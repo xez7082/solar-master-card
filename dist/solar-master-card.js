@@ -4,6 +4,7 @@ import {
   css
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
+// --- ÉDITEUR ---
 class SolarMasterCardEditor extends LitElement {
   static get properties() { return { hass: {}, _config: {}, _selectedTab: { type: String } }; }
   constructor() { super(); this._selectedTab = 'config_solar'; }
@@ -37,6 +38,7 @@ class SolarMasterCardEditor extends LitElement {
         { name: "eco_day_euro", label: "Gains Jour (€)", selector: { entity: {} } },
         { name: "eco_year_euro", label: "Gains Annuels (€)", selector: { entity: {} } },
         { name: "kwh_price", label: "Prix du kWh (€)", selector: { entity: {} } },
+        { name: "eco_target", label: "Objectif Mensuel (€)", selector: { number: {min:0, max:1000} } },
         { name: "main_cons_entity", label: "Conso Maison (W)", selector: { entity: {} } }
       ]
     };
@@ -51,6 +53,7 @@ class SolarMasterCardEditor extends LitElement {
 }
 if (!customElements.get("solar-master-card-editor")) customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
+// --- CARTE ---
 class SolarMasterCard extends LitElement {
   static getConfigElement() { return document.createElement("solar-master-card-editor"); }
   static get properties() { return { hass: {}, config: {}, _tab: { type: String } }; }
@@ -89,7 +92,7 @@ class SolarMasterCard extends LitElement {
                             <div class="big-val">${this._get(c.total_now)}<small>W</small></div>
                             <div class="pct-val">OBJECTIF : ${this._get(c.total_obj_pct)}%</div>
                             <div class="bar-wrap"><div class="bar-f" style="width:${this._get(c.total_obj_pct)}%"></div></div>
-                            <div class="solar-sub-info">Production Jour : ${this._get(c.solar_daily_kwh)} kWh</div>
+                            <div class="solar-sub-info">PRODUCTION JOUR : ${this._get(c.solar_daily_kwh)} kWh</div>
                         </div>
                         <div class="panels-row">
                             ${panels.map(p => html`
@@ -106,6 +109,7 @@ class SolarMasterCard extends LitElement {
                             ${[1,2,3,4,5,6].map(i => c[`d${i}_entity`] ? html`<div class="d-box"><span class="d-l">${c[`d${i}_label`]}</span><span class="d-v">${this._get(c[`d${i}_entity`])}<small>${this._getU(c[`d${i}_entity`])}</small></span></div>` : '')}
                         </div>
                     </div>` 
+
                 : this._tab === 'batt' ? html`
                     <div class="page">
                         ${[1,2,3,4].map(i => c[`b${i}_s`] ? html`
@@ -118,13 +122,20 @@ class SolarMasterCard extends LitElement {
                                 </div>
                             </div>` : '')}
                     </div>`
+
                 : html`
                     <div class="page">
-                        <div class="eco-hero"><div class="e-big">${this._get(c.eco_money)}<small>€</small></div><div class="e-price-tag">Prix kWh : ${this._get(c.kwh_price)} €</div></div>
+                        <div class="eco-hero">
+                            <div class="e-label">GAINS TOTAUX</div>
+                            <div class="e-big">${this._get(c.eco_money)}<small>€</small></div>
+                            <div class="e-target">Objectif Mensuel : ${c.eco_target || 0}€</div>
+                            <div class="e-bar-wrap"><div class="e-bar-fill" style="width:${Math.min(100, (parseFloat(this._get(c.eco_money))/(c.eco_target || 1)) * 100)}%"></div></div>
+                            <div class="e-price-tag">Prix kWh : ${this._get(c.kwh_price)} €</div>
+                        </div>
                         <div class="eco-stats-grid">
-                            <div class="stat-card"><span class="s-label">JOUR</span><span class="s-value green">${this._get(c.eco_day_euro)}€</span></div>
-                            <div class="stat-card"><span class="s-label">ANNUEL</span><span class="s-value yellow">${this._get(c.eco_year_euro)}€</span></div>
-                            <div class="stat-card"><span class="s-label">MAISON</span><span class="s-value">${this._get(c.main_cons_entity)}W</span></div>
+                            <div class="stat-card"><span class="s-label">JOUR</span><span class="s-value green">${this._get(c.eco_day_euro)}<small>€</small></span></div>
+                            <div class="stat-card"><span class="s-label">ANNUEL</span><span class="s-value yellow">${this._get(c.eco_year_euro)}<small>€</small></span></div>
+                            <div class="stat-card"><span class="s-label">MAISON</span><span class="s-value">${this._get(c.main_cons_entity)}<small>W</small></span></div>
                         </div>
                     </div>`}
             </div>
@@ -144,16 +155,19 @@ class SolarMasterCard extends LitElement {
     .overlay { height: 100%; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; position: relative; z-index: 1; background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%); }
     
     .top-nav { display: flex; gap: 8px; margin-bottom: 20px; }
-    .t-badge { background: rgba(255,255,255,0.06); padding: 7px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(5px); }
+    .t-badge { background: rgba(255,255,255,0.06); padding: 7px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
     .t-badge.green { color: #4caf50; margin-left: auto; border: 1px solid rgba(76,175,80,0.2); }
     .export { color: #00f9f9; border: 1px solid rgba(0,249,249,0.3); }
     .import { color: #ff5252; border: 1px solid rgba(255,82,82,0.3); }
 
     .header-main { text-align: center; margin-bottom: 25px; }
-    .prod-label { font-size: 10px; letter-spacing: 2px; opacity: 0.5; font-weight: 700; }
+    .prod-label { font-size: 9px; letter-spacing: 2px; opacity: 0.5; font-weight: 800; margin-bottom: 5px; }
     .big-val { font-size: 62px; font-weight: 900; color: #ffc107; line-height: 0.9; }
-    .bar-wrap { height: 6px; background: rgba(255,255,255,0.08); width: 65%; margin: 10px auto; border-radius: 10px; overflow: hidden; }
+    .big-val small { font-size: 18px; margin-left: 4px; opacity: 0.6; }
+    .pct-val { font-size: 11px; font-weight: 800; color: #ffc107; margin-top: 15px; }
+    .bar-wrap { height: 6px; background: rgba(255,255,255,0.08); width: 65%; margin: 8px auto; border-radius: 10px; overflow: hidden; }
     .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.6); }
+    .solar-sub-info { font-size: 10px; font-weight: 700; opacity: 0.6; margin-top: 5px; }
 
     .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; }
     .hud-circle { width: 84px; height: 84px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); }
@@ -170,9 +184,27 @@ class SolarMasterCard extends LitElement {
     .d-l { display: block; font-size: 8px; opacity: 0.5; font-weight: 900; margin-bottom: 4px; }
     .d-v { font-size: 14px; font-weight: 800; color: #00f9f9; }
 
-    .rack { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 20px; margin-bottom: 12px; border-left: 4px solid #4caf50; backdrop-filter: blur(10px); }
-    .r-f-separated { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; }
+    .rack { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 20px; margin-bottom: 12px; border-left: 4px solid #4caf50; backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.05); }
+    .v-meter { display: flex; gap: 4px; height: 12px; margin: 12px 0; }
+    .v-seg { flex: 1; background: rgba(255,255,255,0.06); border-radius: 2px; }
+    .v-seg.on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
+    .r-f-separated { display: flex; justify-content: space-between; gap: 10px; }
     .r-f-item { flex: 1; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px; }
+
+    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.1) 0%, transparent 100%); padding: 25px; border-radius: 25px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 15px; }
+    .e-label { font-size: 10px; font-weight: 800; opacity: 0.6; letter-spacing: 1px; }
+    .e-big { font-size: 60px; font-weight: 900; color: #4caf50; line-height: 1; }
+    .e-target { font-size: 11px; margin-top: 10px; font-weight: 700; color: #4caf50; opacity: 0.8; }
+    .e-bar-wrap { height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; margin: 12px 0; overflow: hidden; }
+    .e-bar-fill { height: 100%; background: #4caf50; box-shadow: 0 0 15px #4caf50; }
+    .e-price-tag { font-size: 11px; opacity: 0.5; font-weight: bold; }
+
+    .eco-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .stat-card { background: rgba(255,255,255,0.03); padding: 15px 5px; border-radius: 18px; text-align: center; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+    .s-label { display: block; font-size: 8px; font-weight: 900; opacity: 0.4; margin-bottom: 5px; }
+    .s-value { font-size: 14px; font-weight: 900; }
+    .s-value.green { color: #4caf50; }
+    .s-value.yellow { color: #ffc107; }
 
     .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.8); padding: 12px; border-radius: 25px; margin-top: auto; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); }
     .n-btn { opacity: 0.3; cursor: pointer; transition: 0.4s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
