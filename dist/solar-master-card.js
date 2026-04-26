@@ -98,7 +98,7 @@ class SolarMasterCard extends LitElement {
 
             <div class="content">
                 ${this._tab === 'solar' ? html`
-                    <div class="page">
+                    <div class="page slide-in">
                         <div class="header-main">
                             <div class="big-val">${this._get(c.total_now)}<small>W</small></div>
                             <div class="pct-val">OBJECTIF : ${this._get(c.total_obj_pct)}%</div>
@@ -129,7 +129,7 @@ class SolarMasterCard extends LitElement {
                     </div>` 
 
                 : this._tab === 'batt' ? html`
-                    <div class="page">
+                    <div class="page slide-in">
                         ${[1,2,3,4].map(i => c[`b${i}_s`] ? html`
                             <div class="rack">
                                 <div class="r-h"><b>${c[`b${i}_n`]}</b> <span class="soc-v">${this._get(c[`b${i}_s`])}%</span></div>
@@ -144,7 +144,7 @@ class SolarMasterCard extends LitElement {
                     </div>`
 
                 : html`
-                    <div class="page">
+                    <div class="page slide-in">
                         <div class="eco-hero">
                             <div class="e-title">ÉCONOMIE TOTALE</div>
                             <div class="e-big">${this._get(c.eco_money)}<small>€</small></div>
@@ -178,20 +178,52 @@ class SolarMasterCard extends LitElement {
   }
 
   static styles = css`
-    ha-card { border-radius: 28px; overflow: hidden; background: #000; color: #fff; font-family: 'Inter', sans-serif; }
-    .overlay { height: 100%; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
-    .top-nav { display: flex; gap: 8px; margin-bottom: 20px; }
-    .t-badge { background: rgba(255,255,255,0.06); padding: 7px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+    ha-card { 
+      border-radius: 28px; 
+      overflow: hidden; 
+      background: #000; 
+      color: #fff; 
+      font-family: 'Inter', sans-serif;
+      position: relative;
+    }
+    
+    /* LE FOND RESTAURÉ */
+    .overlay { 
+      height: 100%; 
+      display: flex; 
+      flex-direction: column; 
+      padding: 15px; 
+      box-sizing: border-box;
+      background: 
+        radial-gradient(circle at 50% -20%, rgba(255, 193, 7, 0.15) 0%, transparent 50%),
+        linear-gradient(180deg, #0a0a0a 0%, #000000 100%);
+      position: relative;
+    }
+
+    /* EFFET DE GRAIN/TEXTURE DISCRET */
+    .overlay::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Cfilter id='noiseFilter'%3%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3%3C/filter%3%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3%3C/svg%3e");
+      opacity: 0.02;
+      pointer-events: none;
+    }
+    
+    .top-nav { display: flex; gap: 8px; margin-bottom: 20px; z-index: 1; }
+    .t-badge { background: rgba(255,255,255,0.06); padding: 7px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.05); }
     .t-badge.green { color: #4caf50; margin-left: auto; border: 1px solid rgba(76,175,80,0.2); }
-    .header-main { text-align: center; margin-bottom: 25px; }
-    .big-val { font-size: 62px; font-weight: 900; color: #ffc107; line-height: 0.9; }
+    .export { color: #00f9f9; border: 1px solid rgba(0,249,249,0.3); }
+    .import { color: #ff5252; border: 1px solid rgba(255,82,82,0.3); }
+
+    .header-main { text-align: center; margin-bottom: 25px; z-index: 1; }
+    .big-val { font-size: 62px; font-weight: 900; color: #ffc107; line-height: 0.9; text-shadow: 0 0 20px rgba(255,193,7,0.3); }
     .pct-val { font-size: 13px; font-weight: 800; color: #ffc107; margin-top: 15px; }
     .bar-wrap { height: 6px; background: rgba(255,255,255,0.08); width: 65%; margin: 10px auto; border-radius: 10px; overflow: hidden; }
     .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.6); }
-    
-    /* PANNEAUX FIXÉS */
-    .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; }
-    .hud-circle { width: 84px; height: 84px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(10,10,10,0.8); }
+
+    .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; z-index: 1; }
+    .hud-circle { width: 84px; height: 84px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); }
     .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 3.5s linear infinite; top:0; left:0; box-sizing: border-box; }
     .hud-inner { text-align: center; line-height: 1.1; }
     .x { display: block; font-size: 7px; opacity: 0.6; font-weight: 700; }
@@ -200,27 +232,24 @@ class SolarMasterCard extends LitElement {
     .flow-arrow { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-size: 10px; animation: pulse 1.5s infinite; }
     .hud-n { font-size: 10px; font-weight: 800; margin-top: 14px; opacity: 0.7; text-align: center; }
 
-    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; z-index: 1; }
     .d-box { background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
     .d-v { font-size: 14px; font-weight: 800; color: #00f9f9; }
 
-    .rack { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 20px; margin-bottom: 12px; border-left: 4px solid #4caf50; }
+    .rack { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 20px; margin-bottom: 12px; border-left: 4px solid #4caf50; backdrop-filter: blur(10px); }
     .r-f-separated { display: flex; justify-content: space-between; gap: 10px; margin-top: 5px; }
     .r-f-item { flex: 1; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 8px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px; }
-    .v-meter { display: flex; gap: 4px; height: 14px; margin: 12px 0; }
-    .v-seg { flex: 1; background: rgba(255,255,255,0.06); border-radius: 2px; }
-    .v-seg.on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
 
-    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.12) 0%, transparent 100%); padding: 30px 20px; border-radius: 30px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 20px; }
+    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.1) 0%, transparent 100%); padding: 30px 20px; border-radius: 30px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 20px; backdrop-filter: blur(5px); }
     .e-big { font-size: 65px; font-weight: 900; color: #4caf50; line-height: 1; }
     .stat-card { background: rgba(255,255,255,0.03); padding: 15px 5px; border-radius: 18px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-    .s-value.green { color: #4caf50; }
-    .s-value.yellow { color: #ffc107; }
 
-    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.9); padding: 12px; border-radius: 25px; margin-top: auto; }
-    .n-btn { opacity: 0.2; cursor: pointer; transition: 0.4s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .n-btn.active { opacity: 1; color: #ffc107; }
+    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.8); padding: 12px; border-radius: 25px; margin-top: auto; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); z-index: 1; }
+    .n-btn { opacity: 0.3; cursor: pointer; transition: 0.4s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .n-btn.active { opacity: 1; color: #ffc107; transform: translateY(-2px); }
 
+    .slide-in { animation: slideIn 0.4s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes pulse { 0%, 100% { opacity: 1; transform: translate(-50%, 0); } 50% { opacity: 0.3; transform: translate(-50%, 5px); } }
   `;
