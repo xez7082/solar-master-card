@@ -1,61 +1,69 @@
-# ☀️ Solar Master Card by xez7082
+# ☀️ Solar Master Card (V40)
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
-![version](https://img.shields.io/badge/version-1.0.0-blue.svg?style=for-the-badge)
-![license](https://img.shields.io/badge/license-MIT-green.svg?style=for-the-badge)
-![maintained](https://img.shields.io/badge/Maintained%3F-yes-brightgreen.svg?style=for-the-badge)
+Une carte Home Assistant avancée et ultra-personnalisable pour le suivi de votre installation photovoltaïque. Ce projet offre un design de type "Cockpit" avec des effets de transparence (Glassmorphism), un support d'image de fond dynamique et une navigation par onglets fluide.
 
-Une carte **Home Assistant** ultra-complète et dynamique pour piloter et surveiller vos installations solaires (Beem, Marstek, Storcube) et vos équipements de loisirs (Spa). 
+![Version](https://img.shields.io/badge/version-40.0-gold)
+![Platform](https://img.shields.io/badge/platform-Home%20Assistant-blue)
 
 ---
 
-## 🚀 Pourquoi cette carte ?
+## 📸 Aperçu du Design
 
-Plutôt que d'empiler des dizaines de cartes individuelles, la **Solar Master Card** centralise tout dans une interface élégante et interactive basée sur **LitElement**. Elle intègre un éditeur visuel pour que vous n'ayez plus jamais à modifier de YAML manuellement.
+Voici les différents onglets de la carte en action :
 
-### 🌟 Points forts
-- **Éditeur Visuel (UI)** : Configuration simplifiée par onglets directement dans l'interface Home Assistant.
-- **Design Glassmorphism** : Effets de transparence, flou (blur) et animations néon.
-- **Animations de Flux** : Effet "Scan" tournant et pulsations dont l'intensité varie selon votre production réelle.
-- **Optimisé pour le Solaire** : Gestion native des SOC batteries, températures de cellules et production journalière.
-- **Module Spa Intégré** : Suivi de la chimie (pH, ORP, Sel) et contrôle des pompes/bulles.
+| Solaire (Production) | Détails Techniques |
+|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/spa10.png" width="400"> | <img src="https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/spa11.png" width="400"> |
+
+| Gestion Batteries | Économie & Gains |
+|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/spa12.png" width="400"> | <img src="https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/spa13.png" width="400"> |
 
 ---
 
-## 📸 Aperçu du Dashboard
+## ✨ Caractéristiques principales
 
-| Vue Statut Solaire | Éditeur de Configuration | Vue Chimie / Spa |
-| :--- | :--- | :--- |
-| ![Preview](https://raw.githubusercontent.com/xez7082/solar-master-card/main/images/preview.png) | ![Editor](https://raw.githubusercontent.com/xez7082/solar-master-card/main/images/editor.png) | ![Chemistry](https://raw.githubusercontent.com/xez7082/solar-master-card/main/images/spa_view.png) |
+* **🚀 Design Cockpit :** Interface futuriste avec jauges circulaires (HUD) et animations de scan en temps réel.
+* **🖼️ Moteur Visuel :** Ajoutez votre propre image de fond avec réglage du **flou (blur)** et de l'**opacité** directement depuis l'éditeur.
+* **🔋 Onglet Batteries :** Suivi précis de plusieurs batteries avec jauges à segments ultra-fins, température et flux (W).
+* **💰 Onglet Économie :** Visualisez vos gains quotidiens, annuels et suivez votre objectif mensuel via une barre de progression dédiée.
+* **📱 Navigation Intuitive :** Menu footer intégré pour basculer rapidement entre la production, le stockage et les statistiques financières.
+* **🛠️ Éditeur Intégré :** Configuration facile via l'interface UI de Home Assistant (pas de YAML complexe nécessaire).
 
 ---
 
 ## 🛠️ Installation
 
-### Option 1 : Via HACS (Recommandé)
-1. Dans Home Assistant, allez dans **HACS** > **Interface**.
-2. Cliquez sur les **3 points** (en haut à droite) > **Dépôts personnalisés**.
-3. Ajoutez l'URL : `https://github.com/xez7082/solar-master-card`
-4. Sélectionnez la catégorie **Lovelace**.
-5. Cliquez sur **Installer**.
+### 1. Pré-requis
+Assurez-vous d'avoir accès aux ressources externes dans votre configuration Home Assistant.
 
-### Option 2 : Manuelle
-1. Téléchargez `dist/solar-master-card.js`.
-2. Placez-le dans `/config/www/community/solar-master-card/`.
-3. Ajoutez la ressource dans votre tableau de bord :
-   - Type : `module`
-   - URL : `/local/community/solar-master-card/solar-master-card.js`
+### 2. Ajout de la carte
+1.  Copiez le code du fichier `solar-master-card.js`.
+2.  Dans Home Assistant, allez dans **Configuration** -> **Tableaux de bord** -> **Ressources**.
+3.  Ajoutez une nouvelle ressource avec le type `JavaScript Module`.
+4.  Créez une nouvelle carte **Manuel** dans votre tableau de bord et collez le code.
 
 ---
 
-## ⚙️ Configuration rapide (YAML)
+## ⚙️ Configuration
 
-Bien que la carte dispose d'un éditeur visuel, voici un exemple de configuration de base :
+L'éditeur visuel est divisé en 3 sections :
+* **SOLAIRE :** Configuration des entités de production, de l'image de fond et de la météo.
+* **BATTERIES :** Configuration des SOC, températures et flux de charge/décharge.
+* **ÉCONOMIE :** Suivi des gains en euros, prix du kWh et objectifs mensuels.
 
-```yaml
-type: custom:solar-master-card
-title: "MA STATION BEEM"
-beem_power: sensor.beem_maison_puissance
-beem_day: sensor.beem_maison_production_aujourd_hui
-marstek_soc: sensor.marstek_venus_soc
-background_image: "/local/img/solar_bg.jpg"
+---
+
+## 📝 Changelog (v40.0)
+* **Nouveau :** Ajout des jauges de batteries ultra-fines (25 segments).
+* **Optimisation :** Réduction des espaces en hauteur dans l'onglet Économie.
+* **Correction :** Restauration des barres de progression d'objectif solaire.
+* **Visuel :** Support complet du flou d'arrière-plan configurable.
+
+---
+
+## 🤝 Contribution
+Les contributions, rapports de bugs et suggestions sont les bienvenus ! N'hésitez pas à ouvrir une *Issue* ou une *Pull Request*.
+
+---
+Développé avec ❤️ pour la communauté Home Assistant.
