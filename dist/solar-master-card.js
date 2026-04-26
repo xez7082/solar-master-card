@@ -23,10 +23,11 @@ class SolarMasterCardEditor extends LitElement {
         { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
         { name: "grid_flow", label: "Flux Réseau (W)", selector: { entity: {} } },
         { name: "total_obj_pct", label: "Objectif (%)", selector: { entity: {} } },
+        { name: "solar_daily_kwh", label: "Prod Jour (kWh) - Pour info", selector: { entity: {} } },
         ...[1,2,3,4].map(i => [
-          { name: `p${i}_name`, label: `Nom P${i}`, selector: { text: {} } },
+          { name: `p${i}_name`, label: `Nom P${i}` },
           { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } },
-          { name: `p${i}_extra`, label: `Info P${i}`, selector: { text: {} } }
+          { name: `p${i}_extra`, label: `Info P${i}` }
         ]).flat(),
         ...[1,2,3,4,5,6].map(i => [{ name: `d${i}_label`, label: `Diag ${i} Nom` }, { name: `d${i}_entity`, label: `Diag ${i} Entité`, selector: { entity: {} } }]).flat()
       ],
@@ -39,9 +40,9 @@ class SolarMasterCardEditor extends LitElement {
         ]).flat()
       ],
       config_stats: [
-        { name: "eco_money", label: "Gains (€)", selector: { entity: {} } },
-        { name: "eco_target", label: "Objectif (€)", selector: { number: {min:0, max:1000} } },
-        { name: "total_day", label: "kWh Jour", selector: { entity: {} } },
+        { name: "eco_money", label: "Gains Totaux (€)", selector: { entity: {} } },
+        { name: "eco_day_euro", label: "Gains Jour (€)", selector: { entity: {} } },
+        { name: "eco_target", label: "Objectif Mensuel (€)", selector: { number: {min:0, max:1000} } },
         { name: "main_cons_entity", label: "Conso Maison (W)", selector: { entity: {} } }
       ]
     };
@@ -78,7 +79,7 @@ class SolarMasterCard extends LitElement {
         <div class="overlay">
             
             <div class="top-nav">
-                <div class="t-badge"><ha-icon icon="mdi:cloud-outline"></ha-icon> ${this._get(c.entity_weather)}</div>
+                <div class="t-badge"><ha-icon icon="mdi:weather-sunny"></ha-icon> ${this._get(c.entity_weather)}</div>
                 <div class="t-badge ${gridVal > 0 ? 'export' : 'import'}">
                     <ha-icon icon="mdi:transmission-tower"></ha-icon> ${Math.abs(gridVal)} ${gridUnit}
                 </div>
@@ -89,9 +90,11 @@ class SolarMasterCard extends LitElement {
                 ${this._tab === 'solar' ? html`
                     <div class="page">
                         <div class="header-main">
+                            <div class="prod-label">PUISSANCE LIVE</div>
                             <div class="big-val">${this._get(c.total_now)}<small>W</small></div>
                             <div class="pct-val">OBJECTIF : ${this._get(c.total_obj_pct)}%</div>
                             <div class="bar-wrap"><div class="bar-f" style="width:${this._get(c.total_obj_pct)}%"></div></div>
+                            <div class="solar-sub-info">Cumul Jour: ${this._get(c.solar_daily_kwh)} kWh</div>
                         </div>
 
                         <div class="panels-row">
@@ -104,6 +107,7 @@ class SolarMasterCard extends LitElement {
                                             <span class="v" style="color:${p.c}">${Math.round(this._get(p.e))}</span>
                                             <span class="u">WATTS</span>
                                         </div>
+                                        <div class="flow-arrow" style="color:${p.c}">▼</div>
                                     </div>
                                     <div class="hud-n">${p.n}</div>
                                 </div>`)}
@@ -130,14 +134,15 @@ class SolarMasterCard extends LitElement {
                 : html`
                     <div class="page">
                         <div class="eco-hero">
-                            <div class="e-title">TOTAL ÉCONOMISÉ</div>
+                            <div class="e-title">GAIN TOTAL CUMULÉ</div>
                             <div class="e-big">${this._get(c.eco_money)}<small>€</small></div>
                             <div class="e-bar"><div class="e-fill" style="width:${(parseFloat(this._get(c.eco_money))/(c.eco_target || 100))*100}%"></div></div>
+                            <div class="e-target">Objectif: ${c.eco_target || 100}€</div>
                         </div>
                         <div class="eco-stats">
                             <div class="stat-card">
-                                <span class="s-label">PROD. JOUR</span>
-                                <span class="s-value">${this._get(c.total_day)} <small>kWh</small></span>
+                                <span class="s-label">GAINS DU JOUR</span>
+                                <span class="s-value euro">${this._get(c.eco_day_euro)} <small>€</small></span>
                             </div>
                             <div class="stat-card">
                                 <span class="s-label">CONSO MAISON</span>
@@ -150,61 +155,66 @@ class SolarMasterCard extends LitElement {
             <div class="nav-footer">
                 <div class="n-btn ${this._tab==='solar'?'active':''}" @click=${()=>this._tab='solar'}><ha-icon icon="mdi:solar-power"></ha-icon></div>
                 <div class="n-btn ${this._tab==='batt'?'active':''}" @click=${()=>this._tab='batt'}><ha-icon icon="mdi:battery-charging-high"></ha-icon></div>
-                <div class="n-btn ${this._tab==='stats'?'active':''}" @click=${()=>this._tab='stats'}><ha-icon icon="mdi:currency-eur"></ha-icon></div>
+                <div class="n-btn ${this._tab==='stats'?'active':''}" @click=${()=>this._tab='stats'}><ha-icon icon="mdi:finance"></ha-icon></div>
             </div>
         </div>
       </ha-card>`;
   }
 
   static styles = css`
-    ha-card { border-radius: 24px; overflow: hidden; background: #050505; color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; }
-    .overlay { height: 100%; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
+    ha-card { border-radius: 28px; overflow: hidden; background: #000; color: #fff; font-family: 'Inter', sans-serif; }
+    .overlay { height: 100%; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; background: linear-gradient(180deg, rgba(255,193,7,0.03) 0%, transparent 100%); }
     
     .top-nav { display: flex; gap: 8px; margin-bottom: 20px; }
-    .t-badge { background: rgba(255,255,255,0.07); padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 5px; }
-    .t-badge.green { color: #4caf50; margin-left: auto; }
-    .export { color: #00f9f9; box-shadow: inset 0 0 10px rgba(0,249,249,0.1); }
-    .import { color: #ff5252; }
+    .t-badge { background: rgba(255,255,255,0.06); padding: 7px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.05); }
+    .t-badge.green { color: #4caf50; margin-left: auto; border-color: rgba(76,175,80,0.2); }
+    .export { color: #00f9f9; border-color: rgba(0,249,249,0.3); }
+    .import { color: #ff5252; border-color: rgba(255,82,82,0.3); }
 
     .header-main { text-align: center; margin-bottom: 25px; }
-    .big-val { font-size: 58px; font-weight: 900; color: #ffc107; line-height: 1; }
-    .pct-val { font-size: 14px; font-weight: 800; color: #ffc107; margin-top: 15px; }
-    .bar-wrap { height: 6px; background: rgba(255,255,255,0.1); width: 65%; margin: 8px auto; border-radius: 3px; overflow: hidden; }
-    .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px #ffc107; }
+    .prod-label { font-size: 10px; letter-spacing: 2px; opacity: 0.5; font-weight: 700; margin-bottom: 5px; }
+    .big-val { font-size: 62px; font-weight: 900; color: #ffc107; line-height: 0.9; text-shadow: 0 0 30px rgba(255,193,7,0.2); }
+    .pct-val { font-size: 13px; font-weight: 800; color: #ffc107; margin-top: 15px; opacity: 0.9; }
+    .bar-wrap { height: 6px; background: rgba(255,255,255,0.08); width: 65%; margin: 10px auto; border-radius: 10px; overflow: hidden; }
+    .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.6); }
+    .solar-sub-info { font-size: 11px; opacity: 0.4; font-weight: 600; }
 
-    .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; }
-    .hud-circle { width: 82px; height: 82px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
-    .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 3s linear infinite; top:0; left:0; box-sizing: border-box; }
-    .hud-inner { text-align: center; line-height: 1; }
-    .x { display: block; font-size: 7px; opacity: 0.5; margin-bottom: 2px; }
-    .v { font-size: 20px; font-weight: 900; }
-    .u { display: block; font-size: 7px; opacity: 0.3; font-weight: bold; margin-top: 2px; }
-    .hud-n { font-size: 10px; font-weight: bold; margin-top: 10px; opacity: 0.7; text-align: center; }
+    .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; padding: 0 5px; }
+    .hud-item { position: relative; }
+    .hud-circle { width: 84px; height: 84px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(10,10,10,0.8); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+    .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 3.5s linear infinite; top:0; left:0; box-sizing: border-box; }
+    .hud-inner { text-align: center; line-height: 1.1; }
+    .x { display: block; font-size: 7px; opacity: 0.6; font-weight: 700; }
+    .v { font-size: 22px; font-weight: 900; }
+    .u { display: block; font-size: 7px; opacity: 0.3; font-weight: 900; }
+    .flow-arrow { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-size: 10px; animation: pulse 1.5s infinite; }
+    .hud-n { font-size: 10px; font-weight: 800; margin-top: 14px; opacity: 0.7; text-align: center; text-transform: uppercase; }
 
-    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .d-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-    .d-l { display: block; font-size: 8px; opacity: 0.4; text-transform: uppercase; margin-bottom: 3px; }
-    .d-v { font-size: 13px; font-weight: 800; color: #00f9f9; }
+    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .d-box { background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+    .d-l { display: block; font-size: 8px; opacity: 0.4; font-weight: 800; margin-bottom: 4px; }
+    .d-v { font-size: 14px; font-weight: 800; color: #00f9f9; }
 
-    .rack { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 15px; margin-bottom: 12px; }
-    .v-meter { display: flex; gap: 4px; height: 14px; margin: 10px 0; }
-    .v-seg { flex: 1; background: rgba(255,255,255,0.05); border-radius: 2px; }
-    .v-seg.on { background: #4caf50; box-shadow: 0 0 8px #4caf50; }
+    .rack { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 20px; margin-bottom: 12px; border-left: 4px solid #4caf50; }
+    .v-meter { display: flex; gap: 4px; height: 16px; margin: 12px 0; }
+    .v-seg { flex: 1; background: rgba(255,255,255,0.06); border-radius: 2px; }
+    .v-seg.on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
 
-    /* ECONOMIE LISIBILITÉ AMÉLIORÉE */
-    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.15), transparent); padding: 30px; border-radius: 25px; text-align: center; border: 1px solid rgba(76,175,80,0.2); margin-bottom: 20px; }
-    .e-big { font-size: 60px; font-weight: 900; color: #4caf50; text-shadow: 0 0 20px rgba(76,175,80,0.4); }
+    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.12) 0%, transparent 100%); padding: 35px 20px; border-radius: 30px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 20px; }
+    .e-big { font-size: 65px; font-weight: 900; color: #4caf50; line-height: 1; text-shadow: 0 0 25px rgba(76,175,80,0.3); }
+    .e-target { font-size: 11px; opacity: 0.4; margin-top: 10px; font-weight: 700; }
     .eco-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .stat-card { background: rgba(76,175,80,0.08); padding: 20px; border-radius: 20px; text-align: center; border: 1px solid rgba(76,175,80,0.1); }
-    .s-label { display: block; font-size: 10px; font-weight: 800; opacity: 0.6; letter-spacing: 1px; margin-bottom: 10px; color: #4caf50; }
-    .s-value { font-size: 24px; font-weight: 900; color: #fff; }
-    .s-value small { font-size: 12px; opacity: 0.5; margin-left: 4px; }
+    .stat-card { background: rgba(255,255,255,0.03); padding: 22px; border-radius: 24px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+    .s-label { display: block; font-size: 10px; font-weight: 900; opacity: 0.5; letter-spacing: 1px; margin-bottom: 12px; }
+    .s-value { font-size: 26px; font-weight: 900; color: #fff; }
+    .s-value.euro { color: #4caf50; }
 
-    .nav-footer { display: flex; justify-content: space-around; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 22px; margin-top: auto; }
-    .n-btn { opacity: 0.2; cursor: pointer; transition: 0.4s; }
-    .n-btn.active { opacity: 1; color: #ffc107; transform: scale(1.1); }
+    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.9); padding: 16px; border-radius: 25px; margin-top: auto; backdrop-filter: blur(10px); }
+    .n-btn { opacity: 0.2; cursor: pointer; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .n-btn.active { opacity: 1; color: #ffc107; transform: translateY(-3px) scale(1.1); }
 
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: translate(-50%, 0); } 50% { opacity: 0.3; transform: translate(-50%, 5px); } }
   `;
 }
 if (!customElements.get("solar-master-card")) customElements.define("solar-master-card", SolarMasterCard);
