@@ -23,7 +23,7 @@ class SolarMasterCardEditor extends LitElement {
         { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
         { name: "grid_flow", label: "Flux Réseau (W)", selector: { entity: {} } },
         { name: "total_obj_pct", label: "Objectif (%)", selector: { entity: {} } },
-        { name: "solar_daily_kwh", label: "Prod Jour (kWh) - Pour info", selector: { entity: {} } },
+        { name: "solar_daily_kwh", label: "Prod Jour (kWh)", selector: { entity: {} } },
         ...[1,2,3,4].map(i => [
           { name: `p${i}_name`, label: `Nom P${i}` },
           { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } },
@@ -42,6 +42,8 @@ class SolarMasterCardEditor extends LitElement {
       config_stats: [
         { name: "eco_money", label: "Gains Totaux (€)", selector: { entity: {} } },
         { name: "eco_day_euro", label: "Gains Jour (€)", selector: { entity: {} } },
+        { name: "eco_year_euro", label: "Gains Annuels (€)", selector: { entity: {} } },
+        { name: "kwh_price", label: "Prix du kWh (€)", selector: { entity: {} } },
         { name: "eco_target", label: "Objectif Mensuel (€)", selector: { number: {min:0, max:1000} } },
         { name: "main_cons_entity", label: "Conso Maison (W)", selector: { entity: {} } }
       ]
@@ -137,16 +139,20 @@ class SolarMasterCard extends LitElement {
                             <div class="e-title">GAIN TOTAL CUMULÉ</div>
                             <div class="e-big">${this._get(c.eco_money)}<small>€</small></div>
                             <div class="e-bar"><div class="e-fill" style="width:${(parseFloat(this._get(c.eco_money))/(c.eco_target || 100))*100}%"></div></div>
-                            <div class="e-target">Objectif: ${c.eco_target || 100}€</div>
+                            <div class="e-price-tag">Prix kWh : ${this._get(c.kwh_price)} €</div>
                         </div>
-                        <div class="eco-stats">
+                        <div class="eco-stats-grid">
                             <div class="stat-card">
-                                <span class="s-label">GAINS DU JOUR</span>
-                                <span class="s-value euro">${this._get(c.eco_day_euro)} <small>€</small></span>
+                                <span class="s-label">JOUR</span>
+                                <span class="s-value green">${this._get(c.eco_day_euro)}<small>€</small></span>
                             </div>
                             <div class="stat-card">
-                                <span class="s-label">CONSO MAISON</span>
-                                <span class="s-value">${this._get(c.main_cons_entity)} <small>W</small></span>
+                                <span class="s-label">ANNUEL</span>
+                                <span class="s-value yellow">${this._get(c.eco_year_euro)}<small>€</small></span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="s-label">CONSO</span>
+                                <span class="s-value">${this._get(c.main_cons_entity)}<small>W</small></span>
                             </div>
                         </div>
                     </div>`}
@@ -163,36 +169,32 @@ class SolarMasterCard extends LitElement {
 
   static styles = css`
     ha-card { border-radius: 28px; overflow: hidden; background: #000; color: #fff; font-family: 'Inter', sans-serif; }
-    .overlay { height: 100%; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; background: linear-gradient(180deg, rgba(255,193,7,0.03) 0%, transparent 100%); }
+    .overlay { height: 100%; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
     
     .top-nav { display: flex; gap: 8px; margin-bottom: 20px; }
-    .t-badge { background: rgba(255,255,255,0.06); padding: 7px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.05); }
-    .t-badge.green { color: #4caf50; margin-left: auto; border-color: rgba(76,175,80,0.2); }
-    .export { color: #00f9f9; border-color: rgba(0,249,249,0.3); }
-    .import { color: #ff5252; border-color: rgba(255,82,82,0.3); }
+    .t-badge { background: rgba(255,255,255,0.06); padding: 7px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+    .t-badge.green { color: #4caf50; margin-left: auto; border: 1px solid rgba(76,175,80,0.2); }
+    .export { color: #00f9f9; border: 1px solid rgba(0,249,249,0.3); }
+    .import { color: #ff5252; border: 1px solid rgba(255,82,82,0.3); }
 
     .header-main { text-align: center; margin-bottom: 25px; }
-    .prod-label { font-size: 10px; letter-spacing: 2px; opacity: 0.5; font-weight: 700; margin-bottom: 5px; }
-    .big-val { font-size: 62px; font-weight: 900; color: #ffc107; line-height: 0.9; text-shadow: 0 0 30px rgba(255,193,7,0.2); }
-    .pct-val { font-size: 13px; font-weight: 800; color: #ffc107; margin-top: 15px; opacity: 0.9; }
+    .prod-label { font-size: 10px; letter-spacing: 2px; opacity: 0.5; font-weight: 700; }
+    .big-val { font-size: 62px; font-weight: 900; color: #ffc107; line-height: 0.9; }
+    .pct-val { font-size: 13px; font-weight: 800; color: #ffc107; margin-top: 15px; }
     .bar-wrap { height: 6px; background: rgba(255,255,255,0.08); width: 65%; margin: 10px auto; border-radius: 10px; overflow: hidden; }
     .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.6); }
-    .solar-sub-info { font-size: 11px; opacity: 0.4; font-weight: 600; }
+    .solar-sub-info { font-size: 11px; opacity: 0.4; }
 
-    .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; padding: 0 5px; }
-    .hud-item { position: relative; }
-    .hud-circle { width: 84px; height: 84px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(10,10,10,0.8); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+    .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; }
+    .hud-circle { width: 84px; height: 84px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(10,10,10,0.8); }
     .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 3.5s linear infinite; top:0; left:0; box-sizing: border-box; }
-    .hud-inner { text-align: center; line-height: 1.1; }
-    .x { display: block; font-size: 7px; opacity: 0.6; font-weight: 700; }
     .v { font-size: 22px; font-weight: 900; }
     .u { display: block; font-size: 7px; opacity: 0.3; font-weight: 900; }
     .flow-arrow { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-size: 10px; animation: pulse 1.5s infinite; }
-    .hud-n { font-size: 10px; font-weight: 800; margin-top: 14px; opacity: 0.7; text-align: center; text-transform: uppercase; }
+    .hud-n { font-size: 10px; font-weight: 800; margin-top: 14px; opacity: 0.7; text-align: center; }
 
     .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .d-box { background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-    .d-l { display: block; font-size: 8px; opacity: 0.4; font-weight: 800; margin-bottom: 4px; }
     .d-v { font-size: 14px; font-weight: 800; color: #00f9f9; }
 
     .rack { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 20px; margin-bottom: 12px; border-left: 4px solid #4caf50; }
@@ -200,18 +202,22 @@ class SolarMasterCard extends LitElement {
     .v-seg { flex: 1; background: rgba(255,255,255,0.06); border-radius: 2px; }
     .v-seg.on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
 
-    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.12) 0%, transparent 100%); padding: 35px 20px; border-radius: 30px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 20px; }
-    .e-big { font-size: 65px; font-weight: 900; color: #4caf50; line-height: 1; text-shadow: 0 0 25px rgba(76,175,80,0.3); }
-    .e-target { font-size: 11px; opacity: 0.4; margin-top: 10px; font-weight: 700; }
-    .eco-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .stat-card { background: rgba(255,255,255,0.03); padding: 22px; border-radius: 24px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-    .s-label { display: block; font-size: 10px; font-weight: 900; opacity: 0.5; letter-spacing: 1px; margin-bottom: 12px; }
-    .s-value { font-size: 26px; font-weight: 900; color: #fff; }
-    .s-value.euro { color: #4caf50; }
+    /* ECONOMIE V31 */
+    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.12) 0%, transparent 100%); padding: 30px 20px; border-radius: 30px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 20px; }
+    .e-big { font-size: 65px; font-weight: 900; color: #4caf50; line-height: 1; }
+    .e-price-tag { font-size: 11px; font-weight: 800; color: #ffc107; background: rgba(255,193,7,0.1); padding: 4px 12px; border-radius: 20px; display: inline-block; margin-top: 15px; }
+    
+    .eco-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .stat-card { background: rgba(255,255,255,0.03); padding: 15px 5px; border-radius: 18px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+    .s-label { display: block; font-size: 9px; font-weight: 900; opacity: 0.5; margin-bottom: 8px; }
+    .s-value { font-size: 18px; font-weight: 900; }
+    .s-value small { font-size: 10px; margin-left: 2px; opacity: 0.6; }
+    .s-value.green { color: #4caf50; }
+    .s-value.yellow { color: #ffc107; }
 
-    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.9); padding: 16px; border-radius: 25px; margin-top: auto; backdrop-filter: blur(10px); }
-    .n-btn { opacity: 0.2; cursor: pointer; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-    .n-btn.active { opacity: 1; color: #ffc107; transform: translateY(-3px) scale(1.1); }
+    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.9); padding: 16px; border-radius: 25px; margin-top: auto; }
+    .n-btn { opacity: 0.2; cursor: pointer; transition: 0.4s; }
+    .n-btn.active { opacity: 1; color: #ffc107; }
 
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes pulse { 0%, 100% { opacity: 1; transform: translate(-50%, 0); } 50% { opacity: 0.3; transform: translate(-50%, 5px); } }
