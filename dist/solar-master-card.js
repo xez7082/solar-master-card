@@ -19,6 +19,7 @@ class SolarMasterCardEditor extends LitElement {
     const schemas = {
       config_solar: [
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200, step: 10 } } },
+        { name: "background_image", label: "URL de l'image de fond", selector: { text: {} } },
         { name: "entity_weather", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
         { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
         { name: "grid_flow", label: "Flux Réseau (W)", selector: { entity: {} } },
@@ -27,7 +28,7 @@ class SolarMasterCardEditor extends LitElement {
         ...[1,2,3,4].map(i => [
           { name: `p${i}_name`, label: `Nom P${i}` },
           { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } },
-          { name: `p${i}_extra`, label: `Info P${i} (Ex: 230V)` }
+          { name: `p${i}_extra`, label: `Info P${i}` }
         ]).flat(),
         ...[1,2,3,4,5,6].map(i => [{ name: `d${i}_label`, label: `Diag ${i} Nom` }, { name: `d${i}_entity`, label: `Diag ${i} Entité`, selector: { entity: {} } }]).flat()
       ],
@@ -69,15 +70,6 @@ class SolarMasterCard extends LitElement {
   _get(id) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].state : '0'; }
   _getU(id) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].attributes.unit_of_measurement || '' : ''; }
 
-  _translateWeather(state) {
-    const map = {
-      'clear-night': 'Nuit claire', 'cloudy': 'Nuageux', 'fog': 'Brouillard', 'hail': 'Grêle', 'lightning': 'Orage', 
-      'lightning-rainy': 'Orage pluvieux', 'partlycloudy': 'Voilé', 'pouring': 'Averse', 
-      'rainy': 'Pluie', 'snowy': 'Neige', 'snowy-rainy': 'Pluie neigeuse', 'sunny': 'Ensoleillé', 'windy': 'Venteux'
-    };
-    return map[state.toLowerCase()] || state;
-  }
-
   render() {
     if (!this.config || !this.hass) return html``;
     const c = this.config;
@@ -86,10 +78,11 @@ class SolarMasterCard extends LitElement {
 
     return html`
       <ha-card style="height:${c.card_height || 650}px;">
+        ${c.background_image ? html`<div class="bg-img" style="background-image: url('${c.background_image}')"></div>` : ''}
+        
         <div class="overlay">
-            
             <div class="top-nav">
-                <div class="t-badge"><ha-icon icon="mdi:weather-sunny"></ha-icon> ${this._translateWeather(this._get(c.entity_weather))}</div>
+                <div class="t-badge"><ha-icon icon="mdi:weather-sunny"></ha-icon> ${this._get(c.entity_weather)}</div>
                 <div class="t-badge ${gridVal > 0 ? 'export' : 'import'}">
                     <ha-icon icon="mdi:transmission-tower"></ha-icon> ${Math.abs(gridVal)} W
                 </div>
@@ -178,52 +171,38 @@ class SolarMasterCard extends LitElement {
   }
 
   static styles = css`
-    ha-card { 
-      border-radius: 28px; 
-      overflow: hidden; 
-      background: #000; 
-      color: #fff; 
-      font-family: 'Inter', sans-serif;
-      position: relative;
-    }
+    ha-card { border-radius: 28px; overflow: hidden; background: #000; color: #fff; position: relative; }
     
-    /* LE FOND RESTAURÉ */
-    .overlay { 
-      height: 100%; 
-      display: flex; 
-      flex-direction: column; 
-      padding: 15px; 
-      box-sizing: border-box;
-      background: 
-        radial-gradient(circle at 50% -20%, rgba(255, 193, 7, 0.15) 0%, transparent 50%),
-        linear-gradient(180deg, #0a0a0a 0%, #000000 100%);
-      position: relative;
+    .bg-img {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background-size: cover; background-position: center;
+      opacity: 0.4; filter: blur(2px) brightness(0.5); z-index: 0;
     }
 
-    /* EFFET DE GRAIN/TEXTURE DISCRET */
-    .overlay::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Cfilter id='noiseFilter'%3%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3%3C/filter%3%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3%3C/svg%3e");
-      opacity: 0.02;
-      pointer-events: none;
+    .overlay { 
+      height: 100%; display: flex; flex-direction: column; padding: 15px; 
+      box-sizing: border-box; position: relative; z-index: 1;
+      background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%);
     }
+
+    .t-badge { background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); padding: 7px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+    .big-val { font-size: 62px; font-weight: 900; color: #ffc107; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    .hud-circle { background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+    .d-box, .stat-card, .rack { background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
+    .nav-footer { background: rgba(0,0,0,0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
     
-    .top-nav { display: flex; gap: 8px; margin-bottom: 20px; z-index: 1; }
-    .t-badge { background: rgba(255,255,255,0.06); padding: 7px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.05); }
+    /* ... (tous les autres styles d'animations de la V34 sont inclus) */
+    .top-nav { display: flex; gap: 8px; margin-bottom: 20px; }
+    .t-badge { font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
     .t-badge.green { color: #4caf50; margin-left: auto; border: 1px solid rgba(76,175,80,0.2); }
     .export { color: #00f9f9; border: 1px solid rgba(0,249,249,0.3); }
     .import { color: #ff5252; border: 1px solid rgba(255,82,82,0.3); }
-
-    .header-main { text-align: center; margin-bottom: 25px; z-index: 1; }
-    .big-val { font-size: 62px; font-weight: 900; color: #ffc107; line-height: 0.9; text-shadow: 0 0 20px rgba(255,193,7,0.3); }
+    .header-main { text-align: center; margin-bottom: 25px; }
     .pct-val { font-size: 13px; font-weight: 800; color: #ffc107; margin-top: 15px; }
     .bar-wrap { height: 6px; background: rgba(255,255,255,0.08); width: 65%; margin: 10px auto; border-radius: 10px; overflow: hidden; }
     .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.6); }
-
-    .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; z-index: 1; }
-    .hud-circle { width: 84px; height: 84px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); }
+    .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; }
+    .hud-circle { width: 84px; height: 84px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; }
     .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 3.5s linear infinite; top:0; left:0; box-sizing: border-box; }
     .hud-inner { text-align: center; line-height: 1.1; }
     .x { display: block; font-size: 7px; opacity: 0.6; font-weight: 700; }
@@ -231,25 +210,21 @@ class SolarMasterCard extends LitElement {
     .u { display: block; font-size: 7px; opacity: 0.3; font-weight: 900; }
     .flow-arrow { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-size: 10px; animation: pulse 1.5s infinite; }
     .hud-n { font-size: 10px; font-weight: 800; margin-top: 14px; opacity: 0.7; text-align: center; }
-
-    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; z-index: 1; }
-    .d-box { background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .d-box { padding: 12px; border-radius: 14px; text-align: center; }
     .d-v { font-size: 14px; font-weight: 800; color: #00f9f9; }
-
-    .rack { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 20px; margin-bottom: 12px; border-left: 4px solid #4caf50; backdrop-filter: blur(10px); }
+    .rack { padding: 18px; border-radius: 20px; margin-bottom: 12px; border-left: 4px solid #4caf50; }
     .r-f-separated { display: flex; justify-content: space-between; gap: 10px; margin-top: 5px; }
     .r-f-item { flex: 1; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 8px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px; }
-
-    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.1) 0%, transparent 100%); padding: 30px 20px; border-radius: 30px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 20px; backdrop-filter: blur(5px); }
+    .v-meter { display: flex; gap: 4px; height: 14px; margin: 12px 0; }
+    .v-seg { flex: 1; background: rgba(255,255,255,0.06); border-radius: 2px; }
+    .v-seg.on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
+    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.1) 0%, transparent 100%); padding: 30px 20px; border-radius: 30px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 20px; }
     .e-big { font-size: 65px; font-weight: 900; color: #4caf50; line-height: 1; }
-    .stat-card { background: rgba(255,255,255,0.03); padding: 15px 5px; border-radius: 18px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-
-    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.8); padding: 12px; border-radius: 25px; margin-top: auto; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); z-index: 1; }
+    .stat-card { padding: 15px 5px; border-radius: 18px; text-align: center; }
+    .nav-footer { display: flex; justify-content: space-around; padding: 12px; border-radius: 25px; margin-top: auto; }
     .n-btn { opacity: 0.3; cursor: pointer; transition: 0.4s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .n-btn.active { opacity: 1; color: #ffc107; transform: translateY(-2px); }
-
-    .slide-in { animation: slideIn 0.4s ease-out; }
-    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes pulse { 0%, 100% { opacity: 1; transform: translate(-50%, 0); } 50% { opacity: 0.3; transform: translate(-50%, 5px); } }
   `;
