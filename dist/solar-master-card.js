@@ -115,7 +115,9 @@ class SolarMasterCard extends LitElement {
                         ${[1,2,3,4].map(i => c[`b${i}_s`] ? html`
                             <div class="rack">
                                 <div class="r-h"><b>${c[`b${i}_n`]}</b> <span class="soc-v">${this._get(c[`b${i}_s`])}%</span></div>
-                                <div class="v-meter">${[...Array(15)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 6.6) ? 'on' : ''}"></div>`)}</div>
+                                <div class="v-meter">
+                                    ${[...Array(25)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 4) ? 'on' : ''}"></div>`)}
+                                </div>
                                 <div class="r-f-separated">
                                     <div class="r-f-item"><ha-icon icon="mdi:thermometer"></ha-icon> ${this._get(c[`b${i}_temp`])}°C</div>
                                     <div class="r-f-item"><ha-icon icon="mdi:swap-vertical"></ha-icon> ${this._get(c[`b${i}_flow`])}W</div>
@@ -128,7 +130,7 @@ class SolarMasterCard extends LitElement {
                         <div class="eco-hero">
                             <div class="e-label">GAINS TOTAUX</div>
                             <div class="e-big">${this._get(c.eco_money)}<small>€</small></div>
-                            <div class="e-target">Objectif Mensuel : ${c.eco_target || 0}€</div>
+                            <div class="e-target">Objectif : ${c.eco_target || 0}€ (${Math.round((parseFloat(this._get(c.eco_money))/(c.eco_target || 1)) * 100)}%)</div>
                             <div class="e-bar-wrap"><div class="e-bar-fill" style="width:${Math.min(100, (parseFloat(this._get(c.eco_money))/(c.eco_target || 1)) * 100)}%"></div></div>
                             <div class="e-price-tag">Prix kWh : ${this._get(c.kwh_price)} €</div>
                         </div>
@@ -160,58 +162,59 @@ class SolarMasterCard extends LitElement {
     .export { color: #00f9f9; border: 1px solid rgba(0,249,249,0.3); }
     .import { color: #ff5252; border: 1px solid rgba(255,82,82,0.3); }
 
-    .header-main { text-align: center; margin-bottom: 25px; }
+    .header-main { text-align: center; margin-bottom: 20px; }
     .prod-label { font-size: 9px; letter-spacing: 2px; opacity: 0.5; font-weight: 800; margin-bottom: 5px; }
-    .big-val { font-size: 62px; font-weight: 900; color: #ffc107; line-height: 0.9; }
+    .big-val { font-size: 58px; font-weight: 900; color: #ffc107; line-height: 0.9; }
     .big-val small { font-size: 18px; margin-left: 4px; opacity: 0.6; }
-    .pct-val { font-size: 11px; font-weight: 800; color: #ffc107; margin-top: 15px; }
-    .bar-wrap { height: 6px; background: rgba(255,255,255,0.08); width: 65%; margin: 8px auto; border-radius: 10px; overflow: hidden; }
+    .pct-val { font-size: 10px; font-weight: 800; color: #ffc107; margin-top: 10px; }
+    .bar-wrap { height: 6px; background: rgba(255,255,255,0.08); width: 60%; margin: 6px auto; border-radius: 10px; overflow: hidden; }
     .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.6); }
-    .solar-sub-info { font-size: 10px; font-weight: 700; opacity: 0.6; margin-top: 5px; }
+    .solar-sub-info { font-size: 9px; font-weight: 700; opacity: 0.6; margin-top: 5px; }
 
-    .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; }
-    .hud-circle { width: 84px; height: 84px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); }
+    .panels-row { display: flex; justify-content: space-around; margin-bottom: 20px; }
+    .hud-circle { width: 80px; height: 80px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); }
     .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 3.5s linear infinite; top:0; left:0; box-sizing: border-box; }
     .hud-inner { text-align: center; }
-    .v { font-size: 22px; font-weight: 900; }
+    .v { font-size: 20px; font-weight: 900; }
     .u { display: block; font-size: 7px; opacity: 0.3; font-weight: 900; }
     .x { display: block; font-size: 7px; opacity: 0.6; font-weight: 700; }
     .flow-arrow { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-size: 10px; animation: pulse 1.5s infinite; }
-    .hud-n { font-size: 10px; font-weight: 800; margin-top: 14px; opacity: 0.7; text-align: center; }
+    .hud-n { font-size: 9px; font-weight: 800; margin-top: 10px; opacity: 0.7; text-align: center; }
 
-    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .d-box { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px); }
-    .d-l { display: block; font-size: 8px; opacity: 0.5; font-weight: 900; margin-bottom: 4px; }
-    .d-v { font-size: 14px; font-weight: 800; color: #00f9f9; }
+    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .d-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px); }
+    .d-l { display: block; font-size: 7px; opacity: 0.5; font-weight: 900; margin-bottom: 3px; }
+    .d-v { font-size: 13px; font-weight: 800; color: #00f9f9; }
 
-    .rack { background: rgba(255,255,255,0.03); padding: 18px; border-radius: 20px; margin-bottom: 12px; border-left: 4px solid #4caf50; backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.05); }
-    .v-meter { display: flex; gap: 4px; height: 12px; margin: 12px 0; }
-    .v-seg { flex: 1; background: rgba(255,255,255,0.06); border-radius: 2px; }
-    .v-seg.on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
-    .r-f-separated { display: flex; justify-content: space-between; gap: 10px; }
-    .r-f-item { flex: 1; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 8px; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    /* --- BATTERIES FINES --- */
+    .rack { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 18px; margin-bottom: 10px; border-left: 3px solid #4caf50; backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.05); }
+    .v-meter { display: flex; gap: 3px; height: 12px; margin: 12px 0; }
+    .v-seg { flex: 1; background: rgba(255,255,255,0.06); border-radius: 1px; width: 2px; } /* Traits plus fins */
+    .v-seg.on { background: #4caf50; box-shadow: 0 0 5px rgba(76,175,80,0.5); }
+    .r-h { display: flex; justify-content: space-between; font-size: 12px; }
+    .soc-v { color: #4caf50; font-weight: 900; }
+    .r-f-separated { display: flex; justify-content: space-between; gap: 8px; }
+    .r-f-item { flex: 1; background: rgba(255,255,255,0.04); padding: 6px; border-radius: 8px; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 4px; }
 
-    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.1) 0%, transparent 100%); padding: 25px; border-radius: 25px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 15px; }
-    .e-label { font-size: 10px; font-weight: 800; opacity: 0.6; letter-spacing: 1px; }
-    .e-big { font-size: 60px; font-weight: 900; color: #4caf50; line-height: 1; }
-    .e-target { font-size: 11px; margin-top: 10px; font-weight: 700; color: #4caf50; opacity: 0.8; }
-    .e-bar-wrap { height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; margin: 12px 0; overflow: hidden; }
-    .e-bar-fill { height: 100%; background: #4caf50; box-shadow: 0 0 15px #4caf50; }
-    .e-price-tag { font-size: 11px; opacity: 0.5; font-weight: bold; }
+    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.1) 0%, transparent 100%); padding: 15px; border-radius: 20px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 12px; }
+    .e-label { font-size: 9px; font-weight: 800; opacity: 0.5; letter-spacing: 1px; }
+    .e-big { font-size: 54px; font-weight: 900; color: #4caf50; line-height: 1; }
+    .e-target { font-size: 10px; margin-top: 5px; font-weight: 700; color: #4caf50; opacity: 0.7; }
+    .e-bar-wrap { height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; margin: 8px 0; overflow: hidden; }
+    .e-bar-fill { height: 100%; background: #4caf50; }
+    .e-price-tag { font-size: 10px; opacity: 0.4; font-weight: bold; }
 
-    .eco-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .stat-card { background: rgba(255,255,255,0.03); padding: 15px 5px; border-radius: 18px; text-align: center; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
-    .s-label { display: block; font-size: 8px; font-weight: 900; opacity: 0.4; margin-bottom: 5px; }
-    .s-value { font-size: 14px; font-weight: 900; }
-    .s-value.green { color: #4caf50; }
-    .s-value.yellow { color: #ffc107; }
+    .eco-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat-card { background: rgba(255,255,255,0.03); padding: 12px 5px; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+    .s-label { display: block; font-size: 7px; font-weight: 900; opacity: 0.4; margin-bottom: 4px; }
+    .s-value { font-size: 13px; font-weight: 900; }
 
-    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.8); padding: 12px; border-radius: 25px; margin-top: auto; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); }
-    .n-btn { opacity: 0.3; cursor: pointer; transition: 0.4s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.8); padding: 10px; border-radius: 22px; margin-top: auto; backdrop-filter: blur(15px); }
+    .n-btn { opacity: 0.3; cursor: pointer; transition: 0.4s; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; }
     .n-btn.active { opacity: 1; color: #ffc107; }
 
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @keyframes pulse { 0%, 100% { opacity: 1; transform: translate(-50%, 0); } 50% { opacity: 0.3; transform: translate(-50%, 5px); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: translate(-50%, 0); } 50% { opacity: 0.3; transform: translate(-50%, 3px); } }
   `;
 }
 if (!customElements.get("solar-master-card")) customElements.define("solar-master-card", SolarMasterCard);
