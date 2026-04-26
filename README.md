@@ -1,5 +1,10 @@
 # ☀️ Solar Master Card (V40)
 
+[![Version](https://img.shields.io/badge/version-40.0.0-gold.svg?style=for-the-badge)](https://github.com/xez7082/solar-master-card)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Platform](https://img.shields.io/badge/Platform-Home%20Assistant-blue.svg?style=for-the-badge)](https://www.home-assistant.io/)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg?style=for-the-badge)](https://github.com/xez7082/solar-master-card/graphs/commit-activity)
+
 Une interface de monitoring solaire futuriste pour **Home Assistant**. Cette carte transforme vos données photovoltaïques en un véritable tableau de bord haute performance (style Cockpit) avec gestion des économies et du stockage.
 
 ---
