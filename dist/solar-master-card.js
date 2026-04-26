@@ -4,10 +4,10 @@ import {
   css
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
-// --- ÉDITEUR CONFIGURATION ---
+// --- ÉDITEUR VISUEL COMPLET ---
 class SolarMasterCardEditor extends LitElement {
   static get properties() { return { hass: {}, _config: {}, _selectedTab: { type: String } }; }
-  constructor() { super(); this._selectedTab = 'solar'; }
+  constructor() { super(); this._selectedTab = 'solar_main'; }
   setConfig(config) { this._config = config; }
 
   _valueChanged(ev) {
@@ -18,34 +18,65 @@ class SolarMasterCardEditor extends LitElement {
 
   render() {
     if (!this.hass || !this._config) return html``;
+
     const schemas = {
-      solar: [
+      solar_main: [
+        { name: "title", label: "Titre de la carte", selector: { text: {} } },
         { name: "total_now", label: "Prod Totale Instantanée (W)", selector: { entity: { domain: "sensor" } } },
         { name: "total_obj", label: "Objectif Prod Jour (kWh)", selector: { entity: { domain: "sensor" } } },
         { name: "total_month", label: "Prod Totale Mois (kWh)", selector: { entity: { domain: "sensor" } } },
-        { name: "total_year", label: "Prod Totale Année (kWh)", selector: { entity: { domain: "sensor" } } }
+        { name: "total_year", label: "Prod Totale Année (kWh)", selector: { entity: { domain: "sensor" } } },
+        { name: "background", label: "Image de fond (URL)", selector: { text: {} } }
+      ],
+      beem_units: [
+        { name: "beem_m_w", label: "Beem Maison - Watts", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_m_d", label: "Beem Maison - Jour (kWh)", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_s_w", label: "Beem Spa - Watts", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_s_d", label: "Beem Spa - Jour (kWh)", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_i_w", label: "Beem IBC - Watts", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_i_d", label: "Beem IBC - Jour (kWh)", selector: { entity: { domain: "sensor" } } }
       ],
       batteries: [
-        { name: "bat_count", label: "Nombre de batteries (1-5)", selector: { number: { min: 1, max: 5, mode: "box" } } },
-        { name: "bat1_soc", label: "Batterie 1 SOC (%)", selector: { entity: {} } },
-        { name: "bat1_pwr", label: "Batterie 1 Watts", selector: { entity: {} } }
+        { name: "bat1_soc", label: "Bat 1 - SOC %", selector: { entity: {} } },
+        { name: "bat1_pwr", label: "Bat 1 - Watts", selector: { entity: {} } },
+        { name: "bat2_soc", label: "Bat 2 - SOC %", selector: { entity: {} } },
+        { name: "bat2_pwr", label: "Bat 2 - Watts", selector: { entity: {} } },
+        { name: "bat3_soc", label: "Bat 3 - SOC %", selector: { entity: {} } },
+        { name: "bat4_soc", label: "Bat 4 - SOC %", selector: { entity: {} } },
+        { name: "bat5_soc", label: "Bat 5 - SOC %", selector: { entity: {} } }
       ],
-      eco: [
-        { name: "eco_label", label: "Titre Section Économies", selector: { text: {} } },
-        { name: "eco1", label: "Sensor Éco 1", selector: { entity: {} } },
-        { name: "eco2", label: "Sensor Éco 2", selector: { entity: {} } }
+      economy: [
+        { name: "eco1_ent", label: "Eco 1 - Entité", selector: { entity: {} } }, { name: "eco1_nom", label: "Eco 1 - Nom", selector: { text: {} } },
+        { name: "eco2_ent", label: "Eco 2 - Entité", selector: { entity: {} } }, { name: "eco2_nom", label: "Eco 2 - Nom", selector: { text: {} } },
+        { name: "eco3_ent", label: "Eco 3 - Entité", selector: { entity: {} } }, { name: "eco3_nom", label: "Eco 3 - Nom", selector: { text: {} } },
+        { name: "eco4_ent", label: "Eco 4 - Entité", selector: { entity: {} } }, { name: "eco4_nom", label: "Eco 4 - Nom", selector: { text: {} } },
+        { name: "eco5_ent", label: "Eco 5 - Entité", selector: { entity: {} } }, { name: "eco5_nom", label: "Eco 5 - Nom", selector: { text: {} } }
+      ],
+      objectifs: [
+        { name: "obj1_ent", label: "Objectif 1 - Capteur", selector: { entity: {} } }, { name: "obj1_target", label: "Cible (ex: 100%)", selector: { text: {} } },
+        { name: "obj2_ent", label: "Objectif 2 - Capteur", selector: { entity: {} } }, { name: "obj2_target", label: "Cible", selector: { text: {} } }
       ]
     };
 
     return html`
       <div class="editor-tabs">
-        ${Object.keys(schemas).map(t => html`<button class="${this._selectedTab === t ? 'active' : ''}" @click=${() => this._selectedTab = t}>${t.toUpperCase()}</button>`)}
+        ${Object.keys(schemas).map(t => html`
+          <button class="${this._selectedTab === t ? 'active' : ''}" @click=${() => this._selectedTab = t}>
+            ${t.replace('_', ' ').toUpperCase()}
+          </button>
+        `)}
       </div>
-      <p style="font-size: 10px; color: #aaa;">Note: Configurez les entités Beem et additionnelles via le YAML pour plus de 5 entités.</p>
-      <ha-form .hass=${this.hass} .data=${this._config} .schema=${schemas[this._selectedTab]} @value-changed=${this._valueChanged}></ha-form>
+      <div class="editor-form">
+        <ha-form .hass=${this.hass} .data=${this._config} .schema=${schemas[this._selectedTab]} @value-changed=${this._valueChanged}></ha-form>
+      </div>
     `;
   }
-  static styles = css`.editor-tabs { display: flex; gap: 5px; margin-bottom: 10px; } button { background: #444; color: #fff; border: none; padding: 5px; cursor: pointer; font-size: 10px; border-radius: 4px; } button.active { background: #ffc107; color: #000; }`;
+  static styles = css`
+    .editor-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 20px; }
+    button { background: #333; color: #fff; border: 1px solid #444; padding: 6px 10px; cursor: pointer; font-size: 9px; border-radius: 4px; transition: 0.2s; }
+    button.active { background: #ffc107; color: #000; border-color: #ffc107; font-weight: bold; }
+    .editor-form { background: #222; padding: 15px; border-radius: 8px; }
+  `;
 }
 
 if (!customElements.get("solar-master-card-editor")) customElements.define("solar-master-card-editor", SolarMasterCardEditor);
@@ -58,156 +89,97 @@ class SolarMasterCard extends LitElement {
   setConfig(config) { this.config = config; }
 
   _get(id) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].state : '0'; }
-  _attr(id, attr) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].attributes[attr] : ''; }
 
-  // Template pour une ligne de panneau (Type Beem)
-  _renderPanelRow(name, sensorW, sensorD, sensorM) {
-    const valW = parseInt(this._get(sensorW));
-    const pct = Math.min((valW / 1200) * 100, 100);
+  _renderPanel(name, w, d) {
+    if (!w) return html``;
+    const valW = parseInt(this._get(w));
     return html`
-      <div class="beem-row">
-        <div class="beem-shape ${valW > 5 ? 'active' : ''}"><ha-icon icon="mdi:solar-panel"></ha-icon></div>
-        <div class="beem-info">
-            <div class="beem-name">${name}</div>
-            <div class="beem-progress"><div class="beem-bar" style="width: ${pct}%"></div></div>
-        </div>
-        <div class="beem-badges">
-            <div class="b-badge">DAY<span>${this._get(sensorD)}</span></div>
-            <div class="b-badge">NOW<span>${valW}W</span></div>
-        </div>
+      <div class="row">
+        <div class="icon-circle ${valW > 5 ? 'active' : ''}"><ha-icon icon="mdi:solar-panel"></ha-icon></div>
+        <div class="info"><div>${name}</div><div class="bar-bg"><div class="bar" style="width:${Math.min(valW/12, 100)}%"></div></div></div>
+        <div class="badge">NOW<b>${valW}W</b></div>
+        <div class="badge green">JOUR<b>${this._get(d)}</b></div>
       </div>`;
   }
 
   _renderTab() {
     const c = this.config;
-    
-    // --- ONGLET SOLAIRE ---
     if (this._tab === 'solar') {
-        return html`
-          <div class="tab-content scroll">
-            <div class="solar-grid-header">
-                <div class="stat-box"><span>ACTUEL</span><br><b>${this._get(c.total_now)} W</b></div>
-                <div class="stat-box"><span>OBJ.</span><br><b>${this._get(c.total_obj)}</b></div>
-                <div class="stat-box"><span>MOIS</span><br><b>${this._get(c.total_month)}</b></div>
-                <div class="stat-box"><span>AN</span><br><b>${this._get(c.total_year)}</b></div>
-            </div>
-            ${this._renderPanelRow("Beem Maison", c.beem_m_w, c.beem_m_d, c.beem_m_m)}
-            ${this._renderPanelRow("Beem Spa", c.beem_s_w, c.beem_s_d, c.beem_s_m)}
-            ${this._renderPanelRow("Beem IBC", c.beem_i_w, c.beem_i_d, c.beem_i_m)}
-            ${c.extra_panels ? c.extra_panels.map(p => this._renderPanelRow(p.name, p.w, p.d, p.m)) : ''}
-          </div>`;
+      return html`
+        <div class="header-stats">
+          <div><small>NOW</small><br>${this._get(c.total_now)}W</div>
+          <div><small>OBJ</small><br>${this._get(c.total_obj)}</div>
+          <div><small>MOIS</small><br>${this._get(c.total_month)}</div>
+          <div><small>AN</small><br>${this._get(c.total_year)}</div>
+        </div>
+        <div class="scroll-area">
+          ${this._renderPanel("Maison", c.beem_m_w, c.beem_m_d)}
+          ${this._renderPanel("Spa", c.beem_s_w, c.beem_s_d)}
+          ${this._renderPanel("IBC", c.beem_i_w, c.beem_i_d)}
+        </div>`;
     }
-
-    // --- ONGLET BATTERIES ---
     if (this._tab === 'bat') {
-        const bats = [];
-        for(let i=1; i <= (c.bat_count || 1); i++) {
-            bats.push({soc: c[`bat${i}_soc`], pwr: c[`bat${i}_pwr`]});
-        }
-        return html`
-          <div class="tab-content scroll">
-            ${bats.map((b, i) => html`
-                <div class="bat-row">
-                    <ha-icon icon="mdi:battery-high"></ha-icon>
-                    <div class="bat-label">Pack ${i+1}</div>
-                    <div class="bat-bar-bg"><div class="bat-bar" style="width:${this._get(b.soc)}%"></div></div>
-                    <div class="bat-val">${this._get(b.soc)}% <small>(${this._get(b.pwr)}W)</small></div>
-                </div>
-            `)}
-          </div>`;
+      return html`<div class="scroll-area">
+        ${[1,2,3,4,5].map(i => c[`bat${i}_soc`] ? html`
+          <div class="row">
+            <ha-icon icon="mdi:battery"></ha-icon>
+            <div class="info">Pack ${i} <div class="bar-bg"><div class="bar" style="width:${this._get(c[`bat${i}_soc`])}%"></div></div></div>
+            <div class="badge">${this._get(c[`bat${i}_soc`])}%</div>
+          </div>` : '')}
+      </div>`;
     }
-
-    // --- ONGLET ÉCONOMIES ---
     if (this._tab === 'eco') {
-        return html`
-          <div class="tab-content grid-2 scroll">
-            ${c.eco_sensors ? c.eco_sensors.map(s => html`
-                <div class="eco-card">
-                    <div class="eco-val">${this._get(s.entity)}<small>${this._attr(s.entity, 'unit_of_measurement')}</small></div>
-                    <div class="eco-name">${s.name}</div>
-                </div>
-            `) : html`<p>Configurez "eco_sensors" en YAML</p>`}
-          </div>`;
-    }
-
-    // --- ONGLET OBJECTIFS ---
-    if (this._tab === 'obj') {
-        return html`
-          <div class="tab-content scroll">
-             ${c.obj_sensors ? c.obj_sensors.map(s => html`
-                <div class="obj-row">
-                    <span>${s.name}</span>
-                    <div class="obj-val">${this._get(s.entity)} / ${s.target}</div>
-                </div>
-             `) : ''}
-          </div>`;
+        return html`<div class="grid-eco">
+            ${[1,2,3,4,5].map(i => c[`eco${i}_ent`] ? html`
+                <div class="eco-card"><b>${this._get(c[`eco${i}_ent`])}</b><br><small>${c[`eco${i}_nom`]}</small></div>
+            ` : '')}
+        </div>`;
     }
   }
 
   render() {
-    const c = this.config;
     return html`
-      <ha-card style="height: ${c.card_height || '500px'}">
-        <div class="bg" style="background-image: url('${c.background}');">
-          <div class="glass-overlay">
+      <ha-card style="height:500px">
+        <div class="main" style="background-image:url('${this.config.background}')">
+          <div class="overlay">
+            <div class="title">${this.config.title || 'SOLAR MASTER'}</div>
             <div class="content">${this._renderTab()}</div>
-            <div class="navbar">
-                <ha-icon class="${this._tab==='solar'?'active':''}" icon="mdi:solar-power" @click=${()=>this._tab='solar'}></ha-icon>
-                <ha-icon class="${this._tab==='bat'?'active':''}" icon="mdi:battery-charging-100" @click=${()=>this._tab='bat'}></ha-icon>
-                <ha-icon class="${this._tab==='eco'?'active':''}" icon="mdi:cash-multiple" @click=${()=>this._tab='eco'}></ha-icon>
-                <ha-icon class="${this._tab==='obj'?'active':''}" icon="mdi:target" @click=${()=>this._tab='obj'}></ha-icon>
+            <div class="nav">
+              <ha-icon class="${this._tab==='solar'?'active':''}" icon="mdi:solar-power" @click=${()=>this._tab='solar'}></ha-icon>
+              <ha-icon class="${this._tab==='bat'?'active':''}" icon="mdi:battery-charging" @click=${()=>this._tab='bat'}></ha-icon>
+              <ha-icon class="${this._tab==='eco'?'active':''}" icon="mdi:cash-100" @click=${()=>this._tab='eco'}></ha-icon>
             </div>
           </div>
         </div>
-      </ha-card>
-    `;
+      </ha-card>`;
   }
 
   static styles = css`
-    :host { --accent: #ffc107; }
-    ha-card { border-radius: 20px; overflow: hidden; background: #000; color: #fff; }
-    .bg { height: 100%; background-size: cover; background-position: center; }
-    .glass-overlay { height: 100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(15px); display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
+    ha-card { border-radius: 20px; overflow: hidden; background: #000; color: #fff; font-family: sans-serif; }
+    .main { height: 100%; background-size: cover; }
+    .overlay { height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
+    .title { text-align: center; font-size: 10px; letter-spacing: 3px; opacity: 0.6; margin-bottom: 10px; }
     .content { flex: 1; overflow: hidden; }
-    .scroll { overflow-y: auto; height: 100%; padding-right: 5px; }
-    .scroll::-webkit-scrollbar { width: 3px; }
-    .scroll::-webkit-scrollbar-thumb { background: rgba(255,193,7,0.3); border-radius: 10px; }
-
-    /* SOLAR TAB */
-    .solar-grid-header { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 15px; text-align: center; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; }
-    .stat-box span { font-size: 8px; opacity: 0.5; }
-    .stat-box b { font-size: 11px; color: var(--accent); }
-    
-    .beem-row { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 10px; display: flex; align-items: center; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); }
-    .beem-shape { width: 35px; height: 35px; border-radius: 50%; background: rgba(255,193,7,0.1); display: flex; align-items: center; justify-content: center; margin-right: 10px; }
-    .beem-shape.active { box-shadow: 0 0 10px rgba(255,193,7,0.4); animation: pulse 2s infinite; }
-    .beem-info { flex: 1; }
-    .beem-name { font-size: 11px; font-weight: bold; }
-    .beem-progress { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 5px; }
-    .beem-bar { height: 100%; background: var(--accent); border-radius: 2px; }
-    .beem-badges { display: flex; gap: 5px; }
-    .b-badge { background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 6px; font-size: 7px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-    .b-badge span { display: block; font-size: 9px; color: var(--accent); font-weight: bold; }
-
-    /* BATTERY TAB */
-    .bat-row { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; margin-bottom: 5px; }
-    .bat-bar-bg { flex: 1; height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
-    .bat-bar { height: 100%; background: linear-gradient(90deg, #f44336, #4caf50); }
-    .bat-val { font-size: 10px; width: 70px; text-align: right; }
-
-    /* ECO TAB */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .eco-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
-    .eco-val { font-size: 16px; color: #4caf50; font-weight: bold; }
-    .eco-name { font-size: 9px; opacity: 0.5; margin-top: 5px; }
-
-    /* NAV */
-    .navbar { display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid rgba(255,255,255,0.1); }
-    .navbar ha-icon { cursor: pointer; opacity: 0.3; transition: 0.3s; }
-    .navbar ha-icon.active { opacity: 1; color: var(--accent); }
-
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .header-stats { display: flex; justify-content: space-between; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin-bottom: 15px; text-align: center; font-size: 12px; }
+    .header-stats small { font-size: 8px; opacity: 0.5; }
+    .scroll-area { overflow-y: auto; height: 100%; padding-right: 5px; }
+    .row { display: flex; align-items: center; background: rgba(255,255,255,0.05); margin-bottom: 8px; padding: 10px; border-radius: 12px; gap: 10px; }
+    .icon-circle { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,193,7,0.1); display: flex; align-items: center; justify-content: center; }
+    .icon-circle.active { color: #ffc107; box-shadow: 0 0 10px #ffc10744; }
+    .info { flex: 1; font-size: 11px; font-weight: bold; }
+    .bar-bg { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 4px; }
+    .bar { height: 100%; background: #ffc107; border-radius: 2px; }
+    .badge { background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px; font-size: 8px; text-align: center; }
+    .badge b { display: block; font-size: 10px; color: #ffc107; }
+    .green b { color: #4caf50; }
+    .grid-eco { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .eco-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+    .nav { display: flex; justify-content: space-around; padding-top: 10px; border-top: 1px solid #ffffff1a; }
+    .nav ha-icon { opacity: 0.3; cursor: pointer; }
+    .nav ha-icon.active { opacity: 1; color: #ffc107; }
   `;
 }
 
 if (!customElements.get("solar-master-card")) customElements.define("solar-master-card", SolarMasterCard);
+window.customCards = window.customCards || [];
+window.customCards.push({ type: "solar-master-card", name: "Solar Master Visual Editor", preview: true });
