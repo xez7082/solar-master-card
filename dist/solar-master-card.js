@@ -21,24 +21,26 @@ class SolarMasterCardEditor extends LitElement {
     const schemas = {
       gen: [
         { name: "title", label: "Titre du Système", selector: { text: {} } },
-        { name: "background", label: "Image de fond (/local/...)", selector: { text: {} } },
-        { name: "card_height", label: "Hauteur Carte (ex: 500px)", selector: { text: {} } }
+        { name: "background", label: "Image de fond", selector: { text: {} } }
       ],
-      solar: [
-        { name: "entity_solar_power", label: "Puissance Solaire (W)", selector: { entity: { domain: "sensor" } } },
-        { name: "entity_solar_yield", label: "Production Jour (kWh)", selector: { entity: { domain: "sensor" } } },
-        { name: "entity_house_load", label: "Consommation Maison", selector: { entity: { domain: "sensor" } } }
+      beem_maison: [
+        { name: "beem_m_w", label: "Beem Maison - Watts", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_m_d", label: "Beem Maison - Jour", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_m_m", label: "Beem Maison - Mois", selector: { entity: { domain: "sensor" } } }
       ],
-      battery: [
-        { name: "entity_soc", label: "État de charge (%)", selector: { entity: { domain: "sensor" } } },
-        { name: "entity_bat_temp", label: "Température Batterie", selector: { entity: { domain: "sensor" } } },
-        { name: "entity_bat_power", label: "Charge/Décharge (W)", selector: { entity: { domain: "sensor" } } },
-        { name: "min_soc", label: "SOC Alerte Basse", selector: { number: { mode: "box" } } }
+      beem_spa: [
+        { name: "beem_s_w", label: "Beem Spa - Watts", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_s_d", label: "Beem Spa - Jour", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_s_m", label: "Beem Spa - Mois", selector: { entity: { domain: "sensor" } } }
       ],
-      details: [
-        { name: "entity_bat_volt", label: "Tension Batterie (V)", selector: { entity: { domain: "sensor" } } },
-        { name: "entity_bat_amp", label: "Courant Batterie (A)", selector: { entity: { domain: "sensor" } } },
-        { name: "entity_solar_volt", label: "Tension Panneaux (V)", selector: { entity: { domain: "sensor" } } }
+      beem_ibc: [
+        { name: "beem_i_w", label: "Beem IBC - Watts", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_i_d", label: "Beem IBC - Jour", selector: { entity: { domain: "sensor" } } },
+        { name: "beem_i_m", label: "Beem IBC - Mois", selector: { entity: { domain: "sensor" } } }
+      ],
+      system: [
+        { name: "entity_soc", label: "Batterie (%)", selector: { entity: { domain: "sensor" } } },
+        { name: "entity_house_load", label: "Conso Maison (W)", selector: { entity: { domain: "sensor" } } }
       ]
     };
 
@@ -49,7 +51,7 @@ class SolarMasterCardEditor extends LitElement {
       <ha-form .hass=${this.hass} .data=${this._config} .schema=${schemas[this._selectedTab]} @value-changed=${this._valueChanged}></ha-form>
     `;
   }
-  static styles = css`.editor-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; } button { padding: 8px; cursor: pointer; border-radius: 4px; border: none; background: #444; color: white; font-size: 10px;} button.active { background: #ffc107; color: black; font-weight: bold; }`;
+  static styles = css`.editor-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; } button { padding: 8px; cursor: pointer; border-radius: 4px; border: none; background: #444; color: white; font-size: 9px;} button.active { background: #ffc107; color: black; font-weight: bold; }`;
 }
 
 if (!customElements.get("solar-master-card-editor")) {
@@ -63,89 +65,78 @@ class SolarMasterCard extends LitElement {
   constructor() { super(); this._tab = 'home'; }
   setConfig(config) { this.config = config; }
 
-  _get(id) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].state : '--'; }
-  _getUnit(id) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].attributes.unit_of_measurement || '' : ''; }
+  _get(id) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].state : '0'; }
+
+  _renderBeemRow(name, s_w, s_d, s_m) {
+    const valW = parseInt(this._get(s_w));
+    const valD = parseFloat(this._get(s_d)).toFixed(1);
+    const valM = parseInt(this._get(s_m));
+    const pct = Math.min((valW / 1200) * 100, 100);
+    const isActive = valW > 5;
+
+    return html`
+      <div class="beem-row">
+        <div class="beem-icon-container">
+            <div class="beem-shape ${isActive ? 'active' : ''}" style="--anim-glow: ${valW/1200*25+5}px">
+                <ha-icon icon="mdi:solar-power-variant"></ha-icon>
+            </div>
+        </div>
+        <div class="beem-info">
+            <div class="beem-name">${name}</div>
+            <div class="beem-state">${valW} W</div>
+            <div class="beem-progress-bg"><div class="beem-bar" style="width: ${pct}%"></div></div>
+        </div>
+        <div class="beem-badges">
+            <div class="b-badge b-month">MOIS<br><span>${valM}k</span></div>
+            <div class="b-badge b-day">JOUR<br><span>${valD}k</span></div>
+            <div class="b-badge b-now">NOW<br><span>${valW}W</span></div>
+        </div>
+      </div>
+    `;
+  }
 
   _renderTab() {
     const c = this.config;
-    
     if (this._tab === 'home') {
-        const valS = parseFloat(this._get(c.entity_solar_power)) || 0;
         return html`
-          <div class="home-view">
-            <div class="main-display">
-                <div class="side-info">
-                    <div class="val-big">${this._get(c.entity_soc)}%</div>
-                    <div class="label-tiny">BATTERIE</div>
-                    <div class="hum-pill">${this._get(c.entity_bat_temp)}°C</div>
-                </div>
-                <div class="center-gauge">
-                    <div class="outer-ring"></div>
-                    <div class="inner-circle">
-                        <span class="water-label">SOLAIRE</span>
-                        <span class="water-val">${valS}</span>
-                        <span class="water-unit">WATTS</span>
-                    </div>
-                </div>
-                <div class="side-info">
-                    <div class="val-big">${this._get(c.entity_solar_yield)}</div>
-                    <div class="label-tiny">PRODUCTION JOUR</div>
-                    <div class="hum-pill">kWh</div>
-                </div>
+            <div class="beem-container">
+                <div class="beem-title-main">PRODUCTION SOLAIRE BEEM</div>
+                ${this._renderBeemRow("Beem Maison", c.beem_m_w, c.beem_m_d, c.beem_m_m)}
+                ${this._renderBeemRow("Beem Spa", c.beem_s_w, c.beem_s_d, c.beem_s_m)}
+                ${this._renderBeemRow("Beem IBC", c.beem_i_w, c.beem_i_d, c.beem_i_m)}
             </div>
-            <div class="energy-card">
-                <ha-icon icon="mdi:home-lightning-bolt" class="anim-pulse"></ha-icon>
-                <div class="energy-details">
-                    <div class="energy-val">${this._get(c.entity_house_load)} <small>W</small></div>
-                    <div class="energy-label">CONSO MAISON ACTUELLE</div>
-                </div>
-            </div>
-          </div>`;
+        `;
     }
-
-    if (this._tab === 'bat') {
-        const batP = parseFloat(this._get(c.entity_bat_power)) || 0;
+    
+    if (this._tab === 'sys') {
         return html`
-          <div class="home-view">
-             <div class="center-gauge" style="width:180px; height:180px;">
-                <div class="inner-circle" style="width:150px; height:150px;">
-                    <ha-icon icon="${batP >= 0 ? 'mdi:battery-arrow-up' : 'mdi:battery-arrow-down'}" style="color: #ffc107; --mdc-icon-size: 40px;"></ha-icon>
-                    <span class="water-val" style="font-size: 38px;">${Math.abs(batP)}</span>
-                    <span class="water-unit">WATTS ${batP >= 0 ? 'CHARGE' : 'DÉCHARGE'}</span>
+          <div class="sys-view">
+             <div class="center-gauge">
+                <div class="outer-ring"></div>
+                <div class="inner-circle">
+                    <span class="water-label">BATTERIE</span>
+                    <span class="water-val">${this._get(c.entity_soc)}%</span>
                 </div>
              </div>
+             <div class="energy-card">
+                <ha-icon icon="mdi:home-lightning-bolt" class="anim-pulse"></ha-icon>
+                <div class="energy-val">${this._get(c.entity_house_load)} W</div>
+             </div>
           </div>`;
-    }
-    
-    if (this._tab === 'det') {
-        const sensors = [
-            { n: 'BAT V', v: this._get(c.entity_bat_volt), u: 'V', i: 'mdi:sine-wave' },
-            { n: 'BAT A', v: this._get(c.entity_bat_amp), u: 'A', i: 'mdi:current-dc' },
-            { n: 'SOLAR V', v: this._get(c.entity_solar_volt), u: 'V', i: 'mdi:solar-panel-large' },
-            { n: 'TEMP', v: this._get(c.entity_bat_temp), u: '°C', i: 'mdi:thermometer' }
-        ];
-        return html`<div class="glass-grid">${sensors.map(s => html`
-            <div class="glass-card">
-                <div class="g-header"><ha-icon icon="${s.i}"></ha-icon> <span>${s.n}</span></div>
-                <div class="g-body">
-                    <span class="g-main">${s.v}<small>${s.u}</small></span>
-                </div>
-            </div>`)}</div>`;
     }
   }
 
   render() {
     const c = this.config;
     return html`
-      <ha-card style="height: ${c.card_height || '500px'};">
-        <div class="bg" style="background-image: url('${c.background || ''}'); background-color: #1a1a1a;">
+      <ha-card style="height: ${c.card_height || '550px'};">
+        <div class="bg" style="background-image: url('${c.background || ''}');">
             <div class="glass-overlay">
                 <div class="card-header">${c.title || 'SOLAR MASTER'}</div>
                 <div class="content">${this._renderTab()}</div>
                 <div class="navbar">
-                    <ha-icon class="${this._tab==='home'?'active':''}" icon="mdi:solar-power" @click=${()=>this._tab='home'}></ha-icon>
-                    <ha-icon class="${this._tab==='bat'?'active':''}" icon="mdi:battery-charging-100" @click=${()=>this._tab='bat'}></ha-icon>
-                    <ha-icon class="${this._tab==='det'?'active':''}" icon="mdi:chart-timeline-variant" @click=${()=>this._tab='det'}></ha-icon>
+                    <ha-icon class="${this._tab==='home'?'active':''}" icon="mdi:solar-panel-large" @click=${()=>this._tab='home'}></ha-icon>
+                    <ha-icon class="${this._tab==='sys'?'active':''}" icon="mdi:battery-charging" @click=${()=>this._tab='sys'}></ha-icon>
                 </div>
             </div>
         </div>
@@ -154,50 +145,61 @@ class SolarMasterCard extends LitElement {
   }
 
   static styles = css`
-    :host { --accent: #ffc107; --glass: rgba(255, 255, 255, 0.05); }
-    ha-card { border-radius: 25px; overflow: hidden; border: none; background: #000; color: #fff; }
+    :host { --accent: #ffc107; --c-solar: 255, 193, 7; --c-day: 76, 175, 80; --c-month: 33, 150, 243; }
+    ha-card { border-radius: 25px; overflow: hidden; background: #000; color: #fff; }
     .bg { background-size: cover; background-position: center; height: 100%; }
-    .glass-overlay { height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%); backdrop-filter: blur(15px); display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
-    .card-header { text-align: center; font-weight: 200; letter-spacing: 4px; font-size: 12px; opacity: 0.6; }
-    .content { flex: 1; display: flex; align-items: center; justify-content: center; }
+    .glass-overlay { height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(15px); display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; }
+    .content { flex: 1; overflow-y: auto; padding: 10px 0; }
     
-    .home-view { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 25px; }
-    .main-display { display: flex; align-items: center; justify-content: space-around; width: 100%; }
-    .val-big { font-size: 24px; font-weight: 300; color: var(--accent); }
-    .label-tiny { font-size: 8px; letter-spacing: 1px; opacity: 0.4; }
-    .hum-pill { font-size: 10px; background: var(--glass); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
+    /* BEEM ROWS (Traductions du Mushroom) */
+    .beem-container { display: flex; flex-direction: column; gap: 15px; }
+    .beem-title-main { text-align: center; font-size: 9px; font-weight: 900; letter-spacing: 2px; color: rgba(var(--c-solar), 0.6); margin-bottom: 5px; }
+    .beem-row { background: rgba(255,255,255,0.03); border-radius: 15px; padding: 10px; display: flex; align-items: center; position: relative; height: 85px; border: 1px solid rgba(255,255,255,0.05); }
     
-    .center-gauge { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; }
-    .outer-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 1px solid rgba(255,193,7,0.1); border-top: 3px solid var(--accent); animation: rotate 4s linear infinite; }
-    .inner-circle { width: 135px; height: 135px; background: rgba(255,255,255,0.02); border-radius: 50%; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .beem-icon-container { width: 50px; display: flex; justify-content: center; }
+    .beem-shape { width: 42px; height: 42px; border-radius: 50%; background: rgba(var(--c-solar), 0.1); display: flex; align-items: center; justify-content: center; position: relative; }
+    .beem-shape ha-icon { --mdc-icon-size: 24px; color: rgb(var(--c-solar)); z-index: 2; }
     
-    .water-val { font-size: 42px; font-weight: 100; color: var(--accent); }
-    .water-label { font-size: 9px; opacity: 0.5; letter-spacing: 2px; }
-    .water-unit { font-size: 9px; opacity: 0.5; }
+    /* Animation Scan & Pulse */
+    .beem-shape.active::before {
+        content: ""; position: absolute; inset: -3px; border-radius: 50%;
+        background: conic-gradient(from -25deg, transparent 0%, rgba(var(--c-solar), 0.5) 25%, transparent 50%);
+        animation: rotate 4s linear infinite; filter: blur(2px);
+    }
+    .beem-shape.active { box-shadow: 0 0 var(--anim-glow) rgba(var(--c-solar), 0.4); }
 
-    .energy-card { background: var(--glass); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; display: flex; align-items: center; gap: 15px; width: 85%; }
-    .energy-card ha-icon { color: var(--accent); }
-    .energy-val { font-size: 18px; }
-    .energy-label { font-size: 8px; opacity: 0.4; }
+    .beem-info { flex: 1; margin-left: 10px; }
+    .beem-name { font-size: 11px; font-weight: bold; opacity: 0.9; }
+    .beem-state { font-size: 10px; opacity: 0.6; }
+    
+    .beem-progress-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+    .beem-bar { height: 100%; background: rgb(var(--c-solar)); box-shadow: 0 0 8px rgba(var(--c-solar), 0.5); transition: width 0.5s ease; }
 
-    .glass-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; }
-    .glass-card { background: var(--glass); border: 1px solid rgba(255,255,255,0.05); padding: 12px; border-radius: 15px; text-align: center; }
-    .g-header { font-size: 10px; opacity: 0.5; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 5px; }
-    .g-main { font-size: 18px; color: var(--accent); }
+    .beem-badges { display: flex; gap: 4px; }
+    .b-badge { width: 42px; height: 28px; border-radius: 6px; font-size: 7px; font-weight: bold; text-align: center; display: flex; flex-direction: column; justify-content: center; border: 1px solid; }
+    .b-badge span { font-size: 9px; }
+    .b-month { background: rgba(var(--c-month), 0.1); border-color: rgb(var(--c-month)); color: rgb(var(--c-month)); }
+    .b-day { background: rgba(var(--c-day), 0.1); border-color: rgb(var(--c-day)); color: rgb(var(--c-day)); }
+    .b-now { background: rgba(255, 152, 0, 0.1); border-color: rgb(255, 152, 0); color: rgb(255, 152, 0); }
 
-    .navbar { display: flex; justify-content: space-around; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
-    .navbar ha-icon { cursor: pointer; opacity: 0.3; --mdc-icon-size: 24px; transition: 0.3s; }
-    .navbar ha-icon.active { opacity: 1; color: var(--accent); filter: drop-shadow(0 0 5px var(--accent)); }
+    /* SYSTEM TAB */
+    .sys-view { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    .center-gauge { position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; }
+    .outer-ring { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 2px solid transparent; border-top: 2px solid var(--accent); animation: rotate 4s linear infinite; }
+    .inner-circle { width: 110px; height: 110px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .water-val { font-size: 32px; color: var(--accent); }
+    .energy-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; width: 80%; text-align: center; }
+
+    .navbar { display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .navbar ha-icon { cursor: pointer; opacity: 0.3; transition: 0.3s; }
+    .navbar ha-icon.active { opacity: 1; color: var(--accent); }
 
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .anim-pulse { animation: pulse 2s ease-in-out infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
   `;
 }
 
 if (!customElements.get("solar-master-card")) {
     customElements.define("solar-master-card", SolarMasterCard);
 }
-
 window.customCards = window.customCards || [];
-window.customCards.push({ type: "solar-master-card", name: "Solar Master Ultra V1", preview: true });
+window.customCards.push({ type: "solar-master-card", name: "Solar Master Beem V2", preview: true });
