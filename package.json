@@ -1,1 +1,13 @@
-
+{
+  "name": "solar-master-card",
+  "version": "1.0.0",
+  "description": "Carte solaire multi-équipements",
+  "main": "dist/solar-master-card.js",
+  "keywords": [
+    "home-assistant",
+    "solar",
+    "lovelace",
+    "custom-card"
+  ],
+  "author": "TonPseudo"
+}
