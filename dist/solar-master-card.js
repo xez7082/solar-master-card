@@ -111,25 +111,33 @@ class SolarMasterCard extends LitElement {
     return dict[s?.toLowerCase()] || s || 'Inconnu';
   }
 
-  _renderSunTracker() {
+  // Rendu de la courbe solaire verticale incurvée (côté droit)
+  _renderSideSunTracker() {
     if (!this.hass.states['sun.sun']) return html``;
     const sun = this.hass.states['sun.sun'];
     const elev = sun.attributes.elevation || 0;
-    // Calcul de la progression de -90 (levé) à +90 (couché)
-    const progress = ((elev + 90) / 180) * 100;
+    
+    // Calcul de la position verticale (Bottom 0% = -90°, Top 100% = +90°)
+    const yPos = ((elev + 90) / 180) * 100;
+    
+    // Calcul de l'incursion horizontale (arc de cercle) pour donner l'effet courbe
+    // Au zénith (90°), l'incursion est maximale vers la gauche.
+    const rad = (elev * Math.PI) / 180;
+    const xIncurve = Math.cos(rad) * 15; // 15px d'incursion max
+    
     const isNight = elev < 0;
     
     return html`
-      <div class="sun-container">
-        <div class="sun-track">
-            <div class="sun-line" style="width: ${Math.max(0, Math.min(100, progress))}%"></div>
-            <ha-icon 
-                icon="${isNight ? 'mdi:weather-night' : 'mdi:white-balance-sunny'}" 
-                class="sun-moving-icon ${isNight ? 'night' : ''}"
-                style="left: ${Math.max(0, Math.min(95, progress))}%">
-            </ha-icon>
-        </div>
-        <div class="sun-info">ÉLÉVATION : ${elev.toFixed(1)}°</div>
+      <div class="sun-side-track">
+        <svg viewbox="0 0 20 100" class="sun-curve-svg">
+          <path d="M10,100 C-5,50 -5,50 10,0" class="sun-path-bg" />
+        </svg>
+        <ha-icon 
+          icon="${isNight ? 'mdi:weather-night' : 'mdi:white-balance-sunny'}" 
+          class="sun-side-icon ${isNight ? 'night' : ''}"
+          style="bottom: ${Math.max(0, Math.min(92, yPos))}%; right: ${5 + xIncurve}px;">
+        </ha-icon>
+        <div class="sun-elev-text">${elev.toFixed(0)}°</div>
       </div>
     `;
   }
@@ -179,24 +187,27 @@ class SolarMasterCard extends LitElement {
         <div class="header-main">
           <div class="big-val">${totalProd.val}<small>${totalProd.unit || 'W'}</small></div>
           <div class="bar-wrap"><div class="bar-f" style="width:${this._getRaw(c.total_obj_pct)}%"></div></div>
-          
-          ${this._renderSunTracker()}
-
           <div class="obj-text">OBJECTIF PROD : ${this._getRaw(c.total_obj_pct)}%</div>
         </div>
-        <div class="panels-row">
-          ${panels.map(p => {
-            const s = this._smartGet(p.e);
-            return html`
-              <div class="hud-item">
-                <div class="hud-circle" style="border-color:${p.c}44">
-                  <div class="scan" style="border-top-color:${p.c}"></div>
-                  <div class="val-container"><span class="v" style="color:${p.c}">${Math.round(s.val)}</span><span class="unit" style="color:${p.c}">${s.unit || 'W'}</span></div>
-                </div>
-                <div class="hud-n">${p.n}</div>
-              </div>`;
-          })}
+        
+        <div class="solar-center-layout">
+          <div class="panels-row">
+            ${panels.map(p => {
+              const s = this._smartGet(p.e);
+              return html`
+                <div class="hud-item">
+                  <div class="hud-circle" style="border-color:${p.c}44">
+                    <div class="scan" style="border-top-color:${p.c}"></div>
+                    <div class="val-container"><span class="v" style="color:${p.c}">${Math.round(s.val)}</span><span class="unit" style="color:${p.c}">${s.unit || 'W'}</span></div>
+                  </div>
+                  <div class="hud-n">${p.n}</div>
+                </div>`;
+            })}
+          </div>
+          
+          ${this._renderSideSunTracker()}
         </div>
+
         <div class="diag-grid">
           ${[1, 2, 3, 4, 5, 6].map(i => {
             const d = this._smartGet(c[`d${i}_entity`]);
@@ -264,28 +275,31 @@ class SolarMasterCard extends LitElement {
     .top-nav { display: flex; gap: 10px; margin-bottom: 25px; }
     .t-badge { background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 14px; font-size: 12px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px); display: flex; align-items: center; gap: 8px; }
     .green { color: #4caf50; margin-left: auto; }
-    .header-main { text-align: center; margin-bottom: 25px; }
+    .header-main { text-align: center; margin-bottom: 20px; position: relative; z-index: 2; }
     .big-val { font-size: 64px; font-weight: 900; color: #ffc107; line-height: 1; }
     .bar-wrap { height: 6px; background: rgba(255,255,255,0.1); width: 180px; margin: 12px auto 8px auto; border-radius: 10px; overflow: hidden; }
     .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px #ffc107; }
-    
-    /* Sun Tracker Styles */
-    .sun-container { width: 180px; margin: 10px auto; position: relative; }
-    .sun-track { height: 2px; background: rgba(255,255,255,0.1); border-radius: 10px; position: relative; margin-bottom: 12px; }
-    .sun-line { height: 100%; background: linear-gradient(90deg, #ff5722, #ffc107); border-radius: 10px; transition: width 1s ease-in-out; }
-    .sun-moving-icon { position: absolute; top: -11px; --mdc-icon-size: 22px; color: #ffc107; filter: drop-shadow(0 0 5px #ffc107); transition: left 1s ease-in-out; }
-    .sun-moving-icon.night { color: #81d4fa; filter: drop-shadow(0 0 5px #0277bd); }
-    .sun-info { font-size: 8px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
-    
     .obj-text { font-size: 10px; opacity: 0.5; font-weight: bold; margin-top: 5px; }
-    .panels-row { display: flex; justify-content: space-around; margin-bottom: 20px; }
-    .hud-circle { width: 85px; height: 85px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
+    
+    /* Layout pour Panels + Sun Tracker à droite */
+    .solar-center-layout { display: flex; align-items: center; justify-content: center; margin-bottom: 30px; position: relative; gap: 10px; }
+    .panels-row { display: flex; justify-content: space-around; flex: 1; max-width: 320px; }
+    
+    /* Side Sun Tracker Styles */
+    .sun-side-track { width: 40px; height: 100px; position: relative; margin-left: auto; }
+    .sun-curve-svg { width: 100%; height: 100%; transform: scaleX(-1); /* Inverser la courbe pour qu'elle bombe vers la gauche */ }
+    .sun-path-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 1; stroke-dasharray: 2,2; }
+    .sun-side-icon { position: absolute; --mdc-icon-size: 20px; color: #ffc107; filter: drop-shadow(0 0 5px #ffc107); transition: all 1s ease-in-out; z-index: 3; }
+    .sun-side-icon.night { color: #81d4fa; filter: drop-shadow(0 0 5px #0277bd); }
+    .sun-elev-text { position: absolute; bottom: -15px; right: 0; font-size: 8px; opacity: 0.5; font-weight: bold; width: 100%; text-align: center; }
+
+    .hud-circle { width: 80px; height: 80px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
     .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 4s linear infinite; top:-2px; left:-2px; padding:2px; box-sizing: content-box; }
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .val-container { display: flex; flex-direction: column; align-items: center; line-height: 1; }
-    .v { font-size: 22px; font-weight: 900; }
-    .unit { font-size: 11px; }
-    .hud-n { font-size: 10px; text-align: center; margin-top: 8px; opacity: 0.8; }
+    .v { font-size: 20px; font-weight: 900; }
+    .unit { font-size: 10px; }
+    .hud-n { font-size: 9px; text-align: center; margin-top: 8px; opacity: 0.8; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
     .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .d-box { background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
     .d-v { display: block; font-size: 14px; font-weight: bold; color: #00f9f9; }
