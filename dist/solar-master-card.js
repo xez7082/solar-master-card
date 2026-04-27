@@ -111,24 +111,26 @@ class SolarMasterCard extends LitElement {
     return dict[s?.toLowerCase()] || s || 'Inconnu';
   }
 
-  _renderSunWidget() {
+  // Rendu de la GRANDE courbe solaire
+  _renderWideSunTracker() {
     if (!this.hass.states['sun.sun']) return html``;
     const sun = this.hass.states['sun.sun'];
     const elev = sun.attributes.elevation || 0;
-    const progress = ((elev + 90) / 180) * 100;
+    // On mappe -20° à +90° pour la visibilité
+    const progress = ((elev + 20) / 110) * 100;
     const isNight = elev < 0;
     
     return html`
-      <div class="sun-widget">
-        <svg viewbox="0 0 100 45" class="sun-svg">
-          <path d="M5,40 Q50,0 95,40" class="sun-track-path" />
+      <div class="wide-sun-container">
+        <svg viewbox="0 0 400 60" class="wide-sun-svg">
+          <path d="M10,55 Q200,-30 390,55" class="wide-sun-path" />
+          <line x1="10" y1="55" x2="390" y2="55" class="horizon-line" />
         </svg>
-        <ha-icon 
-          icon="${isNight ? 'mdi:weather-night' : 'mdi:white-balance-sunny'}" 
-          class="sun-icon-move ${isNight ? 'night' : ''}"
-          style="left: ${Math.max(5, Math.min(85, progress))}%; bottom: ${Math.max(5, Math.min(30, elev < 0 ? 5 : (elev/90)*30))}px;">
-        </ha-icon>
-        <div class="sun-label-min">SUN ELEV: ${elev.toFixed(1)}°</div>
+        <div class="sun-mover" style="left: ${Math.max(5, Math.min(92, progress))}%; bottom: ${Math.max(10, Math.min(50, (elev/90)*60 + 20))}px;">
+           <ha-icon icon="${isNight ? 'mdi:weather-night' : 'mdi:white-balance-sunny'}" class="${isNight ? 'night' : ''}"></ha-icon>
+           <span class="sun-val">${elev.toFixed(1)}°</span>
+        </div>
+        <div class="location-tag">SAINTE-CROIX-EN-PLAINE</div>
       </div>
     `;
   }
@@ -144,7 +146,7 @@ class SolarMasterCard extends LitElement {
         
         <div class="overlay">
           <div class="top-nav">
-            <div class="t-badge"><ha-icon icon="mdi:weather-sunny"></ha-icon> ${this._translateWeather(this._getRaw(c.entity_weather))}</div>
+            <div class="t-badge"><ha-icon icon="mdi:map-marker"></ha-icon> Local</div>
             <div class="t-badge"><ha-icon icon="mdi:transmission-tower"></ha-icon> ${this._smartGet(c.grid_flow).val} W</div>
             <div class="t-badge green">${totalEco.val}${totalEco.unit || '€'}</div>
           </div>
@@ -175,14 +177,13 @@ class SolarMasterCard extends LitElement {
 
     return html`
       <div class="page">
-        <div class="solar-header-row">
-          <div class="total-block">
-            <div class="big-val">${totalProd.val}<small>${totalProd.unit || 'W'}</small></div>
-            <div class="bar-wrap"><div class="bar-f" style="width:${this._getRaw(c.total_obj_pct)}%"></div></div>
-            <div class="obj-text">OBJECTIF PROD : ${this._getRaw(c.total_obj_pct)}%</div>
-          </div>
-          
-          ${this._renderSunWidget()}
+        <div class="solar-main-header">
+           <div class="watts-display">
+              <div class="big-val">${totalProd.val}<small>${totalProd.unit || 'W'}</small></div>
+              <div class="perf-bar"><div class="perf-fill" style="width:${this._getRaw(c.total_obj_pct)}%"></div></div>
+              <div class="perf-label">OBJECTIF : ${this._getRaw(c.total_obj_pct)}%</div>
+           </div>
+           ${this._renderWideSunTracker()}
         </div>
 
         <div class="panels-row">
@@ -198,6 +199,7 @@ class SolarMasterCard extends LitElement {
               </div>`;
           })}
         </div>
+
         <div class="diag-grid">
           ${[1, 2, 3, 4, 5, 6].map(i => {
             const d = this._smartGet(c[`d${i}_entity`]);
@@ -207,6 +209,7 @@ class SolarMasterCard extends LitElement {
       </div>`;
   }
 
+  // ... (Garder les méthodes _renderBattery et _renderEco identiques aux versions précédentes)
   _renderBattery() {
     const c = this.config;
     return html`
@@ -262,27 +265,30 @@ class SolarMasterCard extends LitElement {
     ha-card { background: #000; color: #fff; border-radius: 28px; overflow: hidden; position: relative; border: 1px solid #333; font-family: sans-serif; }
     .custom-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; z-index: 0; }
     .overlay { height: 100%; display: flex; flex-direction: column; padding: 20px; position: relative; z-index: 1; background: radial-gradient(circle at 50% 0%, rgba(26, 42, 58, 0.7) 0%, rgba(0,0,0,0.8) 80%); }
-    .top-nav { display: flex; gap: 10px; margin-bottom: 25px; }
-    .t-badge { background: rgba(0,0,0,0.6); padding: 10px 15px; border-radius: 14px; font-size: 12px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px); display: flex; align-items: center; gap: 8px; }
+    .top-nav { display: flex; gap: 10px; margin-bottom: 20px; }
+    .t-badge { background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px); display: flex; align-items: center; gap: 6px; }
     .green { color: #4caf50; margin-left: auto; }
-    
-    /* Solar Header Row */
-    .solar-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 0 10px; }
-    .total-block { text-align: left; }
-    .big-val { font-size: 58px; font-weight: 900; color: #ffc107; line-height: 1; }
-    .bar-wrap { height: 5px; background: rgba(255,255,255,0.1); width: 140px; margin: 10px 0 5px 0; border-radius: 10px; overflow: hidden; }
-    .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px #ffc107; }
-    .obj-text { font-size: 9px; opacity: 0.5; font-weight: bold; }
 
-    /* Sun Widget Side Box */
-    .sun-widget { width: 110px; height: 65px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 5px; }
-    .sun-svg { width: 80%; position: absolute; top: 10px; }
-    .sun-track-path { fill: none; stroke: rgba(255,193,7,0.2); stroke-width: 2; stroke-dasharray: 2,2; }
-    .sun-icon-move { position: absolute; --mdc-icon-size: 18px; color: #ffc107; filter: drop-shadow(0 0 5px #ffc107); transition: all 1s ease-in-out; }
-    .sun-icon-move.night { color: #81d4fa; filter: drop-shadow(0 0 5px #0277bd); }
-    .sun-label-min { font-size: 8px; opacity: 0.6; font-weight: bold; letter-spacing: 0.5px; }
+    /* Solar Header v1.4.8 */
+    .solar-main-header { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 30px; }
+    .watts-display { text-align: center; }
+    .big-val { font-size: 68px; font-weight: 900; color: #ffc107; line-height: 0.9; }
+    .perf-bar { width: 220px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin: 15px auto 5px auto; overflow: hidden; }
+    .perf-fill { height: 100%; background: #ffc107; box-shadow: 0 0 10px #ffc107; transition: width 1s; }
+    .perf-label { font-size: 10px; opacity: 0.6; font-weight: bold; letter-spacing: 1px; }
 
-    .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; }
+    /* Wide Sun Tracker */
+    .wide-sun-container { width: 100%; max-width: 400px; height: 70px; position: relative; margin-top: 10px; }
+    .wide-sun-svg { width: 100%; height: 100%; }
+    .wide-sun-path { fill: none; stroke: rgba(255,193,7,0.2); stroke-width: 2; stroke-dasharray: 4,4; }
+    .horizon-line { stroke: rgba(255,255,255,0.1); stroke-width: 1; }
+    .sun-mover { position: absolute; display: flex; flex-direction: column; align-items: center; transition: all 1s ease-in-out; }
+    .sun-mover ha-icon { --mdc-icon-size: 26px; color: #ffc107; filter: drop-shadow(0 0 8px #ffc107); }
+    .sun-mover ha-icon.night { color: #81d4fa; filter: drop-shadow(0 0 8px #0277bd); }
+    .sun-val { font-size: 10px; font-weight: bold; margin-top: 2px; }
+    .location-tag { position: absolute; bottom: 0; width: 100%; text-align: center; font-size: 8px; opacity: 0.4; letter-spacing: 2px; }
+
+    .panels-row { display: flex; justify-content: space-around; margin-bottom: 30px; }
     .hud-circle { width: 85px; height: 85px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
     .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 4s linear infinite; top:-2px; left:-2px; padding:2px; box-sizing: content-box; }
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -290,13 +296,16 @@ class SolarMasterCard extends LitElement {
     .v { font-size: 22px; font-weight: 900; }
     .unit { font-size: 11px; }
     .hud-n { font-size: 10px; text-align: center; margin-top: 8px; opacity: 0.8; }
+    
     .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .d-box { background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
     .d-v { display: block; font-size: 14px; font-weight: bold; color: #00f9f9; }
     .d-l { font-size: 9px; opacity: 0.5; display: block; margin-bottom: 2px; }
+    
     .footer { display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; margin-top: auto; }
     .f-btn { opacity: 0.4; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 10px; transition: 0.3s; }
     .f-btn.active { opacity: 1; color: #ffc107; }
+    
     .rack-card { background: rgba(0,0,0,0.6); padding: 15px; border-radius: 18px; margin-bottom: 10px; border-left: 5px solid #4caf50; }
     .v-meter { display: flex; gap: 2px; height: 8px; margin: 12px 0; }
     .v-seg { flex: 1; background: rgba(255,255,255,0.1); border-radius: 1px; }
@@ -304,6 +313,7 @@ class SolarMasterCard extends LitElement {
     .r-f-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
     .r-f-box { background: #000; padding: 6px; border-radius: 8px; font-size: 10px; text-align: center; border: 1px solid #333; }
     .cyan { color: #00f9f9; }
+    
     .eco-hero { background: rgba(76,175,80,0.1); padding: 25px; border-radius: 24px; text-align: center; border: 1px solid rgba(76,175,80,0.2); margin-bottom: 25px; }
     .e-big { font-size: 50px; font-weight: 900; color: #4caf50; }
     .e-bar-wrap { height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 18px 0; overflow: hidden; }
