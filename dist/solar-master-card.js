@@ -84,7 +84,6 @@ class SolarMasterCard extends LitElement {
                         <div class="header-main">
                             <div class="big-val">${this._get(c.total_now)}<small>W</small></div>
                             <div class="bar-wrap"><div class="bar-f" style="width:${this._get(c.total_obj_pct)}%"></div></div>
-                            <div class="solar-sub-info">PROD JOUR : ${this._get(c.solar_daily_kwh)} kWh</div>
                         </div>
                         <div class="panels-row">
                             ${panels.map(p => html`
@@ -110,11 +109,11 @@ class SolarMasterCard extends LitElement {
                             <div class="rack">
                                 <div class="r-h"><b>${c[`b${i}_n`]}</b> <span class="soc-v">${this._get(c[`b${i}_s`])}%</span></div>
                                 <div class="v-meter">
-                                    ${[...Array(10)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 10) ? 'on' : ''}"></div>`)}
+                                    ${[...Array(20)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 5) ? 'on' : ''}"></div>`)}
                                 </div>
-                                <div class="r-f-separated">
-                                    <div class="r-f-item"><ha-icon icon="mdi:thermometer"></ha-icon> ${this._get(c[`b${i}_temp`])}°C</div>
-                                    <div class="r-f-item"><ha-icon icon="mdi:swap-vertical"></ha-icon> ${this._get(c[`b${i}_flow`])}W</div>
+                                <div class="r-f-grid">
+                                    <div class="r-f-box"><ha-icon icon="mdi:thermometer"></ha-icon> ${this._get(c[`b${i}_temp`])}°C</div>
+                                    <div class="r-f-box"><ha-icon icon="mdi:swap-vertical"></ha-icon> ${this._get(c[`b${i}_flow`])}W</div>
                                 </div>
                             </div>` : '')}
                     </div>`
@@ -157,27 +156,29 @@ class SolarMasterCard extends LitElement {
     .big-val small { font-size: 20px; margin-left: 5px; opacity: 0.7; }
     .bar-wrap { height: 8px; background: rgba(255,255,255,0.1); width: 70%; margin: 12px auto; border-radius: 10px; overflow: hidden; }
     .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.5); }
-    .solar-sub-info { font-size: 11px; font-weight: 800; opacity: 0.6; }
 
-    /* PANNEAUX AGRANDIS */
+    /* PANNEAUX (GRANDS CERCLES) */
     .panels-row { display: flex; justify-content: space-around; margin-bottom: 30px; }
     .hud-circle { width: 95px; height: 95px; border-radius: 50%; border: 3px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); }
     .scan { position: absolute; width: 100%; height: 100%; border: 3px solid transparent; border-radius: 50%; animation: rotate 3s linear infinite; top:0; left:0; box-sizing: border-box; }
     .v { font-size: 24px; font-weight: 900; }
     .u { display: block; font-size: 8px; opacity: 0.5; font-weight: 900; }
-    .hud-n { font-size: 11px; font-weight: 800; margin-top: 12px; text-align: center; color: rgba(255,255,255,0.9); }
+    .hud-n { font-size: 11px; font-weight: 800; margin-top: 12px; text-align: center; }
 
     .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .d-box { background: rgba(255,255,255,0.06); padding: 12px; border-radius: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
     .d-v { font-size: 15px; font-weight: 800; color: #00f9f9; }
 
-    /* BATTERIES COSTAUDES */
-    .rack { background: rgba(255,255,255,0.07); padding: 18px; border-radius: 20px; margin-bottom: 15px; border-left: 5px solid #4caf50; backdrop-filter: blur(10px); }
-    .v-meter { display: flex; gap: 5px; height: 16px; margin: 15px 0; }
-    .v-seg { flex: 1; background: rgba(255,255,255,0.1); border-radius: 3px; }
+    /* BATTERIES (TRAITS AFFINÉS & SONDES SÉPARÉES) */
+    .rack { background: rgba(255,255,255,0.07); padding: 18px; border-radius: 20px; margin-bottom: 15px; border-left: 5px solid #4caf50; backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.1); }
+    .v-meter { display: flex; gap: 4px; height: 14px; margin: 15px 0; }
+    .v-seg { flex: 1; background: rgba(255,255,255,0.1); border-radius: 2px; } /* Traits plus élégants */
     .v-seg.on { background: #4caf50; box-shadow: 0 0 8px rgba(76,175,80,0.6); }
     .soc-v { color: #4caf50; font-weight: 900; font-size: 16px; }
-    .r-f-item { background: rgba(255,255,255,0.05); padding: 8px; border-radius: 10px; font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+    
+    /* GRILLE POUR SONDES SÉPARÉES */
+    .r-f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .r-f-box { background: rgba(255,255,255,0.05); padding: 8px; border-radius: 10px; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid rgba(255,255,255,0.05); }
 
     .eco-hero { background: rgba(76,175,80,0.1); padding: 25px; border-radius: 25px; text-align: center; border: 1px solid rgba(76,175,80,0.2); margin-bottom: 20px; }
     .e-big { font-size: 60px; font-weight: 900; color: #4caf50; }
