@@ -29,8 +29,8 @@ class SolarMasterCardEditor extends LitElement {
         { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
         { name: "prod_obj_pct", label: "Objectif Production (%)", selector: { entity: {} } },
         ...[4, 5, 6, 7, 8, 9].map(i => [
-          { name: `d${i}_label`, label: `Titre Individuel D${i}` },
-          { name: `d${i}_entity`, label: `Entité D${i}`, selector: { entity: {} } }
+          { name: `d${i}_label`, label: `NOM CAPTEUR D${i}` },
+          { name: `d${i}_entity`, label: `ENTITÉ D${i}`, selector: { entity: {} } }
         ]).flat(),
         ...[1, 2, 3, 4].map(i => [
           { name: `p${i}_name`, label: `Nom Panneau ${i}` },
@@ -123,7 +123,15 @@ class SolarMasterCard extends LitElement {
 
     return html`
       <div class="page">
-        <div class="header-line">${this._renderWeather()}</div>
+        <div class="header-line">
+           <div class="weather-grid">
+              <ha-icon icon="mdi:weather-${(this.hass.states[c.weather_entity]?.state || 'sunny').replace('partlycloudy', 'partly-cloudy')}"></ha-icon>
+              <div class="w-info">
+                <div class="w-status">${this._translateWeather(this.hass.states[c.weather_entity]?.state)}</div>
+                <div class="w-temp">${this.hass.states[c.weather_entity]?.attributes.temperature}°C</div>
+              </div>
+           </div>
+        </div>
         <div class="cockpit-container">
             <svg viewBox="0 0 400 100" preserveAspectRatio="none" class="sun-svg-bg">
                 <path d="M0,90 Q200,-20 400,90" fill="none" stroke="rgba(255,193,7,0.3)" stroke-width="2" stroke-dasharray="5"/>
@@ -169,27 +177,15 @@ class SolarMasterCard extends LitElement {
       </div>`;
   }
 
-  _renderWeather() {
-    const eid = this.config.weather_entity;
-    if (!eid || !this.hass.states[eid]) return html``;
-    const s = this.hass.states[eid];
-    return html`
-      <div class="weather-grid">
-        <ha-icon icon="mdi:weather-${s.state.replace('partlycloudy', 'partly-cloudy')}"></ha-icon>
-        <div class="w-info">
-          <div class="w-status">${this._translateWeather(s.state)}</div>
-          <div class="w-temp">${s.attributes.temperature}°C</div>
-        </div>
-      </div>`;
-  }
-
   _renderDiag(i, side) {
     const c = this.config;
-    if (!c[`d${i}_entity`]) return html`<div class="mini-diag empty"></div>`;
-    const d = this._getVal(c[`d${i}_entity`]);
+    const entityId = c[`d${i}_entity`];
+    const label = c[`d${i}_label`]; // RECUPERE LE TITRE INDIVIDUEL ICI
+    if (!entityId) return html`<div class="mini-diag empty"></div>`;
+    const d = this._getVal(entityId);
     return html`
       <div class="mini-diag ${side}">
-        <span class="m-l">${c[`d${i}_label`] || 'INDIC '+i}</span>
+        <span class="m-l">${label || 'CAPTEUR '+i}</span>
         <span class="m-v">${d.val}<small>${d.unit}</small></span>
       </div>`;
   }
@@ -253,7 +249,7 @@ class SolarMasterCard extends LitElement {
 
     .mini-diag { background:rgba(0,0,0,0.6); padding:8px; border-radius:8px; margin:4px 0; border-left:4px solid #00f9f9; width:115px; backdrop-filter: blur(5px); }
     .mini-diag.r { border-left:none; border-right:4px solid #ffc107; margin-left:auto; text-align: right; }
-    .m-l { font-size:8px; opacity:0.8; display:block; text-transform: uppercase; font-weight: 800; color: #eee; }
+    .m-l { font-size: 8px; opacity: 0.8; display: block; text-transform: uppercase; font-weight: 800; color: #eee; }
     .m-v { font-size:13px; font-weight:bold; }
     
     .big-val-titan { font-size:68px; font-weight:900; color:#ffc107; text-align:center; line-height:0.8; }
@@ -289,4 +285,4 @@ class SolarMasterCard extends LitElement {
 }
 customElements.define("solar-master-card", SolarMasterCard);
 window.customCards = window.customCards || [];
-window.customCards.push({ type: "solar-master-card", name: "Solar Master Card", description: "v2.6.0 - Fix Titles" });
+window.customCards.push({ type: "solar-master-card", name: "Solar Master Card", description: "v2.6.1 - Fix Labels" });
