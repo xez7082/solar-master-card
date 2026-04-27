@@ -139,7 +139,7 @@ class SolarMasterCard extends LitElement {
             </div>
             <div class="cockpit">
               <div class="side">
-                <div class="group-title">${c.title_left}</div>
+                <div class="group-title">${c.title_left || 'GROUPE 1'}</div>
                 ${[4, 5, 6].map(i => this._renderDiag(i, 'l'))}
               </div>
               <div class="center">
@@ -147,7 +147,7 @@ class SolarMasterCard extends LitElement {
                 <div class="big-val-titan">${prod.val}<small>W</small></div>
               </div>
               <div class="side">
-                <div class="group-title right">${c.title_right}</div>
+                <div class="group-title right">${c.title_right || 'GROUPE 2'}</div>
                 ${[7, 8, 9].map(i => this._renderDiag(i, 'r'))}
               </div>
             </div>
@@ -166,7 +166,7 @@ class SolarMasterCard extends LitElement {
                 </div>
                 <div class="hud-n">${c[`p${i}_name`] || 'P'+i}</div>
                 <div class="hud-sub-container">
-                   <div class="hud-sub-label">${c[`p${i}_sub_label`] || ''}</div>
+                   <div class="hud-sub-label">${c[`p${i}_sub_label`] || 'INFO'}</div>
                    <div class="hud-sub-val" style="color:${colors[i-1]}">${sub.val}${sub.unit}</div>
                 </div>
               </div>`;
@@ -236,43 +236,56 @@ class SolarMasterCard extends LitElement {
     
     .cockpit { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; height: 100%; }
     .side { flex: 1; }
-    .group-title { font-size: 10px; font-weight: 900; color: #00f9f9; text-transform: uppercase; margin-bottom: 5px; height: 12px; }
+    .group-title { font-size: 11px; font-weight: 900; color: #00f9f9; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
     .group-title.right { text-align: right; color: #ffc107; }
 
-    .mini-diag { background:rgba(0,0,0,0.6); padding:8px; border-radius:8px; margin:4px 0; border-left:4px solid #00f9f9; width:115px; }
+    .mini-diag { background:rgba(0,0,0,0.6); padding:10px; border-radius:8px; margin:6px 0; border-left:4px solid #00f9f9; width:120px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .mini-diag.r { border-left:none; border-right:4px solid #ffc107; margin-left:auto; text-align: right; }
-    .m-l { font-size: 8px; opacity: 0.8; display: block; text-transform: uppercase; color: #eee; min-height: 10px; font-weight:bold; }
-    .m-v { font-size:13px; font-weight:bold; }
+    
+    /* LABELS MINI DIAG (D4-D9) */
+    .m-l { font-size: 10px; color: #aaa; display: block; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; }
+    .m-v { font-size:15px; font-weight:bold; color: #fff; }
     
     .center { text-align: center; }
-    .c-label { font-size: 10px; font-weight: 900; color: #ffc107; margin-bottom: 5px; text-transform: uppercase; }
-    .big-val-titan { font-size:68px; font-weight:900; color:#ffc107; line-height:0.8; text-align:center; }
+    .c-label { font-size: 11px; font-weight: 900; color: #ffc107; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+    .big-val-titan { font-size:72px; font-weight:900; color:#ffc107; line-height:0.8; text-shadow: 0 0 20px rgba(255,193,7,0.3); }
 
     .panels-row { display:flex; justify-content:space-around; margin-top:35px; }
     .hud-circle-giant { width:78px; height:78px; border-radius:50%; border:3px solid; position:relative; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); }
     .scan { position:absolute; width:100%; height:100%; border:3px solid transparent; border-radius:50%; animation:rotate 4s linear infinite; top:-3px; left:-3px; padding:3px; box-sizing:content-box; }
     @keyframes rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-    .hud-n { font-size:10px; font-weight:bold; text-align:center; margin-top:8px; text-transform: uppercase; }
-    .hud-sub-container { text-align: center; margin-top: 2px; }
-    .hud-sub-label { font-size: 7px; opacity: 0.6; text-transform: uppercase; }
-    .hud-sub-val { font-size:12px; font-weight:bold; }
+    
+    /* LABELS CERCLES (P1-P4) */
+    .hud-n { font-size:11px; font-weight:900; text-align:center; margin-top:10px; text-transform: uppercase; color: #fff; }
+    .hud-sub-container { text-align: center; margin-top: 4px; }
+    .hud-sub-label { font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold; }
+    .hud-sub-val { font-size:13px; font-weight:bold; }
 
-    .rack { background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; margin-bottom:10px; border-left:5px solid #4caf50; }
-    .r-h { display:flex; justify-content:space-between; font-weight:bold; }
-    .v-meter { display:flex; gap:3px; height:7px; margin:10px 0; }
-    .v-seg { flex:1; background:#222; }
-    .v-seg.on { background:#4caf50; }
-    .r-grid-compact { display:grid; grid-template-columns:repeat(4, 1fr); text-align:center; font-size:10px; }
+    /* LABELS BATTERIES */
+    .rack { background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; margin-bottom:12px; border-left:5px solid #4caf50; }
+    .r-h { display:flex; justify-content:space-between; font-weight:bold; font-size: 14px; }
+    .v-meter { display:flex; gap:3px; height:8px; margin:12px 0; }
+    .v-seg { flex:1; background:#222; border-radius: 1px; }
+    .v-seg.on { background:#4caf50; box-shadow: 0 0 5px #4caf50; }
+    .r-grid-compact { display:grid; grid-template-columns:repeat(4, 1fr); text-align:center; gap: 8px; }
+    .r-item span { font-size: 9px; color: #aaa; font-weight: bold; text-transform: uppercase; }
+    .r-item b { font-size: 13px; color: #fff; }
 
+    /* LABELS ECO */
     .eco-main-card { background: rgba(76,175,80,0.1); border: 1px solid #4caf5044; border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px; }
-    .e-value-big { font-size: 58px; font-weight: 900; color: #4caf50; }
-    .e-stats-row { display: flex; justify-content: space-around; margin-top: 20px; border-top: 1px solid #ffffff11; padding-top: 20px; }
-    .eco-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .e-detail { background: #ffffff05; padding: 15px; border-radius: 12px; text-align: center; }
+    .e-header { font-size: 11px; font-weight: bold; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+    .e-value-big { font-size: 62px; font-weight: 900; color: #4caf50; }
+    .e-stat span { font-size: 10px; color: #aaa; font-weight: bold; display: block; }
+    .e-stat b { font-size: 18px; color: #fff; }
+
+    .eco-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .e-detail { background: #ffffff05; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #ffffff11; }
+    .e-detail span { font-size: 10px; color: #aaa; font-weight: bold; display: block; margin-bottom: 5px; }
+    .e-detail b { font-size: 16px; color: #fff; }
 
     .footer { display:flex; justify-content:space-around; padding-top:20px; border-top:1px solid #333; margin-top:auto; }
-    .f-btn { cursor:pointer; opacity:0.5; font-size:12px; font-weight:bold; text-transform: uppercase; }
-    .f-btn.active { opacity:1; color:#ffc107; }
+    .f-btn { cursor:pointer; opacity:0.5; font-size:12px; font-weight:bold; text-transform: uppercase; letter-spacing: 1px; }
+    .f-btn.active { opacity:1; color:#ffc107; border-bottom: 2px solid #ffc107; padding-bottom: 5px; }
     .scroll { overflow-y:auto; max-height:480px; }
   `;
 }
@@ -281,6 +294,6 @@ customElements.define("solar-master-card", SolarMasterCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "solar-master-card",
-  name: "Solar Master v3.0",
-  description: "Version Complète avec Titres Individuels"
+  name: "Solar Master v3.0.1",
+  description: "Correctif Visibilité Labels"
 });
