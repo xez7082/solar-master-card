@@ -4,7 +4,7 @@ import {
   css
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
-// --- ÉDITEUR ---
+// --- ÉDITEUR (Identique) ---
 class SolarMasterCardEditor extends LitElement {
   static get properties() { return { hass: {}, _config: {}, _selectedTab: { type: String } }; }
   constructor() { super(); this._selectedTab = 'config_solar'; }
@@ -106,10 +106,13 @@ class SolarMasterCard extends LitElement {
                     </div>` 
 
                 : this._tab === 'batt' ? html`
-                    <div class="page">
+                    <div class="page battery-page">
                         ${[1,2,3,4].map(i => c[`b${i}_s`] ? html`
-                            <div class="rack">
-                                <div class="r-h"><b>${c[`b${i}_n`]}</b> <span class="soc-v">${this._get(c[`b${i}_s`])}%</span></div>
+                            <div class="rack-mini">
+                                <div class="r-h">
+                                   <span class="r-n">${c[`b${i}_n`]}</span>
+                                   <span class="soc-v">${this._get(c[`b${i}_s`])}%</span>
+                                </div>
                                 <div class="v-meter">
                                     ${[...Array(45)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 2.22) ? 'on' : ''}"></div>`)}
                                 </div>
@@ -147,52 +150,60 @@ class SolarMasterCard extends LitElement {
   static styles = css`
     ha-card { border-radius: 28px; overflow: hidden; background: #000; color: #fff; font-family: 'Inter', sans-serif; position: relative; }
     .bg-layer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-size: cover; background-position: center; z-index: 1; transition: 0.5s; }
-    .overlay { height: 100%; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; position: relative; z-index: 2; background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%); }
+    .overlay { height: 100%; display: flex; flex-direction: column; padding: 12px; box-sizing: border-box; position: relative; z-index: 2; background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%); }
     
-    .top-nav { display: flex; gap: 8px; margin-bottom: 25px; }
-    .t-badge { background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 12px; font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+    .top-nav { display: flex; gap: 8px; margin-bottom: 15px; }
+    .t-badge { background: rgba(255,255,255,0.1); padding: 6px 10px; border-radius: 10px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(10px); }
     .t-badge.green { color: #4caf50; margin-left: auto; }
 
-    .header-main { text-align: center; margin-bottom: 30px; }
-    .big-val { font-size: 64px; font-weight: 900; color: #ffc107; line-height: 1; }
-    .big-val small { font-size: 20px; margin-left: 5px; opacity: 0.7; }
-    .bar-wrap { height: 8px; background: rgba(255,255,255,0.1); width: 70%; margin: 12px auto; border-radius: 10px; overflow: hidden; }
-    .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.5); }
+    .header-main { text-align: center; margin-bottom: 20px; }
+    .big-val { font-size: 52px; font-weight: 900; color: #ffc107; line-height: 1; }
+    .big-val small { font-size: 18px; margin-left: 5px; }
+    .bar-wrap { height: 6px; background: rgba(255,255,255,0.1); width: 60%; margin: 8px auto; border-radius: 10px; overflow: hidden; }
+    .bar-f { height: 100%; background: #ffc107; }
 
-    .panels-row { display: flex; justify-content: space-around; margin-bottom: 30px; }
-    .hud-circle { width: 95px; height: 95px; border-radius: 50%; border: 3px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); }
+    .panels-row { display: flex; justify-content: space-around; margin-bottom: 20px; }
+    .hud-circle { width: 85px; height: 85px; border-radius: 50%; border: 3px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); }
     .scan { position: absolute; width: 100%; height: 100%; border: 3px solid transparent; border-radius: 50%; animation: rotate 3s linear infinite; top:0; left:0; box-sizing: border-box; }
-    .v { font-size: 24px; font-weight: 900; }
-    .u { display: block; font-size: 8px; opacity: 0.5; font-weight: 900; }
-    .hud-n { font-size: 11px; font-weight: 800; margin-top: 12px; text-align: center; }
+    .v { font-size: 20px; font-weight: 900; }
+    .u { display: block; font-size: 7px; opacity: 0.5; font-weight: 900; }
+    .hud-n { font-size: 10px; font-weight: 800; margin-top: 8px; text-align: center; }
 
-    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .d-box { background: rgba(255,255,255,0.06); padding: 12px; border-radius: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-    .d-v { font-size: 15px; font-weight: 800; color: #00f9f9; }
+    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .d-box { background: rgba(255,255,255,0.06); padding: 8px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+    .d-v { font-size: 13px; font-weight: 800; color: #00f9f9; }
+    .d-l { display: block; font-size: 9px; opacity: 0.6; }
 
-    /* --- BATTERIES : SLIM EDITION (0.4PX épaisseur, 6PX hauteur) --- */
-    .rack { background: rgba(255,255,255,0.07); padding: 18px; border-radius: 20px; margin-bottom: 15px; border-left: 5px solid #4caf50; backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.1); }
-    .v-meter { display: flex; gap: 1.5px; height: 6px; margin: 15px 0; }
+    /* --- BATTERIES : COMPACT 480PX MAX --- */
+    .battery-page { max-height: 480px; overflow-y: auto; padding-right: 5px; }
+    .rack-mini { background: rgba(255,255,255,0.06); padding: 10px 12px; border-radius: 15px; margin-bottom: 8px; border-left: 3px solid #4caf50; backdrop-filter: blur(8px); }
+    .r-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+    .r-n { font-size: 12px; font-weight: 800; opacity: 0.9; }
+    .soc-v { color: #4caf50; font-weight: 900; font-size: 13px; }
+    .v-meter { display: flex; gap: 1px; height: 5px; margin-bottom: 10px; }
     .v-seg { flex: 1; background: rgba(255,255,255,0.04); width: 0.4px; } 
-    .v-seg.on { background: #4caf50; box-shadow: 0 0 3px rgba(76,175,80,1); }
-    .soc-v { color: #4caf50; font-weight: 900; font-size: 16px; }
-    
-    .r-f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .r-f-box { background: rgba(255,255,255,0.05); padding: 8px; border-radius: 10px; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid rgba(255,255,255,0.05); }
+    .v-seg.on { background: #4caf50; box-shadow: 0 0 2px rgba(76,175,80,0.8); }
+    .r-f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .r-f-box { background: rgba(0,0,0,0.2); padding: 5px; border-radius: 8px; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid rgba(255,255,255,0.03); }
 
-    .eco-hero { background: rgba(76,175,80,0.1); padding: 25px; border-radius: 25px; text-align: center; border: 1px solid rgba(76,175,80,0.2); margin-bottom: 20px; }
-    .e-big { font-size: 60px; font-weight: 900; color: #4caf50; }
-    .e-bar-wrap { height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 15px 0; overflow: hidden; }
-    .e-bar-fill { height: 100%; background: #4caf50; box-shadow: 0 0 15px #4caf50; }
+    .eco-hero { background: rgba(76,175,80,0.1); padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 15px; }
+    .e-big { font-size: 48px; font-weight: 900; color: #4caf50; }
+    .e-bar-wrap { height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 10px 0; overflow: hidden; }
+    .e-bar-fill { height: 100%; background: #4caf50; }
 
-    .stat-card { background: rgba(255,255,255,0.06); padding: 15px 5px; border-radius: 18px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-    .s-value { font-size: 16px; font-weight: 900; }
+    .stat-card { background: rgba(255,255,255,0.06); padding: 10px; border-radius: 15px; text-align: center; }
+    .s-value { font-size: 14px; font-weight: 900; }
+    .s-label { font-size: 9px; opacity: 0.6; display: block; }
 
-    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.9); padding: 12px; border-radius: 25px; margin-top: auto; border: 1px solid rgba(255,255,255,0.1); }
-    .n-btn { opacity: 0.4; cursor: pointer; transition: 0.4s; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; }
+    .nav-footer { display: flex; justify-content: space-around; background: rgba(15,15,15,0.95); padding: 10px; border-radius: 20px; margin-top: auto; border: 1px solid rgba(255,255,255,0.05); }
+    .n-btn { opacity: 0.4; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; }
     .n-btn.active { opacity: 1; color: #ffc107; }
 
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    /* Scrollbar discrète */
+    .battery-page::-webkit-scrollbar { width: 3px; }
+    .battery-page::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
   `;
 }
 if (!customElements.get("solar-master-card")) customElements.define("solar-master-card", SolarMasterCard);
