@@ -17,10 +17,10 @@ class SolarMasterCardEditor extends LitElement {
     if (!this.hass || !this._config) return html``;
     const schemas = {
       solar: [
-        { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200, step: 10 } } },
+        { name: "card_height", label: "Hauteur (px)", selector: { number: { min: 400, max: 1200 } } },
         { name: "entity_weather", label: "Météo", selector: { entity: { domain: "weather" } } },
-        { name: "total_now", label: "Production Actuelle (W)", selector: { entity: {} } },
-        { name: "total_obj_pct", label: "Objectif Production (%)", selector: { entity: {} } },
+        { name: "total_now", label: "Prod Actuelle (W)", selector: { entity: {} } },
+        { name: "total_obj_pct", label: "Objectif Prod (%)", selector: { entity: {} } },
         { name: "grid_flow", label: "Réseau (W)", selector: { entity: {} } },
         ...[1,2,3,4].map(i => [{ name: `p${i}_name`, label: `Nom P${i}` }, { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }]).flat(),
         ...[1,2,3,4,5,6].map(i => [{ name: `d${i}_label`, label: `Diag ${i} Nom` }, { name: `d${i}_entity`, label: `Diag ${i} Entité`, selector: { entity: {} } }]).flat()
@@ -29,16 +29,16 @@ class SolarMasterCardEditor extends LitElement {
         ...[1,2,3,4].map(i => [
             { name: `b${i}_n`, label: `Nom Batterie ${i}` },
             { name: `b${i}_s`, label: `SOC % Bat ${i}`, selector: { entity: {} } },
-            { name: `b${i}_v`, label: `Sensor GAUCHE (ex: Volt) ${i}`, selector: { entity: {} } },
+            { name: `b${i}_v`, label: `Capteur GAUCHE Bat ${i}`, selector: { entity: {} } },
             { name: `b${i}_temp`, label: `Température Bat ${i}`, selector: { entity: {} } },
             { name: `b${i}_cap`, label: `Capacité Bat ${i}`, selector: { entity: {} } },
-            { name: `b${i}_a`, label: `Sensor DROITE (ex: Amp) ${i}`, selector: { entity: {} } }
+            { name: `b${i}_a`, label: `Capteur DROITE Bat ${i}`, selector: { entity: {} } }
         ]).flat()
       ],
       eco: [
-        { name: "eco_money", label: "Total Économisé (€)", selector: { entity: {} } },
+        { name: "eco_money", label: "Total Éco (€)", selector: { entity: {} } },
         { name: "eco_day_euro", label: "Gain Jour (€)", selector: { entity: {} } },
-        { name: "eco_target", label: "Objectif (€)", selector: { number: {} } },
+        { name: "eco_target", label: "Objectif Mensuel (€)", selector: { number: {} } },
         { name: "main_cons_entity", label: "Conso Maison (W)", selector: { entity: {} } }
       ]
     };
@@ -110,14 +110,12 @@ class SolarMasterCard extends LitElement {
                         ${[1,2,3,4].map(i => c[`b${i}_s`] ? html`
                             <div class="rack-card">
                                 <div class="r-h"><span>${c[`b${i}_n`]}</span> <b class="soc-v">${this._get(c[`b${i}_s`])}%</b></div>
-                                <div class="v-meter">
-                                    ${[...Array(40)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 2.5) ? 'on' : ''}"></div>`)}
-                                </div>
+                                <div class="v-meter">${[...Array(40)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 2.5) ? 'on' : ''}"></div>`)}</div>
                                 <div class="r-f-grid-4">
-                                    <div class="r-f-box cyan-edge">${this._get(c[`b${i}_v`])}<small>${this._getU(c[`b${i}_v`])}</small></div>
+                                    <div class="r-f-box cyan">${this._get(c[`b${i}_v`])}<small>${this._getU(c[`b${i}_v`])}</small></div>
                                     <div class="r-f-box"><ha-icon icon="mdi:thermometer"></ha-icon>${this._get(c[`b${i}_temp`])}°</div>
                                     <div class="r-f-box"><ha-icon icon="mdi:battery-check"></ha-icon>${this._get(c[`b${i}_cap`])}<small>${this._getU(c[`b${i}_cap`])}</small></div>
-                                    <div class="r-f-box cyan-edge">${this._get(c[`b${i}_a`])}<small>${this._getU(c[`b${i}_a`])}</small></div>
+                                    <div class="r-f-box cyan">${this._get(c[`b${i}_a`])}<small>${this._getU(c[`b${i}_a`])}</small></div>
                                 </div>
                             </div>` : '')}
                     </div>`
@@ -153,7 +151,6 @@ class SolarMasterCard extends LitElement {
     .t-badge.green { color: #4caf50; margin-left: auto; border-color: #4caf5044; }
     .header-main { text-align: center; margin-bottom: 20px; }
     .big-val { font-size: 62px; font-weight: 900; color: #ffc107; line-height: 1; }
-    .big-val small { font-size: 18px; margin-left: 5px; opacity: 0.5; }
     .obj-text { font-size: 10px; opacity: 0.5; margin-top: 5px; font-weight: bold; }
     .bar-wrap { height: 6px; background: rgba(255,255,255,0.1); width: 60%; margin: 8px auto 0 auto; border-radius: 10px; overflow: hidden; }
     .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 10px #ffc107; }
@@ -168,22 +165,27 @@ class SolarMasterCard extends LitElement {
     .d-l { font-size: 9px; opacity: 0.5; display: block; }
     .battery-scroll { max-height: 480px; overflow-y: auto; padding-right: 5px; }
     .rack-card { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 18px; margin-bottom: 10px; border-left: 4px solid #4caf50; }
-    .r-h { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; }
     .soc-v { color: #4caf50; font-size: 15px; }
     .v-meter { display: flex; gap: 1.2px; height: 6px; margin-bottom: 12px; }
-    .v-seg { flex: 1; background: rgba(255,255,255,0.03); width: 0.4px; }
+    .v-seg { flex: 1; background: rgba(255,255,255,0.03); }
     .v-seg.on { background: #4caf50; box-shadow: 0 0 4px #4caf50; }
     .r-f-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-    .r-f-box { background: #000; padding: 6px 2px; border-radius: 8px; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid #222; }
-    .cyan-edge { color: #00f9f9; }
-    .eco-hero { background: rgba(76,175,80,0.1); padding: 25px; border-radius: 24px; text-align: center; border: 1px solid #4caf5033; margin-bottom: 20px; }
-    .e-big { font-size: 54px; font-weight: 900; color: #4caf50; }
+    .r-f-box { background: #000; padding: 6px 2px; border-radius: 8px; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 1px solid #222; }
+    .cyan { color: #00f9f9; }
     .footer { display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; margin-top: auto; }
-    .f-btn { opacity: 0.3; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 9px; font-weight: 800; }
+    .f-btn { opacity: 0.3; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 9px; font-weight: 800; }
     .f-btn.active { opacity: 1; color: #ffc107; }
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     ha-icon { --mdc-icon-size: 20px; }
-    small { font-size: 8px; opacity: 0.7; margin-left: 1px; }
   `;
 }
-if (!customElements.get("solar-master-card")) customElements.define("solar-master-card", SolarMasterCard);
+if (!customElements.get("solar-master-card")) {
+  customElements.define("solar-master-card", SolarMasterCard);
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: "solar-master-card",
+    name: "Solar Master Card",
+    preview: true,
+    description: "Carte Solaire & Batterie Haute Performance"
+  });
+}
