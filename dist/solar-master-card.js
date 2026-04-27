@@ -22,6 +22,8 @@ class SolarMasterCardEditor extends LitElement {
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200 } } },
         { name: "bg_url", label: "URL Image de Fond", selector: { text: {} } },
         { name: "weather_entity", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
+        { name: "title_left", label: "Titre Groupe Gauche", selector: { text: {} } },
+        { name: "title_right", label: "Titre Groupe Droite", selector: { text: {} } },
         { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
         { name: "prod_obj_pct", label: "Objectif Production (%)", selector: { entity: {} } },
         ...[1, 2, 3, 4].map(i => [
@@ -82,31 +84,13 @@ class SolarMasterCard extends LitElement {
   }
 
   _renderWeather() {
-    const entityId = this.config.weather_entity;
-    if (!entityId || !this.hass.states[entityId]) return html``;
-    const state = this.hass.states[entityId];
+    const eid = this.config.weather_entity;
+    if (!eid || !this.hass.states[eid]) return html`<div class="weather-grid empty">MÉTÉO INDISP.</div>`;
+    const s = this.hass.states[eid];
     return html`
-      <div class="weather-box">
-        <ha-icon icon="mdi:weather-${state.state.replace('partlycloudy', 'partly-cloudy')}"></ha-icon>
-        <span>${state.attributes.temperature}°C</span>
-      </div>`;
-  }
-
-  _renderSunCurve() {
-    const sun = this.hass.states['sun.sun'];
-    if (!sun) return html``;
-    const elev = sun.attributes.elevation || 0;
-    // Map elevation (-90 to 90) to curve position (0 to 100)
-    const pos = ((elev + 20) / 110) * 100; 
-    return html`
-      <div class="sun-container">
-        <svg viewBox="0 0 200 40" class="sun-svg">
-          <path d="M0,35 Q100,-10 200,35" fill="none" stroke="rgba(255,193,7,0.3)" stroke-width="1" stroke-dasharray="2"/>
-        </svg>
-        <div class="sun-tracker" style="left: ${Math.max(5, Math.min(95, pos))}%">
-          <ha-icon icon="mdi:white-balance-sunny"></ha-icon>
-          <span class="elev-text">${elev.toFixed(1)}°</span>
-        </div>
+      <div class="weather-grid">
+        <ha-icon icon="mdi:weather-${s.state.replace('partlycloudy', 'partly-cloudy')}"></ha-icon>
+        <div class="w-temp">${s.attributes.temperature}°C</div>
       </div>`;
   }
 
@@ -141,23 +125,31 @@ class SolarMasterCard extends LitElement {
     const c = this.config;
     const prod = this._getVal(c.total_now);
     const objVal = parseFloat(this._getVal(c.prod_obj_pct).val) || 0;
+    const sunElev = this.hass.states['sun.sun'] ? this.hass.states['sun.sun'].attributes.elevation.toFixed(1) : "0";
+
     return html`
       <div class="page">
-        <div class="header-row">
-            ${this._renderWeather()}
-            ${this._renderSunCurve()}
-        </div>
+        <div class="top-bar">${this._renderWeather()}</div>
 
         <div class="cockpit">
-          <div class="side">${[4, 5, 6].map(i => this._renderMiniDiag(i, 'l'))}</div>
+          <div class="side">
+            <div class="side-head">${c.title_left}</div>
+            ${[4, 5, 6].map(i => this._renderMiniDiag(i, 'l'))}
+          </div>
+          
           <div class="center">
+            <div class="sun-bg-text">${sunElev}°</div>
             <div class="big-val">${prod.val}<small>W</small></div>
             <div class="obj-bar-container">
                <div class="obj-fill" style="width: ${Math.min(100, objVal)}%"></div>
                <span class="obj-label">OBJECTIF ${objVal}%</span>
             </div>
           </div>
-          <div class="side right-align">${[7, 8, 9].map(i => this._renderMiniDiag(i, 'r'))}</div>
+
+          <div class="side right-align">
+            <div class="side-head right">${c.title_right}</div>
+            ${[7, 8, 9].map(i => this._renderMiniDiag(i, 'r'))}
+          </div>
         </div>
 
         <div class="panels-row">
@@ -220,55 +212,50 @@ class SolarMasterCard extends LitElement {
     .overlay { position:relative; z-index:1; height:100%; display:flex; flex-direction:column; padding:15px; background:rgba(0,0,0,0.7); box-sizing:border-box; }
     .main-content { flex:1; }
     
-    .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .weather-box { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: bold; color: #00f9f9; }
-    .weather-box ha-icon { --mdc-icon-size: 20px; }
+    .top-bar { margin-bottom: 10px; }
+    .weather-grid { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,249,249,0.1); padding: 5px 12px; border-radius: 10px; border: 1px solid rgba(0,249,249,0.3); color: #00f9f9; font-weight: bold; }
+    .weather-grid ha-icon { --mdc-icon-size: 20px; }
     
-    .sun-container { position: relative; width: 120px; height: 35px; }
-    .sun-svg { width: 100%; height: 100%; }
-    .sun-tracker { position: absolute; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
-    .sun-tracker ha-icon { --mdc-icon-size: 14px; color: #ffc107; filter: drop-shadow(0 0 3px gold); }
-    .elev-text { font-size: 8px; font-weight: bold; }
-
-    .cockpit { display:flex; justify-content:space-between; align-items:center; margin-top: 5px;}
+    .cockpit { display:flex; justify-content:space-between; align-items:center; }
     .side { flex:1; }
+    .side-head { font-size: 10px; font-weight: 900; color: #00f9f9; margin-bottom: 5px; text-transform: uppercase; }
+    .side-head.right { text-align: right; color: #ffc107; }
     .right-align { text-align:right; }
     
-    .mini-diag { background:rgba(255,255,255,0.05); padding:6px; border-radius:6px; margin:3px 0; border-left:3px solid #00f9f9; max-width:90px; }
+    .mini-diag { background:rgba(255,255,255,0.05); padding:6px; border-radius:6px; margin:3px 0; border-left:3px solid #00f9f9; max-width:95px; backdrop-filter: blur(5px); }
     .mini-diag.r { border-left:none; border-right:3px solid #ffc107; margin-left:auto; }
-    .m-l { font-size:7px; opacity:0.6; display:block; text-transform:uppercase; }
-    .m-v { font-size:10px; font-weight:bold; }
+    .m-l { font-size:7px; opacity:0.6; display:block; text-transform:uppercase; font-weight: 800; }
+    .m-v { font-size:11px; font-weight:bold; }
     
-    .center { text-align:center; width:140px; }
-    .big-val { font-size:42px; font-weight:900; color:#ffc107; line-height: 1; }
+    .center { text-align:center; width:140px; position: relative; }
+    .sun-bg-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 50px; font-weight: 900; opacity: 0.1; color: #ffc107; pointer-events: none; z-index: -1; }
+    .big-val { font-size:45px; font-weight:900; color:#ffc107; line-height: 1; text-shadow: 0 0 15px rgba(255,193,7,0.3); }
     
-    .obj-bar-container { position: relative; height: 12px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 8px; overflow: hidden; border: 1px solid rgba(255,193,7,0.3); }
-    .obj-fill { height: 100%; background: linear-gradient(90deg, #ffc107, #ffeb3b); box-shadow: 0 0 10px rgba(255,193,7,0.5); }
-    .obj-label { position: absolute; width: 100%; left: 0; top: 0; font-size: 7px; font-weight: 900; line-height: 12px; color: #000; text-align: center; }
+    .obj-bar-container { position: relative; height: 14px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 10px; overflow: hidden; border: 1px solid rgba(255,193,7,0.4); }
+    .obj-fill { height: 100%; background: #ffc107; box-shadow: 0 0 10px #ffc107; }
+    .obj-label { position: absolute; width: 100%; left: 0; top: 0; font-size: 8px; font-weight: 900; line-height: 14px; color: #000; text-align: center; }
 
-    .panels-row { display:flex; justify-content:space-around; margin-top:15px; }
-    .hud-item { display: flex; flex-direction: column; align-items: center; }
-    .hud-circle { width:52px; height:52px; border-radius:50%; border:2px solid; position:relative; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); }
+    .panels-row { display:flex; justify-content:space-around; margin-top:20px; }
+    .hud-circle { width:58px; height:58px; border-radius:50%; border:2px solid; position:relative; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.5); }
     .scan { position:absolute; width:100%; height:100%; border:2px solid transparent; border-radius:50%; animation:rotate 4s linear infinite; top:-2px; left:-2px; padding:2px; box-sizing:content-box; }
     @keyframes rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-    .hud-n { font-size:8px; text-align:center; margin-top:4px; font-weight:bold; opacity:0.7; }
-    .hud-sub { font-size:9px; text-align:center; color:#00f9f9; font-weight:bold; }
+    .hud-n { font-size:9px; text-align:center; margin-top:5px; font-weight:bold; }
+    .hud-sub { font-size:10px; text-align:center; color:#00f9f9; font-weight:bold; }
 
-    .rack { background:rgba(255,255,255,0.05); padding:10px; border-radius:12px; margin-bottom:8px; border-left:3px solid #4caf50; }
-    .r-h { display:flex; justify-content:space-between; font-weight:bold; font-size:11px; }
-    .soc-pct { color:#4caf50; font-size:14px; }
-    .v-meter { display:flex; gap:2px; height:4px; margin:8px 0; }
+    .rack { background:rgba(255,255,255,0.05); padding:10px; border-radius:12px; margin-bottom:8px; border-left:4px solid #4caf50; }
+    .r-h { display:flex; justify-content:space-between; font-weight:bold; font-size:12px; }
+    .v-meter { display:flex; gap:2px; height:5px; margin:8px 0; }
     .v-seg { flex:1; background:#222; }
-    .v-seg.on { background:#4caf50; box-shadow:0 0 3px #4caf50; }
-    .r-grid-compact { display:grid; grid-template-columns:repeat(4, 1fr); text-align:center; font-size:9px; }
+    .v-seg.on { background:#4caf50; box-shadow:0 0 4px #4caf50; }
+    .r-grid-compact { display:grid; grid-template-columns:repeat(4, 1fr); text-align:center; font-size:10px; }
     
-    .footer { display:flex; justify-content:space-around; border-top:1px solid #333; padding-top:10px; margin-top:auto; }
-    .f-btn { cursor:pointer; opacity:0.5; font-size:9px; font-weight:bold; text-transform:uppercase; }
+    .footer { display:flex; justify-content:space-around; border-top:1px solid #333; padding-top:15px; margin-top:auto; }
+    .f-btn { cursor:pointer; opacity:0.5; font-size:10px; font-weight:bold; }
     .f-btn.active { opacity:1; color:#ffc107; }
     .scroll { overflow-y:auto; max-height:450px; }
-    small { font-size:10px; margin-left:1px; }
+    small { font-size:12px; margin-left:2px; }
   `;
 }
 customElements.define("solar-master-card", SolarMasterCard);
 window.customCards = window.customCards || [];
-window.customCards.push({ type: "solar-master-card", name: "Solar Master Card", description: "v2.0.0 - Full Curve & Objective Bar" });
+window.customCards.push({ type: "solar-master-card", name: "Solar Master Card", description: "v2.1.0 - Signature Style" });
