@@ -4,6 +4,7 @@ import {
   css
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
+// --- ÉDITEUR VISUEL ---
 class SolarMasterCardEditor extends LitElement {
   static get properties() { return { hass: {}, _config: {}, _selectedTab: { type: String } }; }
   constructor() { super(); this._selectedTab = 'tab_solar'; }
@@ -29,7 +30,14 @@ class SolarMasterCardEditor extends LitElement {
         ...[1,2,3,4,5,6].map(i => [{ name: `d${i}_label`, label: `Diag ${i} Nom` }, { name: `d${i}_entity`, label: `Diag ${i} Entité`, selector: { entity: {} } }]).flat()
       ],
       tab_batt: [...[1,2,3,4].map(i => [{ name: `b${i}_n`, label: `Nom Bat ${i}` }, { name: `b${i}_s`, label: `SOC % ${i}`, selector: { entity: {} } }, { name: `b${i}_v`, label: `Volt G ${i}`, selector: { entity: {} } }, { name: `b${i}_temp`, label: `Temp ${i}`, selector: { entity: {} } }, { name: `b${i}_cap`, label: `Cap ${i}`, selector: { entity: {} } }, { name: `b${i}_a`, label: `Amp D ${i}`, selector: { entity: {} } }]).flat()],
-      tab_eco: [{ name: "eco_money", label: "Total (€)", selector: { entity: {} } }, { name: "eco_day_euro", label: "Jour (€)", selector: { entity: {} } }, { name: "eco_year_euro", label: "An (€)", selector: { entity: {} } }, { name: "kwh_price", label: "Prix kWh", selector: { entity: {} } }, { name: "eco_target", label: "Objectif (€)", selector: { number: {} } }]
+      tab_eco: [
+        { name: "eco_money", label: "Total Économisé (€)", selector: { entity: {} } },
+        { name: "eco_target", label: "Objectif Mensuel (€)", selector: { number: { min: 0 } } },
+        { name: "eco_day_euro", label: "Gain du Jour (€)", selector: { entity: {} } },
+        { name: "eco_year_euro", label: "Gain Annuel (€)", selector: { entity: {} } },
+        { name: "kwh_price", label: "Prix du kWh (€)", selector: { entity: {} } },
+        { name: "main_cons_entity", label: "Conso Maison (W)", selector: { entity: {} } }
+      ]
     };
     return html`
       <div class="edit-tabs">
@@ -42,6 +50,7 @@ class SolarMasterCardEditor extends LitElement {
 }
 customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
+// --- CARTE PRINCIPALE ---
 class SolarMasterCard extends LitElement {
   static getConfigElement() { return document.createElement("solar-master-card-editor"); }
   static get properties() { return { hass: {}, config: {}, _tab: { type: String } }; }
@@ -101,7 +110,21 @@ class SolarMasterCard extends LitElement {
   _renderEco() {
     const c = this.config;
     const cur = parseFloat(this._get(c.eco_money)) || 0;
-    return html`<div class="page"><div class="eco-hero"><div class="e-big">${cur}<small>€</small></div><div class="e-bar-wrap"><div class="e-bar-fill" style="width:${Math.min(100,(cur/(c.eco_target||1))*100)}%"></div></div><div class="e-target">Objectif : ${c.eco_target || 0}€</div></div></div>`;
+    const target = c.eco_target || 1;
+    return html`
+      <div class="page">
+        <div class="eco-hero">
+          <div class="e-big">${cur}<small>€</small></div>
+          <div class="e-target">Objectif Mensuel : ${target}€</div>
+          <div class="e-bar-wrap"><div class="e-bar-fill" style="width:${Math.min(100, (cur/target)*100)}%"></div></div>
+        </div>
+        <div class="eco-stats-grid">
+          <div class="stat-card"><span class="s-label">AUJOURD'HUI</span><span class="s-value green">${this._get(c.eco_day_euro)}€</span></div>
+          <div class="stat-card"><span class="s-label">ANNUEL</span><span class="s-value yellow">${this._get(c.eco_year_euro)}€</span></div>
+          <div class="stat-card"><span class="s-label">PRIX KWH</span><span class="s-value">${this._get(c.kwh_price)}€</span></div>
+          <div class="stat-card"><span class="s-label">CONSO MAISON</span><span class="s-value">${this._get(c.main_cons_entity)}W</span></div>
+        </div>
+      </div>`;
   }
 
   static styles = css`
@@ -128,6 +151,17 @@ class SolarMasterCard extends LitElement {
     .footer { display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #333; margin-top: auto; }
     .f-btn { opacity: 0.5; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 9px; }
     .f-btn.active { opacity: 1; color: #ffc107; }
+    /* ECO STYLES */
+    .eco-hero { background: rgba(76,175,80,0.1); padding: 20px; border-radius: 20px; text-align: center; border: 1px solid rgba(76,175,80,0.2); margin-bottom: 20px; }
+    .e-big { font-size: 45px; font-weight: 900; color: #4caf50; }
+    .e-target { font-size: 12px; opacity: 0.7; margin-top: 5px; }
+    .e-bar-wrap { height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 15px 0; overflow: hidden; }
+    .e-bar-fill { height: 100%; background: #4caf50; box-shadow: 0 0 10px #4caf50; }
+    .eco-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { background: rgba(0,0,0,0.5); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #333; }
+    .s-label { font-size: 9px; opacity: 0.5; display: block; margin-bottom: 5px; }
+    .s-value { font-size: 16px; font-weight: bold; }
+    .yellow { color: #ffc107; }
     .rack-card { background: rgba(0,0,0,0.6); padding: 12px; border-radius: 15px; margin-bottom: 8px; border-left: 4px solid #4caf50; }
     .v-meter { display: flex; gap: 1px; height: 6px; margin: 8px 0; }
     .v-seg { flex: 1; background: rgba(255,255,255,0.1); }
