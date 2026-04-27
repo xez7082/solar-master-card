@@ -111,7 +111,7 @@ class SolarMasterCard extends LitElement {
                             <div class="rack">
                                 <div class="r-h"><b>${c[`b${i}_n`]}</b> <span class="soc-v">${this._get(c[`b${i}_s`])}%</span></div>
                                 <div class="v-meter">
-                                    ${[...Array(30)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 3.33) ? 'on' : ''}"></div>`)}
+                                    ${[...Array(40)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 2.5) ? 'on' : ''}"></div>`)}
                                 </div>
                                 <div class="r-f-grid">
                                     <div class="r-f-box"><ha-icon icon="mdi:thermometer"></ha-icon> ${this._get(c[`b${i}_temp`])}°C</div>
@@ -170,11 +170,11 @@ class SolarMasterCard extends LitElement {
     .d-box { background: rgba(255,255,255,0.06); padding: 12px; border-radius: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
     .d-v { font-size: 15px; font-weight: 800; color: #00f9f9; }
 
-    /* --- BATTERIES TRAITS FINS --- */
+    /* --- BATTERIES : EFFET LED ULTRA-FIN --- */
     .rack { background: rgba(255,255,255,0.07); padding: 18px; border-radius: 20px; margin-bottom: 15px; border-left: 5px solid #4caf50; backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.1); }
-    .v-meter { display: flex; gap: 3px; height: 12px; margin: 15px 0; }
-    .v-seg { flex: 1; background: rgba(255,255,255,0.08); border-radius: 1px; width: 1.5px; } /* Traits ultra fins */
-    .v-seg.on { background: #4caf50; box-shadow: 0 0 5px rgba(76,175,80,0.5); }
+    .v-meter { display: flex; gap: 2px; height: 12px; margin: 15px 0; }
+    .v-seg { flex: 1; background: rgba(255,255,255,0.05); border-radius: 0px; width: 0.8px; } /* Largeur réduite au minimum */
+    .v-seg.on { background: #4caf50; box-shadow: 0 0 4px rgba(76,175,80,0.8); }
     .soc-v { color: #4caf50; font-weight: 900; font-size: 16px; }
     
     .r-f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
