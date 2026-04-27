@@ -4,7 +4,7 @@ import {
   css
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
-// --- ÉDITEUR SUR-VITAMINÉ ---
+// --- ÉDITEUR ---
 class SolarMasterCardEditor extends LitElement {
   static get properties() { return { hass: {}, _config: {}, _selectedTab: { type: String } }; }
   constructor() { super(); this._selectedTab = 'config_solar'; }
@@ -19,33 +19,35 @@ class SolarMasterCardEditor extends LitElement {
     const schemas = {
       config_solar: [
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200, step: 10 } } },
-        { name: "entity_weather", label: "Météo", selector: { entity: { domain: "weather" } } },
-        { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
-        { name: "total_obj_pct", label: "Objectif Production (%)", selector: { entity: {} } },
-        { name: "grid_flow", label: "Réseau (W)", selector: { entity: {} } },
-        ...[1,2,3,4].map(i => [{ name: `p${i}_name`, label: `Nom P${i}` }, { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }]).flat(),
-        ...[1,2,3,4,5,6].map(i => [{ name: `d${i}_label`, label: `Diag ${i} Label` }, { name: `d${i}_entity`, label: `Diag ${i} Entité`, selector: { entity: {} } }]).flat()
+        { name: "entity_weather", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
+        { name: "total_now", label: "Production Actuelle (W)", selector: { entity: {} } },
+        { name: "total_obj_pct", label: "Objectif Prod (%)", selector: { entity: {} } },
+        { name: "grid_flow", label: "Flux Réseau (W)", selector: { entity: {} } },
+        ...[1,2,3,4].map(i => [{ name: `p${i}_name`, label: `Nom Panneau ${i}` }, { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }]).flat(),
+        ...[1,2,3,4,5,6].map(i => [{ name: `d${i}_label`, label: `Diag ${i} Nom` }, { name: `d${i}_entity`, label: `Diag ${i} Entité`, selector: { entity: {} } }]).flat()
       ],
       config_batt: [
         ...[1,2,3,4].map(i => [
-            { name: `b${i}_n`, label: `Nom Bat ${i}` },
+            { name: `b${i}_n`, label: `Nom Batterie ${i}` },
             { name: `b${i}_s`, label: `SOC % Bat ${i}`, selector: { entity: {} } },
-            { name: `b${i}_v`, label: `Volt (G) Bat ${i}`, selector: { entity: {} } },
-            { name: `b${i}_temp`, label: `Temp Bat ${i}`, selector: { entity: {} } },
+            { name: `b${i}_v`, label: `Tension (V) Bat ${i}`, selector: { entity: {} } },
+            { name: `b${i}_temp`, label: `Température Bat ${i}`, selector: { entity: {} } },
             { name: `b${i}_cap`, label: `Capacité Bat ${i}`, selector: { entity: {} } },
-            { name: `b${i}_a`, label: `Amp (D) Bat ${i}`, selector: { entity: {} } }
+            { name: `b${i}_a`, label: `Courant (A) Bat ${i}`, selector: { entity: {} } }
         ]).flat()
       ],
       config_stats: [
         { name: "eco_money", label: "Total Économisé (€)", selector: { entity: {} } },
-        { name: "eco_day_euro", label: "Gain Jour (€)", selector: { entity: {} } },
+        { name: "eco_day_euro", label: "Gain du Jour (€)", selector: { entity: {} } },
+        { name: "eco_year_euro", label: "Gain Annuel (€)", selector: { entity: {} } },
+        { name: "kwh_price", label: "Prix du kWh (€)", selector: { entity: {} } },
         { name: "eco_target", label: "Objectif Mensuel (€)", selector: { number: {} } },
-        { name: "main_cons_entity", label: "Conso Maison (W)", selector: { entity: {} } }
+        { name: "main_cons_entity", label: "Consommation Maison (W)", selector: { entity: {} } }
       ]
     };
     return html`
       <div class="tabs">
-        ${['config_solar','config_batt','config_stats'].map(t => html`<button class="${this._selectedTab===t?'active':''}" @click=${()=>this._selectedTab=t}>${t.split('_')[1].toUpperCase()}</button>`)}
+        ${['config_solar','config_batt','config_stats'].map(t => html`<button class="${this._selectedTab===t?'active':''}" @click=${()=>this._selectedTab=t}>${t === 'config_solar' ? 'SOLAIRE' : t === 'config_batt' ? 'BATTERIES' : 'ÉCONOMIE'}</button>`)}
       </div>
       <ha-form .hass=${this.hass} .data=${this._config} .schema=${schemas[this._selectedTab]} @value-changed=${this._valueChanged}></ha-form>
     `;
@@ -67,7 +69,12 @@ class SolarMasterCard extends LitElement {
   render() {
     if (!this.config || !this.hass) return html``;
     const c = this.config;
-    const panels = [{n:c.p1_name,e:c.p1_w,c:"#ffc107"},{n:c.p2_name,e:c.p2_w,c:"#00f9f9"},{n:c.p3_name,e:c.p3_w,c:"#4caf50"},{n:c.p4_name,e:c.p4_w,c:"#e91e63"}].filter(p => p.e && this.hass.states[p.e]);
+    const panels = [
+        {n:c.p1_name, e:c.p1_w, c:"#ffc107"},
+        {n:c.p2_name, e:c.p2_w, c:"#00f9f9"},
+        {n:c.p3_name, e:c.p3_w, c:"#4caf50"},
+        {n:c.p4_name, e:c.p4_w, c:"#e91e63"}
+    ].filter(p => p.e && this.hass.states[p.e]);
 
     return html`
       <ha-card style="height:${c.card_height || 650}px;">
@@ -90,7 +97,7 @@ class SolarMasterCard extends LitElement {
                                 <div class="hud-item">
                                     <div class="hud-circle" style="border-color:${p.c}44">
                                         <div class="scan" style="border-top-color:${p.c}"></div>
-                                        <span class="v" style="color:${p.c}">${Math.round(this._get(p.e))}</span>
+                                        <div class="val-container"><span class="v" style="color:${p.c}">${Math.round(this._get(p.e))}</span></div>
                                     </div>
                                     <div class="hud-n">${p.n}</div>
                                 </div>`)}
@@ -113,10 +120,10 @@ class SolarMasterCard extends LitElement {
                                     ${[...Array(40)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 2.5) ? 'on' : ''}"></div>`)}
                                 </div>
                                 <div class="r-f-grid-4">
-                                    <div class="r-f-box cyan">${this._get(c[`b${i}_v`])}<small>${this._getU(c[`b${i}_v`])}</small></div>
+                                    <div class="r-f-box cyan">${this._get(c[`b${i}_v`])}<small>V</small></div>
                                     <div class="r-f-box"><ha-icon icon="mdi:thermometer"></ha-icon>${this._get(c[`b${i}_temp`])}°</div>
-                                    <div class="r-f-box"><ha-icon icon="mdi:battery-import"></ha-icon>${this._get(c[`b${i}_cap`])}<small>${this._getU(c[`b${i}_cap`])}</small></div>
-                                    <div class="r-f-box cyan">${this._get(c[`b${i}_a`])}<small>${this._getU(c[`b${i}_a`])}</small></div>
+                                    <div class="r-f-box"><ha-icon icon="mdi:battery-import"></ha-icon>${this._get(c[`b${i}_cap`])}<small>${this._getU(c[`b${i}_cap` ])}</small></div>
+                                    <div class="r-f-box cyan">${this._get(c[`b${i}_a`])}<small>A</small></div>
                                 </div>
                             </div>` : '')}
                     </div>`
@@ -129,7 +136,9 @@ class SolarMasterCard extends LitElement {
                             <div class="e-bar-wrap"><div class="e-bar-fill" style="width:${Math.min(100, (parseFloat(this._get(c.eco_money))/(c.eco_target || 1)) * 100)}%"></div></div>
                         </div>
                         <div class="eco-stats-grid">
-                            <div class="stat-card"><span class="s-label">JOUR</span><span class="s-value green">${this._get(c.eco_day_euro)}€</span></div>
+                            <div class="stat-card"><span class="s-label">AUJOURD'HUI</span><span class="s-value green">${this._get(c.eco_day_euro)}€</span></div>
+                            <div class="stat-card"><span class="s-label">ANNUEL</span><span class="s-value yellow">${this._get(c.eco_year_euro)}€</span></div>
+                            <div class="stat-card"><span class="s-label">PRIX KWH</span><span class="s-value">${this._get(c.kwh_price)}€</span></div>
                             <div class="stat-card"><span class="s-label">CONSO MAISON</span><span class="s-value">${this._get(c.main_cons_entity)}W</span></div>
                         </div>
                     </div>`}
@@ -137,8 +146,8 @@ class SolarMasterCard extends LitElement {
 
             <div class="footer">
                 <div class="f-btn ${this._tab==='solar'?'active':''}" @click=${()=>this._tab='solar'}><ha-icon icon="mdi:solar-power"></ha-icon><span>SOLAIRE</span></div>
-                <div class="f-btn ${this._tab==='batt'?'active':''}" @click=${()=>this._tab='batt'}><ha-icon icon="mdi:battery-high"></ha-icon><span>BATTERIE</span></div>
-                <div class="f-btn ${this._tab==='stats'?'active':''}" @click=${()=>this._tab='stats'}><ha-icon icon="mdi:finance"></ha-icon><span>ÉCO</span></div>
+                <div class="f-btn ${this._tab==='batt'?'active':''}" @click=${()=>this._tab='batt'}><ha-icon icon="mdi:battery-high"></ha-icon><span>BATTERIES</span></div>
+                <div class="f-btn ${this._tab==='stats'?'active':''}" @click=${()=>this._tab='stats'}><ha-icon icon="mdi:finance"></ha-icon><span>ÉCONOMIE</span></div>
             </div>
         </div>
       </ha-card>`;
@@ -165,6 +174,7 @@ class SolarMasterCard extends LitElement {
     .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; }
     .hud-circle { width: 85px; height: 85px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); }
     .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 3s linear infinite; top:-2px; left:-2px; padding:2px; box-sizing: content-box; }
+    .val-container { z-index: 2; }
     .v { font-size: 20px; font-weight: 900; }
     .hud-n { font-size: 10px; font-weight: 800; margin-top: 8px; text-align: center; opacity: 0.7; }
 
@@ -173,7 +183,7 @@ class SolarMasterCard extends LitElement {
     .d-v { display: block; font-size: 14px; font-weight: 800; color: #00f9f9; }
     .d-l { font-size: 9px; opacity: 0.5; display: block; margin-bottom: 2px; }
 
-    /* BATTERIES (480px scrollable) */
+    /* BATTERIES */
     .battery-scroll { max-height: 480px; overflow-y: auto; padding-right: 5px; }
     .rack-card { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 18px; margin-bottom: 10px; border-left: 4px solid #4caf50; }
     .r-h { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; }
@@ -185,7 +195,7 @@ class SolarMasterCard extends LitElement {
     .r-f-box { background: #000; padding: 6px 2px; border-radius: 8px; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid #222; }
     .cyan { color: #00f9f9; }
 
-    /* ECO */
+    /* ECONOMIE */
     .eco-hero { background: rgba(76,175,80,0.1); padding: 25px; border-radius: 24px; text-align: center; border: 1px solid #4caf5033; margin-bottom: 20px; }
     .e-big { font-size: 54px; font-weight: 900; color: #4caf50; }
     .e-target { font-size: 11px; opacity: 0.6; margin-top: 5px; }
@@ -195,6 +205,7 @@ class SolarMasterCard extends LitElement {
     .stat-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; text-align: center; border: 1px solid #222; }
     .s-label { font-size: 9px; opacity: 0.5; display: block; margin-bottom: 5px; }
     .s-value { font-size: 16px; font-weight: 900; }
+    .yellow { color: #ffc107; }
 
     /* FOOTER */
     .footer { display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; margin-top: auto; }
@@ -208,6 +219,7 @@ class SolarMasterCard extends LitElement {
     .battery-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     ha-icon { --mdc-icon-size: 20px; }
     .r-f-box ha-icon { --mdc-icon-size: 12px; }
+    small { font-size: 8px; margin-left: 2px; opacity: 0.7; }
   `;
 }
 if (!customElements.get("solar-master-card")) customElements.define("solar-master-card", SolarMasterCard);
