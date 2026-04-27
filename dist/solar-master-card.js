@@ -28,7 +28,6 @@ class SolarMasterCardEditor extends LitElement {
         { name: "bg_url", label: "URL Image de Fond", selector: { text: {} } },
         { name: "bg_blur", label: "Flou de l'image (px)", selector: { number: { min: 0, max: 20 } } },
         { name: "bg_opacity", label: "Opacité Image (0.1 à 1.0)", selector: { number: { min: 0.1, max: 1, step: 0.1 } } },
-        { name: "entity_weather", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
         { name: "total_now", label: "Production Actuelle (W)", selector: { entity: {} } },
         { name: "total_obj_pct", label: "Objectif Production (%)", selector: { entity: {} } },
         { name: "grid_flow", label: "Réseau / Grid (W)", selector: { entity: {} } },
@@ -36,7 +35,7 @@ class SolarMasterCardEditor extends LitElement {
           { name: `p${i}_name`, label: `Nom Panneau ${i}` },
           { name: `p${i}_w`, label: `Entité Watts P${i}`, selector: { entity: {} } }
         ]).flat(),
-        ...[1, 2, 3, 4, 5, 6].map(i => [
+        ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => [
           { name: `d${i}_label`, label: `Diag ${i} Label` },
           { name: `d${i}_entity`, label: `Diag ${i} Entité`, selector: { entity: {} } }
         ]).flat()
@@ -106,31 +105,22 @@ class SolarMasterCard extends LitElement {
 
   _getRaw(id) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].state : '0'; }
 
-  _translateWeather(s) {
-    const dict = { 'sunny': 'Ensoleillé', 'clear-night': 'Nuit Claire', 'cloudy': 'Nuageux', 'fog': 'Brouillard', 'hail': 'Grêle', 'lightning': 'Orages', 'partlycloudy': 'Éclaircies', 'pouring': 'Averses', 'rainy': 'Pluvieux', 'snowy': 'Neige', 'windy': 'Venteux' };
-    return dict[s?.toLowerCase()] || s || 'Inconnu';
-  }
-
-  // Rendu de la GRANDE courbe solaire
   _renderWideSunTracker() {
     if (!this.hass.states['sun.sun']) return html``;
     const sun = this.hass.states['sun.sun'];
     const elev = sun.attributes.elevation || 0;
-    // On mappe -20° à +90° pour la visibilité
     const progress = ((elev + 20) / 110) * 100;
     const isNight = elev < 0;
     
     return html`
       <div class="wide-sun-container">
-        <svg viewbox="0 0 400 60" class="wide-sun-svg">
-          <path d="M10,55 Q200,-30 390,55" class="wide-sun-path" />
-          <line x1="10" y1="55" x2="390" y2="55" class="horizon-line" />
+        <svg viewbox="0 0 400 50" class="wide-sun-svg">
+          <path d="M10,45 Q200,-15 390,45" class="wide-sun-path" />
         </svg>
-        <div class="sun-mover" style="left: ${Math.max(5, Math.min(92, progress))}%; bottom: ${Math.max(10, Math.min(50, (elev/90)*60 + 20))}px;">
+        <div class="sun-mover" style="left: ${Math.max(5, Math.min(92, progress))}%; bottom: ${Math.max(5, Math.min(40, (elev/90)*45 + 15))}px;">
            <ha-icon icon="${isNight ? 'mdi:weather-night' : 'mdi:white-balance-sunny'}" class="${isNight ? 'night' : ''}"></ha-icon>
            <span class="sun-val">${elev.toFixed(1)}°</span>
         </div>
-        <div class="location-tag">SAINTE-CROIX-EN-PLAINE</div>
       </div>
     `;
   }
@@ -146,7 +136,7 @@ class SolarMasterCard extends LitElement {
         
         <div class="overlay">
           <div class="top-nav">
-            <div class="t-badge"><ha-icon icon="mdi:map-marker"></ha-icon> Local</div>
+            <div class="t-badge"><ha-icon icon="mdi:map-marker"></ha-icon> Sainte-Croix</div>
             <div class="t-badge"><ha-icon icon="mdi:transmission-tower"></ha-icon> ${this._smartGet(c.grid_flow).val} W</div>
             <div class="t-badge green">${totalEco.val}${totalEco.unit || '€'}</div>
           </div>
@@ -165,6 +155,18 @@ class SolarMasterCard extends LitElement {
     `;
   }
 
+  _renderMiniDiag(i) {
+    const c = this.config;
+    const d = this._smartGet(c[`d${i}_entity`]);
+    if (!c[`d${i}_entity`]) return html`<div class="mini-diag empty"></div>`;
+    return html`
+      <div class="mini-diag">
+        <span class="m-l">${c[`d${i}_label`]}</span>
+        <span class="m-v">${d.val}<small>${d.unit}</small></span>
+      </div>
+    `;
+  }
+
   _renderSolar() {
     const c = this.config;
     const totalProd = this._smartGet(c.total_now);
@@ -177,13 +179,26 @@ class SolarMasterCard extends LitElement {
 
     return html`
       <div class="page">
-        <div class="solar-main-header">
-           <div class="watts-display">
-              <div class="big-val">${totalProd.val}<small>${totalProd.unit || 'W'}</small></div>
-              <div class="perf-bar"><div class="perf-fill" style="width:${this._getRaw(c.total_obj_pct)}%"></div></div>
-              <div class="perf-label">OBJECTIF : ${this._getRaw(c.total_obj_pct)}%</div>
-           </div>
-           ${this._renderWideSunTracker()}
+        ${this._renderWideSunTracker()}
+
+        <div class="cockpit-row">
+          <div class="side-diags left">
+             ${this._renderMiniDiag(4)}
+             ${this._renderMiniDiag(5)}
+             ${this._renderMiniDiag(6)}
+          </div>
+
+          <div class="total-block">
+            <div class="big-val">${totalProd.val}<small>${totalProd.unit || 'W'}</small></div>
+            <div class="perf-bar"><div class="perf-fill" style="width:${this._getRaw(c.total_obj_pct)}%"></div></div>
+            <div class="perf-label">OBJECTIF : ${this._getRaw(c.total_obj_pct)}%</div>
+          </div>
+
+          <div class="side-diags right">
+             ${this._renderMiniDiag(7)}
+             ${this._renderMiniDiag(8)}
+             ${this._renderMiniDiag(9)}
+          </div>
         </div>
 
         <div class="panels-row">
@@ -201,7 +216,7 @@ class SolarMasterCard extends LitElement {
         </div>
 
         <div class="diag-grid">
-          ${[1, 2, 3, 4, 5, 6].map(i => {
+          ${[1, 2, 3].map(i => {
             const d = this._smartGet(c[`d${i}_entity`]);
             return c[`d${i}_entity`] ? html`<div class="d-box"><span class="d-l">${c[`d${i}_label`]}</span><span class="d-v">${d.val}<small>${d.unit}</small></span></div>` : '';
           })}
@@ -209,7 +224,6 @@ class SolarMasterCard extends LitElement {
       </div>`;
   }
 
-  // ... (Garder les méthodes _renderBattery et _renderEco identiques aux versions précédentes)
   _renderBattery() {
     const c = this.config;
     return html`
@@ -264,70 +278,77 @@ class SolarMasterCard extends LitElement {
   static styles = css`
     ha-card { background: #000; color: #fff; border-radius: 28px; overflow: hidden; position: relative; border: 1px solid #333; font-family: sans-serif; }
     .custom-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; z-index: 0; }
-    .overlay { height: 100%; display: flex; flex-direction: column; padding: 20px; position: relative; z-index: 1; background: radial-gradient(circle at 50% 0%, rgba(26, 42, 58, 0.7) 0%, rgba(0,0,0,0.8) 80%); }
-    .top-nav { display: flex; gap: 10px; margin-bottom: 20px; }
-    .t-badge { background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px); display: flex; align-items: center; gap: 6px; }
+    .overlay { height: 100%; display: flex; flex-direction: column; padding: 15px; position: relative; z-index: 1; background: radial-gradient(circle at 50% 0%, rgba(26, 42, 58, 0.7) 0%, rgba(0,0,0,0.8) 80%); }
+    .top-nav { display: flex; gap: 8px; margin-bottom: 10px; }
+    .t-badge { background: rgba(0,0,0,0.6); padding: 6px 10px; border-radius: 10px; font-size: 10px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px); display: flex; align-items: center; gap: 5px; }
     .green { color: #4caf50; margin-left: auto; }
 
-    /* Solar Header v1.4.8 */
-    .solar-main-header { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 30px; }
-    .watts-display { text-align: center; }
-    .big-val { font-size: 68px; font-weight: 900; color: #ffc107; line-height: 0.9; }
-    .perf-bar { width: 220px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin: 15px auto 5px auto; overflow: hidden; }
-    .perf-fill { height: 100%; background: #ffc107; box-shadow: 0 0 10px #ffc107; transition: width 1s; }
-    .perf-label { font-size: 10px; opacity: 0.6; font-weight: bold; letter-spacing: 1px; }
-
     /* Wide Sun Tracker */
-    .wide-sun-container { width: 100%; max-width: 400px; height: 70px; position: relative; margin-top: 10px; }
+    .wide-sun-container { width: 100%; height: 50px; position: relative; margin-bottom: -10px; }
     .wide-sun-svg { width: 100%; height: 100%; }
-    .wide-sun-path { fill: none; stroke: rgba(255,193,7,0.2); stroke-width: 2; stroke-dasharray: 4,4; }
-    .horizon-line { stroke: rgba(255,255,255,0.1); stroke-width: 1; }
+    .wide-sun-path { fill: none; stroke: rgba(255,193,7,0.2); stroke-width: 1.5; stroke-dasharray: 3,3; }
     .sun-mover { position: absolute; display: flex; flex-direction: column; align-items: center; transition: all 1s ease-in-out; }
-    .sun-mover ha-icon { --mdc-icon-size: 26px; color: #ffc107; filter: drop-shadow(0 0 8px #ffc107); }
-    .sun-mover ha-icon.night { color: #81d4fa; filter: drop-shadow(0 0 8px #0277bd); }
-    .sun-val { font-size: 10px; font-weight: bold; margin-top: 2px; }
-    .location-tag { position: absolute; bottom: 0; width: 100%; text-align: center; font-size: 8px; opacity: 0.4; letter-spacing: 2px; }
+    .sun-mover ha-icon { --mdc-icon-size: 20px; color: #ffc107; filter: drop-shadow(0 0 5px #ffc107); }
+    .sun-mover ha-icon.night { color: #81d4fa; }
+    .sun-val { font-size: 8px; font-weight: bold; margin-top: 1px; opacity: 0.8; }
 
-    .panels-row { display: flex; justify-content: space-around; margin-bottom: 30px; }
-    .hud-circle { width: 85px; height: 85px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
+    /* Cockpit Symmetric Row */
+    .cockpit-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 25px; }
+    .total-block { text-align: center; flex: 1; max-width: 180px; }
+    .big-val { font-size: 50px; font-weight: 900; color: #ffc107; line-height: 0.9; }
+    .perf-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.1); border-radius: 3px; margin: 10px 0 5px 0; overflow: hidden; }
+    .perf-fill { height: 100%; background: #ffc107; transition: width 1s; }
+    .perf-label { font-size: 8px; opacity: 0.5; font-weight: bold; }
+
+    .side-diags { display: flex; flex-direction: column; gap: 6px; width: 80px; }
+    .side-diags.left { align-items: flex-end; text-align: right; }
+    .side-diags.right { align-items: flex-start; text-align: left; }
+    .mini-diag { background: rgba(255,255,255,0.05); padding: 5px 8px; border-radius: 8px; border-left: 2px solid #ffc107; width: 100%; box-sizing: border-box; }
+    .left .mini-diag { border-left: none; border-right: 2px solid #00f9f9; }
+    .m-l { font-size: 7px; opacity: 0.4; display: block; text-transform: uppercase; }
+    .m-v { font-size: 11px; font-weight: bold; color: #fff; }
+    .mini-diag.empty { visibility: hidden; }
+
+    .panels-row { display: flex; justify-content: space-around; margin-bottom: 20px; }
+    .hud-circle { width: 80px; height: 80px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
     .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 4s linear infinite; top:-2px; left:-2px; padding:2px; box-sizing: content-box; }
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .val-container { display: flex; flex-direction: column; align-items: center; line-height: 1; }
-    .v { font-size: 22px; font-weight: 900; }
-    .unit { font-size: 11px; }
-    .hud-n { font-size: 10px; text-align: center; margin-top: 8px; opacity: 0.8; }
+    .v { font-size: 20px; font-weight: 900; }
+    .unit { font-size: 10px; }
+    .hud-n { font-size: 9px; text-align: center; margin-top: 8px; opacity: 0.8; }
     
-    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .d-box { background: rgba(0,0,0,0.6); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-    .d-v { display: block; font-size: 14px; font-weight: bold; color: #00f9f9; }
-    .d-l { font-size: 9px; opacity: 0.5; display: block; margin-bottom: 2px; }
+    .d-v { display: block; font-size: 13px; font-weight: bold; color: #00f9f9; }
+    .d-l { font-size: 8px; opacity: 0.5; display: block; margin-bottom: 2px; }
     
-    .footer { display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; margin-top: auto; }
-    .f-btn { opacity: 0.4; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 10px; transition: 0.3s; }
+    .footer { display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #333; margin-top: auto; }
+    .f-btn { opacity: 0.4; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 9px; transition: 0.3s; }
     .f-btn.active { opacity: 1; color: #ffc107; }
     
-    .rack-card { background: rgba(0,0,0,0.6); padding: 15px; border-radius: 18px; margin-bottom: 10px; border-left: 5px solid #4caf50; }
-    .v-meter { display: flex; gap: 2px; height: 8px; margin: 12px 0; }
-    .v-seg { flex: 1; background: rgba(255,255,255,0.1); border-radius: 1px; }
-    .v-seg.on { background: #4caf50; box-shadow: 0 0 5px #4caf50; }
-    .r-f-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .r-f-box { background: #000; padding: 6px; border-radius: 8px; font-size: 10px; text-align: center; border: 1px solid #333; }
+    .rack-card { background: rgba(0,0,0,0.6); padding: 12px; border-radius: 15px; margin-bottom: 8px; border-left: 4px solid #4caf50; }
+    .v-meter { display: flex; gap: 1px; height: 6px; margin: 10px 0; }
+    .v-seg { flex: 1; background: rgba(255,255,255,0.1); }
+    .v-seg.on { background: #4caf50; }
+    .r-f-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .r-f-box { background: #000; padding: 4px; border-radius: 6px; font-size: 9px; text-align: center; }
     .cyan { color: #00f9f9; }
     
-    .eco-hero { background: rgba(76,175,80,0.1); padding: 25px; border-radius: 24px; text-align: center; border: 1px solid rgba(76,175,80,0.2); margin-bottom: 25px; }
-    .e-big { font-size: 50px; font-weight: 900; color: #4caf50; }
-    .e-bar-wrap { height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 18px 0; overflow: hidden; }
-    .e-bar-fill { height: 100%; background: #4caf50; box-shadow: 0 0 10px #4caf50; }
-    .eco-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .stat-card { background: rgba(0,0,0,0.5); padding: 15px; border-radius: 18px; text-align: center; border: 1px solid #333; }
-    .s-label { font-size: 9px; opacity: 0.5; display: block; margin-bottom: 4px; }
-    .s-value { font-size: 18px; font-weight: bold; }
+    .eco-hero { background: rgba(76,175,80,0.1); padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 20px; }
+    .e-big { font-size: 40px; font-weight: 900; color: #4caf50; }
+    .e-bar-wrap { height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 15px 0; overflow: hidden; }
+    .e-bar-fill { height: 100%; background: #4caf50; }
+    .eco-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { background: rgba(0,0,0,0.5); padding: 12px; border-radius: 15px; text-align: center; }
+    .s-label { font-size: 8px; opacity: 0.5; display: block; }
+    .s-value { font-size: 16px; font-weight: bold; }
     .yellow { color: #ffc107; }
-    small { font-size: 14px; opacity: 0.7; margin-left: 4px; }
-    ha-icon { --mdc-icon-size: 20px; }
-    .battery-scroll { overflow-y: auto; max-height: 400px; padding-right: 5px; }
-    .battery-scroll::-webkit-scrollbar { width: 4px; }
-    .battery-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    small { font-size: 12px; opacity: 0.7; margin-left: 3px; }
+    ha-icon { --mdc-icon-size: 18px; }
+    .battery-scroll { overflow-y: auto; max-height: 400px; }
+    .battery-scroll::-webkit-scrollbar { width: 3px; }
+    .battery-scroll::-webkit-scrollbar-thumb { background: #333; }
   `;
 }
 customElements.define("solar-master-card", SolarMasterCard);
