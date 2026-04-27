@@ -4,22 +4,24 @@ import {
   css
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
-// --- ÉDITEUR ---
+// --- ÉDITEUR CORRIGÉ ---
 class SolarMasterCardEditor extends LitElement {
   static get properties() { return { hass: {}, _config: {}, _selectedTab: { type: String } }; }
   constructor() { super(); this._selectedTab = 'config_solar'; }
   setConfig(config) { this._config = config; }
+  
   _valueChanged(ev) {
     if (!this._config || !this.hass) return;
     const config = { ...this._config, ...ev.detail.value };
     this.dispatchEvent(new CustomEvent("config-changed", { detail: { config }, bubbles: true, composed: true }));
   }
+
   render() {
     if (!this.hass || !this._config) return html``;
     const schemas = {
       config_solar: [
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200, step: 10 } } },
-        { name: "background_image", label: "URL Image de fond", selector: { text: {} } },
+        { name: "background_image", label: "URL Image de fond (ex: /local/mon-toit.jpg)", selector: { text: {} } },
         { name: "bg_opacity", label: "Opacité Image (0.1 à 1)", selector: { number: { min: 0.1, max: 1, step: 0.1 } } },
         { name: "bg_blur", label: "Flou Image (px)", selector: { number: { min: 0, max: 20, step: 1 } } },
         { name: "entity_weather", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
@@ -53,7 +55,7 @@ class SolarMasterCardEditor extends LitElement {
 }
 if (!customElements.get("solar-master-card-editor")) customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
-// --- CARTE ---
+// --- CARTE PRINCIPALE ---
 class SolarMasterCard extends LitElement {
   static getConfigElement() { return document.createElement("solar-master-card-editor"); }
   static get properties() { return { hass: {}, config: {}, _tab: { type: String } }; }
@@ -74,9 +76,16 @@ class SolarMasterCard extends LitElement {
     const panels = [{n:c.p1_name,e:c.p1_w,x:c.p1_extra,c:"#ffc107"},{n:c.p2_name,e:c.p2_w,x:c.p2_extra,c:"#00f9f9"},{n:c.p3_name,e:c.p3_w,x:c.p3_extra,c:"#4caf50"},{n:c.p4_name,e:c.p4_w,x:c.p4_extra,c:"#e91e63"}].filter(p => p.e && this.hass.states[p.e]);
     const gridVal = parseFloat(this._get(c.grid_flow));
 
+    // Construction dynamique du style de fond
+    const bgStyle = c.background_image ? `
+      background-image: url('${c.background_image}');
+      opacity: ${c.bg_opacity || 0.4};
+      filter: blur(${c.bg_blur || 0}px);
+    ` : '';
+
     return html`
       <ha-card style="height:${c.card_height || 650}px;">
-        ${c.background_image ? html`<div class="bg-img" style="background-image: url('${c.background_image}'); opacity: ${c.bg_opacity || 0.4}; filter: blur(${c.bg_blur || 2}px);"></div>` : ''}
+        <div class="bg-layer" style="${bgStyle}"></div>
         <div class="overlay">
             <div class="top-nav">
                 <div class="t-badge"><ha-icon icon="mdi:weather-sunny"></ha-icon> ${this._translateWeather(this._get(c.entity_weather))}</div>
@@ -153,64 +162,65 @@ class SolarMasterCard extends LitElement {
 
   static styles = css`
     ha-card { border-radius: 28px; overflow: hidden; background: #000; color: #fff; font-family: 'Inter', sans-serif; position: relative; }
-    .bg-img { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-size: cover; background-position: center; z-index: 0; transition: 0.5s; }
-    .overlay { height: 100%; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box; position: relative; z-index: 1; background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%); }
+    
+    /* FIX IMAGE FOND */
+    .bg-layer { 
+      position: absolute; 
+      top: 0; left: 0; right: 0; bottom: 0; 
+      background-size: cover; 
+      background-position: center; 
+      z-index: 1; 
+      transition: all 0.5s ease-in-out; 
+    }
+
+    .overlay { 
+      height: 100%; 
+      display: flex; 
+      flex-direction: column; 
+      padding: 15px; 
+      box-sizing: border-box; 
+      position: relative; 
+      z-index: 2; /* Devant l'image */
+      background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%); 
+    }
     
     .top-nav { display: flex; gap: 8px; margin-bottom: 20px; }
-    .t-badge { background: rgba(255,255,255,0.06); padding: 7px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-    .t-badge.green { color: #4caf50; margin-left: auto; border: 1px solid rgba(76,175,80,0.2); }
+    .t-badge { background: rgba(255,255,255,0.08); padding: 7px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+    .t-badge.green { color: #4caf50; margin-left: auto; border: 1px solid rgba(76,175,80,0.3); }
     .export { color: #00f9f9; border: 1px solid rgba(0,249,249,0.3); }
     .import { color: #ff5252; border: 1px solid rgba(255,82,82,0.3); }
 
     .header-main { text-align: center; margin-bottom: 20px; }
-    .prod-label { font-size: 9px; letter-spacing: 2px; opacity: 0.5; font-weight: 800; margin-bottom: 5px; }
     .big-val { font-size: 58px; font-weight: 900; color: #ffc107; line-height: 0.9; }
     .big-val small { font-size: 18px; margin-left: 4px; opacity: 0.6; }
-    .pct-val { font-size: 10px; font-weight: 800; color: #ffc107; margin-top: 10px; }
-    .bar-wrap { height: 6px; background: rgba(255,255,255,0.08); width: 60%; margin: 6px auto; border-radius: 10px; overflow: hidden; }
+    .bar-wrap { height: 6px; background: rgba(255,255,255,0.1); width: 60%; margin: 8px auto; border-radius: 10px; overflow: hidden; }
     .bar-f { height: 100%; background: #ffc107; box-shadow: 0 0 15px rgba(255,193,7,0.6); }
-    .solar-sub-info { font-size: 9px; font-weight: 700; opacity: 0.6; margin-top: 5px; }
 
     .panels-row { display: flex; justify-content: space-around; margin-bottom: 20px; }
-    .hud-circle { width: 80px; height: 80px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); }
+    .hud-circle { width: 80px; height: 80px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); }
     .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 3.5s linear infinite; top:0; left:0; box-sizing: border-box; }
-    .hud-inner { text-align: center; }
     .v { font-size: 20px; font-weight: 900; }
-    .u { display: block; font-size: 7px; opacity: 0.3; font-weight: 900; }
-    .x { display: block; font-size: 7px; opacity: 0.6; font-weight: 700; }
-    .flow-arrow { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-size: 10px; animation: pulse 1.5s infinite; }
     .hud-n { font-size: 9px; font-weight: 800; margin-top: 10px; opacity: 0.7; text-align: center; }
 
     .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .d-box { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px); }
-    .d-l { display: block; font-size: 7px; opacity: 0.5; font-weight: 900; margin-bottom: 3px; }
+    .d-box { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
     .d-v { font-size: 13px; font-weight: 800; color: #00f9f9; }
 
-    /* --- BATTERIES FINES --- */
-    .rack { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 18px; margin-bottom: 10px; border-left: 3px solid #4caf50; backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.05); }
+    .rack { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 18px; margin-bottom: 10px; border-left: 3px solid #4caf50; backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.1); }
     .v-meter { display: flex; gap: 3px; height: 12px; margin: 12px 0; }
-    .v-seg { flex: 1; background: rgba(255,255,255,0.06); border-radius: 1px; width: 2px; } /* Traits plus fins */
+    .v-seg { flex: 1; background: rgba(255,255,255,0.08); border-radius: 1px; }
     .v-seg.on { background: #4caf50; box-shadow: 0 0 5px rgba(76,175,80,0.5); }
-    .r-h { display: flex; justify-content: space-between; font-size: 12px; }
-    .soc-v { color: #4caf50; font-weight: 900; }
-    .r-f-separated { display: flex; justify-content: space-between; gap: 8px; }
-    .r-f-item { flex: 1; background: rgba(255,255,255,0.04); padding: 6px; border-radius: 8px; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .r-f-item { background: rgba(255,255,255,0.05); padding: 6px; border-radius: 8px; font-size: 10px; display: flex; align-items: center; justify-content: center; gap: 4px; }
 
-    .eco-hero { background: linear-gradient(180deg, rgba(76,175,80,0.1) 0%, transparent 100%); padding: 15px; border-radius: 20px; text-align: center; border: 1px solid rgba(76,175,80,0.15); margin-bottom: 12px; }
-    .e-label { font-size: 9px; font-weight: 800; opacity: 0.5; letter-spacing: 1px; }
+    .eco-hero { background: rgba(76,175,80,0.05); padding: 15px; border-radius: 20px; text-align: center; border: 1px solid rgba(76,175,80,0.2); margin-bottom: 12px; backdrop-filter: blur(10px); }
     .e-big { font-size: 54px; font-weight: 900; color: #4caf50; line-height: 1; }
-    .e-target { font-size: 10px; margin-top: 5px; font-weight: 700; color: #4caf50; opacity: 0.7; }
-    .e-bar-wrap { height: 6px; background: rgba(255,255,255,0.06); border-radius: 10px; margin: 8px 0; overflow: hidden; }
+    .e-bar-wrap { height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 8px 0; overflow: hidden; }
     .e-bar-fill { height: 100%; background: #4caf50; }
-    .e-price-tag { font-size: 10px; opacity: 0.4; font-weight: bold; }
 
-    .eco-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .stat-card { background: rgba(255,255,255,0.03); padding: 12px 5px; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
-    .s-label { display: block; font-size: 7px; font-weight: 900; opacity: 0.4; margin-bottom: 4px; }
-    .s-value { font-size: 13px; font-weight: 900; }
+    .stat-card { background: rgba(255,255,255,0.05); padding: 12px 5px; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
 
-    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.8); padding: 10px; border-radius: 22px; margin-top: auto; backdrop-filter: blur(15px); }
-    .n-btn { opacity: 0.3; cursor: pointer; transition: 0.4s; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; }
+    .nav-footer { display: flex; justify-content: space-around; background: rgba(20,20,20,0.9); padding: 10px; border-radius: 22px; margin-top: auto; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+    .n-btn { opacity: 0.4; cursor: pointer; transition: 0.4s; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; }
     .n-btn.active { opacity: 1; color: #ffc107; }
 
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
