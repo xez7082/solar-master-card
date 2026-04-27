@@ -4,6 +4,9 @@ import {
   css
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
+/**
+ * EDITEUR DE LA CARTE
+ */
 class SolarMasterCardEditor extends LitElement {
   static get properties() { return { hass: {}, _config: {}, _selectedTab: { type: String } }; }
   constructor() { super(); this._selectedTab = 'tab_solar'; }
@@ -28,7 +31,7 @@ class SolarMasterCardEditor extends LitElement {
         { name: "total_now_label", label: "Titre Production Centrale", selector: { text: {} } },
         { name: "total_now", label: "Entité Production (W)", selector: { entity: {} } },
         ...[4, 5, 6, 7, 8, 9].map(i => [
-          { name: `d${i}_label`, label: `Titre Individuel D${i}` },
+          { name: `d${i}_label`, label: `NOM CAPTEUR D${i}` },
           { name: `d${i}_entity`, label: `Entité D${i}`, selector: { entity: {} } }
         ]).flat(),
         ...[1, 2, 3, 4].map(i => [
@@ -82,6 +85,9 @@ class SolarMasterCardEditor extends LitElement {
 }
 customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
+/**
+ * CORPS DE LA CARTE
+ */
 class SolarMasterCard extends LitElement {
   static getConfigElement() { return document.createElement("solar-master-card-editor"); }
   static get properties() { return { hass: {}, config: {}, _tab: { type: String } }; }
@@ -235,12 +241,12 @@ class SolarMasterCard extends LitElement {
 
     .mini-diag { background:rgba(0,0,0,0.6); padding:8px; border-radius:8px; margin:4px 0; border-left:4px solid #00f9f9; width:115px; }
     .mini-diag.r { border-left:none; border-right:4px solid #ffc107; margin-left:auto; text-align: right; }
-    .m-l { font-size: 8px; opacity: 0.8; display: block; text-transform: uppercase; color: #eee; min-height: 10px; }
+    .m-l { font-size: 8px; opacity: 0.8; display: block; text-transform: uppercase; color: #eee; min-height: 10px; font-weight:bold; }
     .m-v { font-size:13px; font-weight:bold; }
     
     .center { text-align: center; }
     .c-label { font-size: 10px; font-weight: 900; color: #ffc107; margin-bottom: 5px; text-transform: uppercase; }
-    .big-val-titan { font-size:68px; font-weight:900; color:#ffc107; line-height:0.8; }
+    .big-val-titan { font-size:68px; font-weight:900; color:#ffc107; line-height:0.8; text-align:center; }
 
     .panels-row { display:flex; justify-content:space-around; margin-top:35px; }
     .hud-circle-giant { width:78px; height:78px; border-radius:50%; border:3px solid; position:relative; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); }
@@ -270,6 +276,11 @@ class SolarMasterCard extends LitElement {
     .scroll { overflow-y:auto; max-height:480px; }
   `;
 }
+
 customElements.define("solar-master-card", SolarMasterCard);
 window.customCards = window.customCards || [];
-window.customCards.push({ type: "solar-master-card", name: "Solar Master Card", description: "v2.8.0 - Visibility Fix" });
+window.customCards.push({
+  type: "solar-master-card",
+  name: "Solar Master v3.0",
+  description: "Version Complète avec Titres Individuels"
+});
