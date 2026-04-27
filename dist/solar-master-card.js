@@ -18,6 +18,7 @@ class SolarMasterCardEditor extends LitElement {
   }
 
   _valueChanged(ev) {
+    if (!this._config || !this.hass) return;
     const config = { ...this._config, ...ev.detail.value };
     this.dispatchEvent(new CustomEvent("config-changed", {
       detail: { config },
@@ -31,15 +32,18 @@ class SolarMasterCardEditor extends LitElement {
 
     const schema = [
       { name: "total_now", label: "Production (W)", selector: { entity: {} } },
-      { name: "total_now_label", label: "Titre", selector: { text: {} } },
-
-      ...[4,5,6,7,8,9].flatMap(i => [
-        { name: `d${i}_label`, label: `Nom D${i}`, selector: { text: {} } },
+      { name: "total_now_label", label: "Titre Central", selector: { text: {} } },
+      { name: "weather_entity", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
+      
+      { label: "--- CAPTEURS LATERAUX (D4-D9) ---", type: "header" },
+      ...[4, 5, 6, 7, 8, 9].flatMap(i => [
+        { name: `d${i}_label`, label: `Titre D${i}`, selector: { text: {} } },
         { name: `d${i}_entity`, label: `Entité D${i}`, selector: { entity: {} } }
       ]),
 
-      ...[1,2,3,4].flatMap(i => [
-        { name: `p${i}_name`, label: `Nom P${i}`, selector: { text: {} } },
+      { label: "--- CERCLES BAS (P1-P4) ---", type: "header" },
+      ...[1, 2, 3, 4].flatMap(i => [
+        { name: `p${i}_name`, label: `Nom Cercle P${i}`, selector: { text: {} } },
         { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }
       ])
     ];
@@ -71,12 +75,6 @@ class SolarMasterCard extends LitElement {
     return { hass: {}, config: {} };
   }
 
-  constructor() {
-    super();
-    this.config = {};
-  }
-
-  /* ✅ FIX CRUCIAL */
   setConfig(config) {
     if (!config) throw new Error("Configuration invalide");
     this.config = config;
@@ -103,11 +101,10 @@ class SolarMasterCard extends LitElement {
     `;
   }
 
-  /* ================= COCKPIT ================= */
-
   _renderCockpit() {
     const c = this.config;
     const prod = this._getVal(c.total_now);
+    const weather = this.hass.states[c.weather_entity];
 
     const sun = this.hass.states["sun.sun"];
     const elev = sun ? sun.attributes.elevation : 0;
@@ -118,40 +115,42 @@ class SolarMasterCard extends LitElement {
     return html`
       <div class="wrap">
 
-        <!-- ARC -->
+        ${weather ? html`
+          <div class="weather-top">
+             <ha-icon icon="mdi:weather-${weather.state.replace('partlycloudy', 'partly-cloudy')}"></ha-icon>
+             <span>${weather.attributes.temperature}°C</span>
+          </div>
+        ` : ''}
+
         <svg viewBox="0 0 400 100" class="arc">
           <path d="M0,90 Q200,-20 400,90" />
         </svg>
 
-        <!-- SOLEIL -->
         <div class="sun"
-          style="left:${pos}%; opacity:${0.5 + glow};
-          transform:translateX(-50%) scale(${0.8 + glow});">
-          ☀
-          <span>${elev.toFixed(1)}°</span>
+          style="left:${Math.max(5, Math.min(95, pos))}%; opacity:${0.5 + (glow * 0.5)};
+          transform:translateX(-50%) scale(${0.8 + (glow * 0.4)}); text-shadow: 0 0 ${10*glow}px gold;">
+          ☀️
+          <div class="elev">${elev.toFixed(1)}°</div>
         </div>
 
-        <!-- PRODUCTION -->
         <div class="center">
           <div class="prod" style="text-shadow:0 0 ${20 * glow}px #ffc107">
-            ${Math.round(prod.val)}
+            ${Math.round(prod.val)}<small>W</small>
           </div>
-          <div class="label">${c.total_now_label || "PRODUCTION"}</div>
+          <div class="label-main">${c.total_now_label || "PRODUCTION"}</div>
         </div>
 
-        <!-- CAPTEURS -->
         <div class="sides">
-          <div>
-            ${[4,5,6].map(i => this._diag(i))}
+          <div class="col">
+            ${[4, 5, 6].map(i => this._diag(i, 'left'))}
           </div>
-          <div>
-            ${[7,8,9].map(i => this._diag(i))}
+          <div class="col">
+            ${[7, 8, 9].map(i => this._diag(i, 'right'))}
           </div>
         </div>
 
-        <!-- CERCLES -->
         <div class="circles">
-          ${[1,2,3,4].map(i => {
+          ${[1, 2, 3, 4].map(i => {
             if (!c[`p${i}_w`]) return "";
             const v = this._getVal(c[`p${i}_w`]);
 
@@ -169,101 +168,136 @@ class SolarMasterCard extends LitElement {
     `;
   }
 
-  _diag(i) {
+  _diag(i, align) {
     const c = this.config;
     if (!c[`d${i}_entity`]) return "";
 
     const d = this._getVal(c[`d${i}_entity`]);
 
     return html`
-      <div class="diag">
-        <span>${c[`d${i}_label`] || "D"+i}</span>
-        <b>${d.val}${d.unit}</b>
+      <div class="diag" style="border-${align}: 3px solid #ffc107aa">
+        <div class="d-lab">${c[`d${i}_label`] || "CAPTEUR D"+i}</div>
+        <div class="d-val">${d.val} <small>${d.unit}</small></div>
       </div>
     `;
   }
 
   static styles = css`
     ha-card {
-      background:#000;
-      color:#fff;
-      border-radius:20px;
-      padding:20px;
+      background: rgba(0,0,0,0.9);
+      color: #fff;
+      border-radius: 24px;
+      padding: 15px;
+      overflow: hidden;
+      font-family: 'Segoe UI', Roboto, sans-serif;
     }
 
-    .wrap { position:relative; height:500px; }
+    .wrap { position: relative; min-height: 480px; }
+
+    .weather-top {
+      position: absolute;
+      top: 0;
+      left: 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: bold;
+      color: #00f9f9;
+    }
+
+    .arc {
+      width: 100%;
+      height: auto;
+      margin-top: 10px;
+    }
 
     .arc path {
-      fill:none;
-      stroke:#ffc10755;
-      stroke-width:2;
-      stroke-dasharray:6;
+      fill: none;
+      stroke: #ffc10722;
+      stroke-width: 1;
+      stroke-dasharray: 4;
     }
 
     .sun {
-      position:absolute;
-      bottom:20px;
-      color:#ffc107;
-      text-align:center;
-      transition:0.3s;
+      position: absolute;
+      top: 10px;
+      font-size: 24px;
+      text-align: center;
+      transition: 0.5s ease-out;
+      z-index: 2;
     }
+    .elev { font-size: 10px; color: #aaa; }
 
-    .center { text-align:center; margin-top:60px; }
+    .center { text-align: center; margin-top: 10px; }
 
     .prod {
-      font-size:70px;
-      font-weight:900;
-      color:#ffc107;
+      font-size: 64px;
+      font-weight: 900;
+      color: #ffc107;
+      line-height: 1;
+    }
+    .prod small { font-size: 20px; margin-left: 4px; }
+
+    .label-main {
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      opacity: 0.7;
+      text-transform: uppercase;
+      margin-top: 5px;
     }
 
     .sides {
-      display:flex;
-      justify-content:space-between;
-      margin-top:20px;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      gap: 10px;
     }
+    .col { flex: 1; display: flex; flex-direction: column; gap: 8px; }
 
     .diag {
-      background:#111;
-      padding:8px;
-      margin:4px;
-      border-radius:8px;
-      font-size:11px;
+      background: rgba(255,255,255,0.05);
+      padding: 8px 12px;
+      border-radius: 6px;
     }
+    .d-lab { font-size: 9px; text-transform: uppercase; opacity: 0.6; font-weight: bold; }
+    .d-val { font-size: 15px; font-weight: bold; }
 
     .circles {
-      display:flex;
-      justify-content:space-around;
-      margin-top:30px;
+      display: flex;
+      justify-content: space-around;
+      margin-top: 40px;
     }
 
     .circle {
-      position:relative;
-      width:70px;
-      height:70px;
-      border-radius:50%;
-      border:2px solid #ffc10744;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
+      position: relative;
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      border: 1px solid #ffc10733;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,193,7,0.03);
     }
 
     .scan {
-      position:absolute;
-      width:100%;
-      height:100%;
-      border-radius:50%;
-      border-top:2px solid #ffc107;
-      animation:spin 3s linear infinite;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border-top: 2px solid #ffc107;
+      animation: spin 4s linear infinite;
     }
 
     @keyframes spin {
-      from { transform:rotate(0); }
-      to { transform:rotate(360deg); }
+      from { transform: rotate(0); }
+      to { transform: rotate(360deg); }
     }
 
-    .val { font-weight:bold; }
-    .name { font-size:10px; }
+    .val { font-size: 16px; font-weight: 900; color: #ffc107; }
+    .name { font-size: 9px; text-transform: uppercase; opacity: 0.8; }
   `;
 }
 
@@ -274,5 +308,5 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "solar-master-card",
   name: "Solar Master V5 Cockpit",
-  description: "Cockpit solaire avancé"
+  description: "Cockpit solaire corrigé avec labels et météo"
 });
