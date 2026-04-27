@@ -5,7 +5,7 @@ import {
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
 /* =========================
-   EDITOR (simplifié propre)
+   🧠 EDITOR
 ========================= */
 
 class SolarMasterCardEditor extends LitElement {
@@ -30,17 +30,17 @@ class SolarMasterCardEditor extends LitElement {
     if (!this.hass || !this._config) return html``;
 
     const schema = [
-      { name: "total_now", selector: { entity: {} } },
-      { name: "total_now_label", selector: { text: {} } },
+      { name: "total_now", label: "Production (W)", selector: { entity: {} } },
+      { name: "total_now_label", label: "Titre", selector: { text: {} } },
 
       ...[4,5,6,7,8,9].flatMap(i => [
-        { name: `d${i}_label`, selector: { text: {} } },
-        { name: `d${i}_entity`, selector: { entity: {} } }
+        { name: `d${i}_label`, label: `Nom D${i}`, selector: { text: {} } },
+        { name: `d${i}_entity`, label: `Entité D${i}`, selector: { entity: {} } }
       ]),
 
       ...[1,2,3,4].flatMap(i => [
-        { name: `p${i}_name`, selector: { text: {} } },
-        { name: `p${i}_w`, selector: { entity: {} } }
+        { name: `p${i}_name`, label: `Nom P${i}`, selector: { text: {} } },
+        { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }
       ])
     ];
 
@@ -58,7 +58,7 @@ class SolarMasterCardEditor extends LitElement {
 customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
 /* =========================
-   CARD V5 COCKPIT
+   ⚡ CARD V5 COCKPIT
 ========================= */
 
 class SolarMasterCard extends LitElement {
@@ -69,6 +69,17 @@ class SolarMasterCard extends LitElement {
 
   static get properties() {
     return { hass: {}, config: {} };
+  }
+
+  constructor() {
+    super();
+    this.config = {};
+  }
+
+  /* ✅ FIX CRUCIAL */
+  setConfig(config) {
+    if (!config) throw new Error("Configuration invalide");
+    this.config = config;
   }
 
   _getVal(id) {
@@ -107,24 +118,22 @@ class SolarMasterCard extends LitElement {
     return html`
       <div class="wrap">
 
-        <!-- ARC SOLAIRE -->
+        <!-- ARC -->
         <svg viewBox="0 0 400 100" class="arc">
           <path d="M0,90 Q200,-20 400,90" />
         </svg>
 
         <!-- SOLEIL -->
-        <div class="sun" style="
-          left:${pos}%;
-          opacity:${0.5 + glow};
-          transform:translateX(-50%) scale(${0.8 + glow});
-        ">
+        <div class="sun"
+          style="left:${pos}%; opacity:${0.5 + glow};
+          transform:translateX(-50%) scale(${0.8 + glow});">
           ☀
           <span>${elev.toFixed(1)}°</span>
         </div>
 
         <!-- PRODUCTION -->
         <div class="center">
-          <div class="prod" style="text-shadow:0 0 ${20*glow}px #ffc107">
+          <div class="prod" style="text-shadow:0 0 ${20 * glow}px #ffc107">
             ${Math.round(prod.val)}
           </div>
           <div class="label">${c.total_now_label || "PRODUCTION"}</div>
@@ -132,10 +141,10 @@ class SolarMasterCard extends LitElement {
 
         <!-- CAPTEURS -->
         <div class="sides">
-          <div class="left">
+          <div>
             ${[4,5,6].map(i => this._diag(i))}
           </div>
-          <div class="right">
+          <div>
             ${[7,8,9].map(i => this._diag(i))}
           </div>
         </div>
@@ -175,21 +184,15 @@ class SolarMasterCard extends LitElement {
   }
 
   static styles = css`
-
     ha-card {
       background:#000;
       color:#fff;
       border-radius:20px;
       padding:20px;
-      overflow:hidden;
     }
 
-    .wrap {
-      position:relative;
-      height:500px;
-    }
+    .wrap { position:relative; height:500px; }
 
-    /* ARC */
     .arc path {
       fill:none;
       stroke:#ffc10755;
@@ -197,41 +200,22 @@ class SolarMasterCard extends LitElement {
       stroke-dasharray:6;
     }
 
-    /* SUN */
     .sun {
       position:absolute;
       bottom:20px;
       color:#ffc107;
-      font-size:20px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
+      text-align:center;
       transition:0.3s;
     }
 
-    .sun span {
-      font-size:10px;
-    }
-
-    /* CENTER */
-    .center {
-      text-align:center;
-      margin-top:60px;
-    }
+    .center { text-align:center; margin-top:60px; }
 
     .prod {
       font-size:70px;
       font-weight:900;
       color:#ffc107;
-      transition:0.3s;
     }
 
-    .label {
-      font-size:12px;
-      opacity:0.7;
-    }
-
-    /* DIAGS */
     .sides {
       display:flex;
       justify-content:space-between;
@@ -246,7 +230,6 @@ class SolarMasterCard extends LitElement {
       font-size:11px;
     }
 
-    /* CIRCLES */
     .circles {
       display:flex;
       justify-content:space-around;
@@ -279,23 +262,17 @@ class SolarMasterCard extends LitElement {
       to { transform:rotate(360deg); }
     }
 
-    .val {
-      font-weight:bold;
-    }
-
-    .name {
-      font-size:10px;
-    }
+    .val { font-weight:bold; }
+    .name { font-size:10px; }
   `;
 }
 
 customElements.define("solar-master-card", SolarMasterCard);
 
 /* REGISTER */
-
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "solar-master-card",
   name: "Solar Master V5 Cockpit",
-  description: "Cockpit solaire avancé animé"
+  description: "Cockpit solaire avancé"
 });
