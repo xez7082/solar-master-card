@@ -23,44 +23,44 @@ class SolarMasterCardEditor extends LitElement {
         { name: "bg_url", label: "URL Image de Fond", selector: { text: {} } },
         { name: "bg_opacity", label: "Opacité Fond (0.1 à 1.0)", selector: { number: { min: 0.1, max: 1, step: 0.1 } } },
         { name: "bg_blur", label: "Flou Fond (px)", selector: { number: { min: 0, max: 20 } } },
-        { name: "title_left", label: "TITRE GROUPE GAUCHE", selector: { text: {} } },
-        { name: "title_right", label: "TITRE GROUPE DROITE", selector: { text: {} } },
+        { name: "title_left", label: "TITRE GROUPE GAUCHE (D4-D6)", selector: { text: {} } },
+        { name: "title_right", label: "TITRE GROUPE DROITE (D7-D9)", selector: { text: {} } },
         { name: "total_now_label", label: "Titre Production Centrale", selector: { text: {} } },
         { name: "total_now", label: "Entité Production (W)", selector: { entity: {} } },
         ...[4, 5, 6, 7, 8, 9].map(i => [
-          { name: `d${i}_label`, label: `Titre Capteur D${i}` },
+          { name: `d${i}_label`, label: `Titre Individuel D${i}` },
           { name: `d${i}_entity`, label: `Entité D${i}`, selector: { entity: {} } }
         ]).flat(),
         ...[1, 2, 3, 4].map(i => [
           { name: `p${i}_name`, label: `Titre Cercle P${i}` },
           { name: `p${i}_w`, label: `Entité Watts P${i}`, selector: { entity: {} } },
-          { name: `p${i}_sub_label`, label: `Titre Sous-cercle P${i}` },
-          { name: `p${i}_sub`, label: `Entité Sous-cercle P${i}`, selector: { entity: {} } }
+          { name: `p${i}_sub_label`, label: `Titre Valeur Basse P${i}` },
+          { name: `p${i}_sub`, label: `Entité Valeur Basse P${i}`, selector: { entity: {} } }
         ]).flat()
       ],
       tab_batt: [...[1, 2, 3, 4].map(i => [
         { name: `b${i}_n`, label: `Nom Batterie ${i}` },
         { name: `b${i}_s`, label: `Entité SOC % ${i}`, selector: { entity: {} } },
-        { name: `b${i}_cap_label`, label: `Titre Capacité ${i}` },
-        { name: `b${i}_cap`, label: `Entité Capacité ${i}`, selector: { entity: {} } },
-        { name: `b${i}_temp_label`, label: `Titre Température ${i}` },
-        { name: `b${i}_temp`, label: `Entité Température ${i}`, selector: { entity: {} } },
-        { name: `b${i}_v_label`, label: `Titre Voltage ${i}` },
-        { name: `b${i}_v`, label: `Entité Voltage ${i}`, selector: { entity: {} } },
-        { name: `b${i}_a_label`, label: `Titre Ampérage ${i}` },
-        { name: `b${i}_a`, label: `Entité Ampérage ${i}`, selector: { entity: {} } }
+        { name: `b${i}_cap_label`, label: `Label Capacité` },
+        { name: `b${i}_cap`, label: `Entité Capacité`, selector: { entity: {} } },
+        { name: `b${i}_temp_label`, label: `Label Température` },
+        { name: `b${i}_temp`, label: `Entité Température`, selector: { entity: {} } },
+        { name: `b${i}_v_label`, label: `Label Voltage` },
+        { name: `b${i}_v`, label: `Entité Voltage`, selector: { entity: {} } },
+        { name: `b${i}_a_label`, label: `Label Ampérage` },
+        { name: `b${i}_a`, label: `Entité Ampérage`, selector: { entity: {} } }
       ]).flat()],
       tab_eco: [
-        { name: "eco_money_label", label: "Titre Solde Total", selector: { text: {} } },
-        { name: "eco_money", label: "Entité Solde (€)", selector: { entity: {} } },
-        { name: "eco_day_label", label: "Titre Gain Jour", selector: { text: {} } },
-        { name: "eco_day_euro", label: "Entité Gain Jour", selector: { entity: {} } },
-        { name: "eco_year_label", label: "Titre Gain An", selector: { text: {} } },
-        { name: "eco_year_euro", label: "Entité Gain An", selector: { entity: {} } },
-        { name: "kwh_price_label", label: "Titre Tarif EDF", selector: { text: {} } },
-        { name: "kwh_price", label: "Entité Tarif (€)", selector: { entity: {} } },
-        { name: "main_cons_label", label: "Titre Conso Maison", selector: { text: {} } },
-        { name: "main_cons_entity", label: "Entité Conso (W)", selector: { entity: {} } }
+        { name: "eco_money_label", label: "Label Économies Totales", selector: { text: {} } },
+        { name: "eco_money", label: "Entité Total (€)", selector: { entity: {} } },
+        { name: "eco_day_label", label: "Label Gain Jour", selector: { text: {} } },
+        { name: "eco_day_euro", label: "Entité Jour (€)", selector: { entity: {} } },
+        { name: "eco_year_label", label: "Label Gain Année", selector: { text: {} } },
+        { name: "eco_year_euro", label: "Entité Année (€)", selector: { entity: {} } },
+        { name: "kwh_price_label", label: "Label Prix kWh", selector: { text: {} } },
+        { name: "kwh_price", label: "Entité Prix kWh", selector: { entity: {} } },
+        { name: "main_cons_label", label: "Label Conso Maison", selector: { text: {} } },
+        { name: "main_cons_entity", label: "Entité Maison (W)", selector: { entity: {} } }
       ]
     };
 
@@ -150,6 +150,7 @@ class SolarMasterCard extends LitElement {
           ${[1, 2, 3, 4].map(i => {
             if (!c[`p${i}_w`]) return '';
             const s = this._getVal(c[`p${i}_w`]);
+            const sub = this._getVal(c[`p${i}_sub`]);
             const colors = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"];
             return html`
               <div class="hud-item-giant">
@@ -158,8 +159,10 @@ class SolarMasterCard extends LitElement {
                   <div class="v" style="color:${colors[i-1]}">${Math.round(s.val)}</div>
                 </div>
                 <div class="hud-n">${c[`p${i}_name`] || 'P'+i}</div>
-                <div class="hud-sub-label">${c[`p${i}_sub_label`] || ''}</div>
-                <div class="hud-sub-giant">${this._getVal(c[`p${i}_sub`]).val}</div>
+                <div class="hud-sub-container">
+                   <div class="hud-sub-label">${c[`p${i}_sub_label`] || ''}</div>
+                   <div class="hud-sub-val" style="color:${colors[i-1]}">${sub.val}${sub.unit}</div>
+                </div>
               </div>`;
           })}
         </div>
@@ -202,7 +205,7 @@ class SolarMasterCard extends LitElement {
     const c = this.config;
     return html`<div class="page">
       <div class="eco-main-card">
-        <div class="e-header">${c.eco_money_label || 'ÉCONOMIES RÉALISÉES'}</div>
+        <div class="e-header">${c.eco_money_label || 'SOLDE TOTAL'}</div>
         <div class="e-value-big">${this._getVal(c.eco_money).val}€</div>
         <div class="e-stats-row">
             <div class="e-stat"><span>${c.eco_day_label || 'JOUR'}</span><b>+${this._getVal(c.eco_day_euro).val}€</b></div>
@@ -227,25 +230,26 @@ class SolarMasterCard extends LitElement {
     
     .cockpit { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; height: 100%; }
     .side { flex: 1; }
-    .group-title { font-size: 10px; font-weight: 900; color: #00f9f9; text-transform: uppercase; margin-bottom: 5px; }
+    .group-title { font-size: 10px; font-weight: 900; color: #00f9f9; text-transform: uppercase; margin-bottom: 5px; height: 12px; }
     .group-title.right { text-align: right; color: #ffc107; }
 
     .mini-diag { background:rgba(0,0,0,0.6); padding:8px; border-radius:8px; margin:4px 0; border-left:4px solid #00f9f9; width:115px; }
     .mini-diag.r { border-left:none; border-right:4px solid #ffc107; margin-left:auto; text-align: right; }
-    .m-l { font-size: 8px; opacity: 0.8; display: block; text-transform: uppercase; color: #eee; }
+    .m-l { font-size: 8px; opacity: 0.8; display: block; text-transform: uppercase; color: #eee; min-height: 10px; }
     .m-v { font-size:13px; font-weight:bold; }
     
     .center { text-align: center; }
-    .c-label { font-size: 10px; font-weight: 900; color: #ffc107; margin-bottom: 5px; }
+    .c-label { font-size: 10px; font-weight: 900; color: #ffc107; margin-bottom: 5px; text-transform: uppercase; }
     .big-val-titan { font-size:68px; font-weight:900; color:#ffc107; line-height:0.8; }
 
     .panels-row { display:flex; justify-content:space-around; margin-top:35px; }
     .hud-circle-giant { width:78px; height:78px; border-radius:50%; border:3px solid; position:relative; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); }
     .scan { position:absolute; width:100%; height:100%; border:3px solid transparent; border-radius:50%; animation:rotate 4s linear infinite; top:-3px; left:-3px; padding:3px; box-sizing:content-box; }
     @keyframes rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-    .hud-n { font-size:10px; font-weight:bold; text-align:center; margin-top:8px; }
-    .hud-sub-label { font-size: 7px; opacity: 0.6; text-align: center; text-transform: uppercase; }
-    .hud-sub-giant { font-size:13px; color:#00f9f9; font-weight:bold; text-align:center; }
+    .hud-n { font-size:10px; font-weight:bold; text-align:center; margin-top:8px; text-transform: uppercase; }
+    .hud-sub-container { text-align: center; margin-top: 2px; }
+    .hud-sub-label { font-size: 7px; opacity: 0.6; text-transform: uppercase; }
+    .hud-sub-val { font-size:12px; font-weight:bold; }
 
     .rack { background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; margin-bottom:10px; border-left:5px solid #4caf50; }
     .r-h { display:flex; justify-content:space-between; font-weight:bold; }
@@ -268,4 +272,4 @@ class SolarMasterCard extends LitElement {
 }
 customElements.define("solar-master-card", SolarMasterCard);
 window.customCards = window.customCards || [];
-window.customCards.push({ type: "solar-master-card", name: "Solar Master Card", description: "v2.7.0 - Total Labels Control" });
+window.customCards.push({ type: "solar-master-card", name: "Solar Master Card", description: "v2.8.0 - Visibility Fix" });
