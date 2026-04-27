@@ -4,7 +4,7 @@ import {
   css
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
-// --- ÉDITEUR ---
+// --- ÉDITEUR COMPLET ---
 class SolarMasterCardEditor extends LitElement {
   static get properties() { return { hass: {}, _config: {}, _selectedTab: { type: String } }; }
   constructor() { super(); this._selectedTab = 'config_solar'; }
@@ -18,31 +18,36 @@ class SolarMasterCardEditor extends LitElement {
     if (!this.hass || !this._config) return html``;
     const schemas = {
       config_solar: [
-        { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200, step: 10 } } },
-        { name: "background_image", label: "URL Image de fond", selector: { text: {} } },
-        { name: "entity_weather", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
-        { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
+        { name: "card_height", label: "Hauteur Totale Carte (px)", selector: { number: { min: 400, max: 1200, step: 10 } } },
+        { name: "entity_weather", label: "Météo", selector: { entity: { domain: "weather" } } },
+        { name: "total_now", label: "Prod Totale (W)", selector: { entity: {} } },
+        { name: "grid_flow", label: "Réseau (W)", selector: { entity: {} } },
         ...[1,2,3,4].map(i => [{ name: `p${i}_name`, label: `Nom P${i}` }, { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }]).flat()
       ],
       config_batt: [
         ...[1,2,3,4].map(i => [
             { name: `b${i}_n`, label: `Nom Bat ${i}` },
             { name: `b${i}_s`, label: `SOC % Bat ${i}`, selector: { entity: {} } },
-            { name: `b${i}_v`, label: `Sensor Gauche (ex: Volt) Bat ${i}`, selector: { entity: {} } },
+            { name: `b${i}_v`, label: `Volt (Gauche) Bat ${i}`, selector: { entity: {} } },
             { name: `b${i}_temp`, label: `Temp Bat ${i}`, selector: { entity: {} } },
             { name: `b${i}_cap`, label: `Capacité Bat ${i}`, selector: { entity: {} } },
-            { name: `b${i}_a`, label: `Sensor Droite (ex: Amp) Bat ${i}`, selector: { entity: {} } }
+            { name: `b${i}_a`, label: `Amp (Droite) Bat ${i}`, selector: { entity: {} } }
         ]).flat()
+      ],
+      config_stats: [
+        { name: "eco_money", label: "Total Économisé (€)", selector: { entity: {} } },
+        { name: "eco_day_euro", label: "Gain Jour (€)", selector: { entity: {} } },
+        { name: "main_cons_entity", label: "Conso Maison (W)", selector: { entity: {} } }
       ]
     };
     return html`
       <div class="tabs">
-        ${['config_solar','config_batt'].map(t => html`<button class="${this._selectedTab===t?'active':''}" @click=${()=>this._selectedTab=t}>${t === 'config_solar' ? 'SOLAIRE' : 'BATTERIES'}</button>`)}
+        ${['config_solar','config_batt','config_stats'].map(t => html`<button class="${this._selectedTab===t?'active':''}" @click=${()=>this._selectedTab=t}>${t.split('_')[1].toUpperCase()}</button>`)}
       </div>
       <ha-form .hass=${this.hass} .data=${this._config} .schema=${schemas[this._selectedTab]} @value-changed=${this._valueChanged}></ha-form>
     `;
   }
-  static styles = css`.tabs{display:flex;gap:5px;margin-bottom:15px}button{flex:1;padding:10px;background:#2c2c2c;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:11px;font-weight:bold}button.active{background:#ffc107;color:#000}`;
+  static styles = css`.tabs{display:flex;gap:5px;margin-bottom:15px}button{flex:1;padding:10px;background:#2c2c2c;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:10px;font-weight:bold}button.active{background:#ffc107;color:#000}`;
 }
 if (!customElements.get("solar-master-card-editor")) customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
@@ -53,99 +58,126 @@ class SolarMasterCard extends LitElement {
   constructor() { super(); this._tab = 'solar'; }
   setConfig(config) { this.config = config; }
   
-  _get(id) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].state : '--'; }
+  _get(id) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].state : '0'; }
   _getU(id) { return (this.hass && id && this.hass.states[id]) ? this.hass.states[id].attributes.unit_of_measurement || '' : ''; }
 
   render() {
     if (!this.config || !this.hass) return html``;
     const c = this.config;
+    const panels = [1,2,3,4].map(i => ({n:c[`p${i}_name`], e:c[`p${i}_w`] })).filter(p => p.e && this.hass.states[p.e]);
 
     return html`
       <ha-card style="height:${c.card_height || 650}px;">
         <div class="overlay">
-            <div class="content">
+            <div class="top-nav">
+                <div class="t-badge"><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon> ${this._get(c.entity_weather)}</div>
+                <div class="t-badge"><ha-icon icon="mdi:transmission-tower"></ha-icon> ${this._get(c.grid_flow)}W</div>
+            </div>
+
+            <div class="main-content">
                 ${this._tab === 'solar' ? html`
                     <div class="page">
-                        <div class="header-main">
-                            <div class="big-val">${this._get(c.total_now)}<small>W</small></div>
+                        <div class="big-display">
+                            <span class="val">${this._get(c.total_now)}</span><span class="unit">WATTS</span>
                         </div>
-                    </div>` 
+                        <div class="p-grid">
+                            ${panels.map(p => html`
+                                <div class="p-item">
+                                    <div class="p-val">${Math.round(this._get(p.e))}</div>
+                                    <div class="p-name">${p.n}</div>
+                                </div>
+                            `)}
+                        </div>
+                    </div>`
 
                 : this._tab === 'batt' ? html`
-                    <div class="page battery-page">
+                    <div class="page battery-scroll">
                         ${[1,2,3,4].map(i => c[`b${i}_s`] ? html`
-                            <div class="rack-card">
-                                <div class="r-h">
-                                   <span class="r-n">${c[`b${i}_n`]}</span>
-                                   <span class="soc-v">${this._get(c[`b${i}_s`])}%</span>
+                            <div class="b-card">
+                                <div class="b-head"><span>${c[`b${i}_n`]}</span> <b>${this._get(c[`b${i}_s`])}%</b></div>
+                                <div class="led-bar">
+                                    ${[...Array(40)].map((_, idx) => html`<div class="led ${parseInt(this._get(c[`b${i}_s`])) > (idx * 2.5) ? 'on' : ''}"></div>`)}
                                 </div>
-                                <div class="v-meter">
-                                    ${[...Array(45)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 2.22) ? 'on' : ''}"></div>`)}
-                                </div>
-                                <div class="r-f-grid-4">
-                                    <div class="r-f-box cyan-text">${this._get(c[`b${i}_v` ])}<small>${this._getU(c[`b${i}_v` ])}</small></div>
-                                    <div class="r-f-box"><ha-icon icon="mdi:thermometer"></ha-icon>${this._get(c[`b${i}_temp`])}°</div>
-                                    <div class="r-f-box"><ha-icon icon="mdi:battery-import"></ha-icon>${this._get(c[`b${i}_cap`])}<small>${this._getU(c[`b${i}_cap` ])}</small></div>
-                                    <div class="r-f-box cyan-text">${this._get(c[`b${i}_a` ])}<small>${this._getU(c[`b${i}_a` ])}</small></div>
+                                <div class="b-stats">
+                                    <div class="s-box cyan">${this._get(c[`b${i}_v`])}<small>${this._getU(c[`b${i}_v`])}</small></div>
+                                    <div class="s-box"><ha-icon icon="mdi:thermometer"></ha-icon>${this._get(c[`b${i}_temp`])}°</div>
+                                    <div class="s-box"><ha-icon icon="mdi:battery-check"></ha-icon>${this._get(c[`b${i}_cap`])}<small>${this._getU(c[`b${i}_cap`])}</small></div>
+                                    <div class="s-box cyan">${this._get(c[`b${i}_a`])}<small>${this._getU(c[`b${i}_a`])}</small></div>
                                 </div>
                             </div>` : '')}
                     </div>`
-                : ''}
+
+                : html`
+                    <div class="page">
+                        <div class="eco-box">
+                            <div class="eco-val">${this._get(c.eco_money)}€</div>
+                            <div class="eco-label">ÉCONOMIE TOTALE</div>
+                        </div>
+                        <div class="stat-row">
+                            <div class="stat-item"><span>JOUR</span><b>${this._get(c.eco_day_euro)}€</b></div>
+                            <div class="stat-item"><span>CONSO</span><b>${this._get(c.main_cons_entity)}W</b></div>
+                        </div>
+                    </div>`}
             </div>
 
-            <div class="nav-footer">
-                <div class="n-btn ${this._tab==='solar'?'active':''}" @click=${()=>this._tab='solar'}><ha-icon icon="mdi:solar-power"></ha-icon></div>
-                <div class="n-btn ${this._tab==='batt'?'active':''}" @click=${()=>this._tab='batt'}><ha-icon icon="mdi:battery-charging-high"></ha-icon></div>
+            <div class="footer">
+                <div class="f-btn ${this._tab==='solar'?'active':''}" @click=${()=>this._tab='solar'}><ha-icon icon="mdi:solar-power"></ha-icon></div>
+                <div class="f-btn ${this._tab==='batt'?'active':''}" @click=${()=>this._tab='batt'}><ha-icon icon="mdi:battery"></ha-icon></div>
+                <div class="f-btn ${this._tab==='stats'?'active':''}" @click=${()=>this._tab='stats'}><ha-icon icon="mdi:chart-line"></ha-icon></div>
             </div>
         </div>
       </ha-card>`;
   }
 
   static styles = css`
-    ha-card { border-radius: 28px; overflow: hidden; background: #000; color: #fff; }
-    .overlay { height: 100%; display: flex; flex-direction: column; padding: 12px; box-sizing: border-box; background: #0b0b0b; }
+    ha-card { background: #000; color: #fff; border-radius: 24px; font-family: sans-serif; overflow: hidden; }
+    .overlay { height: 100%; display: flex; flex-direction: column; padding: 15px; }
     
-    .battery-page { max-height: 480px; overflow-y: auto; padding-right: 4px; }
-    .rack-card { 
-        background: rgba(255,255,255,0.05); 
-        padding: 10px 12px; 
-        border-radius: 14px; 
-        margin-bottom: 10px; 
-        border-left: 3px solid #4caf50;
-        border-top: 1px solid rgba(255,255,255,0.05);
-    }
+    .top-nav { display: flex; gap: 10px; margin-bottom: 20px; }
+    .t-badge { background: #1a1a1a; padding: 8px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 6px; border: 1px solid #333; }
 
-    .r-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .r-n { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; }
-    .soc-v { color: #4caf50; font-weight: 900; font-size: 14px; }
+    .main-content { flex-grow: 1; min-height: 0; }
     
-    .v-meter { display: flex; gap: 1.2px; height: 6px; margin-bottom: 10px; }
-    .v-seg { flex: 1; background: rgba(255,255,255,0.03); width: 0.4px; } 
-    .v-seg.on { background: #4caf50; box-shadow: 0 0 3px rgba(76,175,80,0.6); }
+    /* SOLAIRE */
+    .big-display { text-align: center; padding: 20px 0; }
+    .big-display .val { font-size: 50px; font-weight: 900; color: #ffc107; }
+    .big-display .unit { font-size: 14px; opacity: 0.5; margin-left: 8px; }
+    .p-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .p-item { background: #111; padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #222; }
+    .p-val { font-size: 18px; font-weight: bold; color: #ffc107; }
+    .p-name { font-size: 10px; opacity: 0.6; margin-top: 4px; }
 
-    .r-f-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-    .r-f-box { 
-        background: rgba(0,0,0,0.4); 
-        padding: 5px 2px; 
-        border-radius: 6px; 
-        font-size: 10px; 
-        font-weight: 700; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        gap: 3px;
-        border: 1px solid rgba(255,255,255,0.02);
-    }
-    .cyan-text { color: #00f9f9; }
-    small { font-size: 7px; opacity: 0.6; margin-left: 1px; }
-    ha-icon { --mdc-icon-size: 12px; opacity: 0.8; }
+    /* BATTERIES : HAUTEUR FIXE 480PX AVEC SCROLL */
+    .battery-scroll { max-height: 480px; overflow-y: auto; padding-right: 5px; }
+    .b-card { background: #111; padding: 12px; border-radius: 16px; margin-bottom: 10px; border-left: 4px solid #4caf50; }
+    .b-head { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
+    .led-bar { display: flex; gap: 1.5px; height: 6px; margin-bottom: 10px; }
+    .led { flex: 1; background: #222; height: 100%; border-radius: 1px; }
+    .led.on { background: #4caf50; box-shadow: 0 0 3px #4caf50; }
+    .b-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+    .s-box { background: #000; padding: 6px 2px; border-radius: 6px; font-size: 10px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 2px; font-weight: bold; }
+    .cyan { color: #00f9f9; }
+    small { font-size: 7px; opacity: 0.7; }
 
-    .nav-footer { display: flex; justify-content: space-around; padding: 12px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: auto; }
-    .n-btn { opacity: 0.3; cursor: pointer; transition: 0.3s; }
-    .n-btn.active { opacity: 1; color: #ffc107; }
+    /* STATS */
+    .eco-box { background: #1a1a1a; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #333; margin-bottom: 15px; }
+    .eco-val { font-size: 40px; font-weight: 900; color: #4caf50; }
+    .eco-label { font-size: 10px; opacity: 0.5; margin-top: 5px; }
+    .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-item { background: #111; padding: 15px; border-radius: 15px; display: flex; flex-direction: column; align-items: center; }
+    .stat-item span { font-size: 9px; opacity: 0.5; }
+    .stat-item b { font-size: 16px; color: #fff; }
+
+    /* FOOTER */
+    .footer { display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; margin-top: 10px; }
+    .f-btn { opacity: 0.3; cursor: pointer; transition: 0.3s; }
+    .f-btn.active { opacity: 1; color: #ffc107; }
     
-    .battery-page::-webkit-scrollbar { width: 3px; }
-    .battery-page::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+    ha-icon { --mdc-icon-size: 20px; }
+    .s-box ha-icon { --mdc-icon-size: 12px; }
+
+    .battery-scroll::-webkit-scrollbar { width: 3px; }
+    .battery-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
   `;
 }
 if (!customElements.get("solar-master-card")) customElements.define("solar-master-card", SolarMasterCard);
