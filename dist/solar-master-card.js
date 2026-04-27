@@ -164,7 +164,7 @@ class SolarMasterCard extends LitElement {
             <div class="sun-dot" style="left: ${Math.max(5, Math.min(95, pos))}%">
                 <ha-icon icon="mdi:white-balance-sunny"></ha-icon>
                 <span>${elev.toFixed(1)}°</span>
-                <small>Azi: ${azi.toFixed(0)}°</small>
+                <small>Azimut: ${azi.toFixed(0)}°</small>
             </div>
             
             <div class="cockpit">
@@ -244,13 +244,21 @@ class SolarMasterCard extends LitElement {
         <div class="e-header">${c.eco_money_label || 'ÉCONOMIES RÉALISÉES'}</div>
         <div class="e-value-big">${this._getVal(c.eco_money).val}€</div>
         <div class="e-stats-row">
-            <div class="e-stat"><span>${c.eco_day_label || 'AUJOURD\'HUI'}</span><b>+${this._getVal(c.eco_day_euro).val}€</b></div>
-            <div class="e-stat"><span>${c.eco_year_label || 'CETTE ANNÉE'}</span><b>+${this._getVal(c.eco_year_euro).val}€</b></div>
+            <div class="e-stat"><span>AUJOURD'HUI</span><b>+${this._getVal(c.eco_day_euro).val}€</b></div>
+            <div class="e-stat"><span>CETTE ANNÉE</span><b>+${this._getVal(c.eco_year_euro).val}€</b></div>
         </div>
       </div>
       <div class="eco-details-grid">
-        <div class="e-detail"><span>${c.kwh_price_label || 'PRIX KWH'}</span><b>${this._getVal(c.kwh_price).val}€</b></div>
-        <div class="e-detail"><span>${c.main_cons_label || 'CONSO MAISON'}</span><b>${this._getVal(c.main_cons_entity).val}W</b></div>
+        <div class="e-detail">
+            <div class="e-icon"><ha-icon icon="mdi:cash-fast"></ha-icon></div>
+            <span>${c.kwh_price_label || 'PRIX KWH'}</span>
+            <b>${this._getVal(c.kwh_price).val}€</b>
+        </div>
+        <div class="e-detail">
+            <div class="e-icon"><ha-icon icon="mdi:home-lightning-bolt"></ha-icon></div>
+            <span>${c.main_cons_label || 'CONSO MAISON'}</span>
+            <b>${this._getVal(c.main_cons_entity).val}W</b>
+        </div>
       </div>
     </div>`;
   }
@@ -260,13 +268,11 @@ class SolarMasterCard extends LitElement {
     .bg-layer { position:absolute; top:0; left:0; width:100%; height:100%; background-size:cover; background-position: center; z-index:0; }
     .overlay { position:relative; z-index:1; height:100%; display:flex; flex-direction:column; padding:20px; background:rgba(0,0,0,0.7); box-sizing:border-box; }
     
-    /* Header Production au-dessus du cockpit */
     .header-prod { text-align: center; margin-bottom: 5px; position: relative; z-index: 10; }
     .c-label { font-size: 11px; font-weight: bold; color: #ffc107; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 1px; }
     .big-val-titan { font-size:76px; font-weight:900; color:#ffc107; line-height:0.8; text-shadow: 0 0 15px rgba(255,193,7,0.4); }
     .big-val-titan small { font-size: 24px; margin-left: 5px; }
 
-    /* Cockpit */
     .cockpit-container { position: relative; width: 100%; height: 160px; margin-top: 5px; }
     .sun-svg-bg { position: absolute; width: 100%; height: 100%; top:0; left:0; z-index:0; opacity: 0.3; }
     .sun-dot { position: absolute; bottom: 10px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; color: #ffc107; z-index:1; }
@@ -275,7 +281,7 @@ class SolarMasterCard extends LitElement {
 
     .cockpit { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-end; height: 100%; padding-bottom: 5px; }
     .side { flex: 1.2; }
-    .center-spacer { flex: 1; } /* Laisse la place pour la courbe du soleil */
+    .center-spacer { flex: 1; }
 
     .group-title { font-size: 11px; font-weight: 900; color: #00f9f9; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
     .group-title.right { text-align: right; color: #ffc107; }
@@ -285,7 +291,6 @@ class SolarMasterCard extends LitElement {
     .m-l { font-size: 10px; color: #aaa; display: block; text-transform: uppercase; font-weight: bold; }
     .m-v { font-size:15px; font-weight:bold; }
     
-    /* Cercles Panneaux */
     .panels-row { display:flex; justify-content:space-around; margin-top:30px; }
     .hud-circle-giant { width:75px; height:75px; border-radius:50%; border:3px solid; position:relative; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.8); }
     .scan { position:absolute; width:100%; height:100%; border:3px solid transparent; border-radius:50%; animation:rotate 4s linear infinite; top:-3px; left:-3px; padding:3px; box-sizing:content-box; }
@@ -302,10 +307,18 @@ class SolarMasterCard extends LitElement {
     .r-grid-compact { display:grid; grid-template-columns:repeat(4, 1fr); text-align:center; gap: 8px; }
     .r-item span { font-size: 9px; color: #aaa; font-weight: bold; text-transform: uppercase; }
 
-    /* Économie */
-    .eco-main-card { background: rgba(76,175,80,0.1); border: 1px solid #4caf5044; border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px; }
-    .e-value-big { font-size: 62px; font-weight: 900; color: #4caf50; }
-    .e-stat span { font-size: 10px; color: #aaa; font-weight: bold; display: block; }
+    /* Économie Design */
+    .eco-main-card { background: linear-gradient(145deg, rgba(76,175,80,0.2), rgba(0,0,0,0.5)); border: 1px solid #4caf5044; border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .e-header { font-size: 11px; font-weight: bold; color: #4caf50; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; }
+    .e-value-big { font-size: 68px; font-weight: 900; color: #4caf50; text-shadow: 0 0 20px rgba(76,175,80,0.3); }
+    .e-stats-row { display: flex; justify-content: space-around; margin-top: 15px; border-top: 1px solid #ffffff11; padding-top: 15px; }
+    .e-stat span { font-size: 9px; color: #aaa; font-weight: bold; display: block; text-transform: uppercase; }
+    .e-stat b { font-size: 18px; color: #fff; }
+    .eco-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .e-detail { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #ffffff08; backdrop-filter: blur(10px); }
+    .e-icon { color: #4caf50; margin-bottom: 5px; opacity: 0.8; }
+    .e-detail span { font-size: 9px; color: #aaa; text-transform: uppercase; display: block; }
+    .e-detail b { font-size: 16px; color: #fff; }
 
     .footer { display:flex; justify-content:space-around; padding-top:20px; border-top:1px solid #333; margin-top:auto; }
     .f-btn { cursor:pointer; opacity:0.4; font-size:12px; font-weight:bold; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
@@ -319,6 +332,6 @@ customElements.define("solar-master-card", SolarMasterCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "solar-master-card",
-  name: "Solar Master v3.2 FR",
-  description: "Dashboard Solaire Titan Edition avec Production en entête."
+  name: "Solar Master v3.3 FR",
+  description: "Dashboard Solaire Titan Edition - Métriques Éco & Solaire FR."
 });
