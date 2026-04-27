@@ -6,7 +6,7 @@ import {
 
 /**
  * ==========================================
- * 🧠 EDITEUR DE LA CARTE (Visibilité Optimisée)
+ * 🧠 EDITEUR DE LA CARTE (Version 3.6 FR)
  * ==========================================
  */
 class SolarMasterCardEditor extends LitElement {
@@ -31,6 +31,7 @@ class SolarMasterCardEditor extends LitElement {
         { name: "title_left", label: "Titre Groupe Gauche", selector: { text: {} } },
         { name: "title_right", label: "Titre Groupe Droite", selector: { text: {} } },
         { name: "total_now", label: "Entité Production Totale (W)", selector: { entity: {} } },
+        { name: "solar_target", label: "Entité Objectif du jour (W)", selector: { entity: {} } },
         ...[4, 5, 6, 7, 8, 9].map(i => [
           { name: `d${i}_label`, label: `Label Capteur D${i}`, selector: { text: {} } },
           { name: `d${i}_entity`, label: `Entité D${i}`, selector: { entity: {} } }
@@ -75,15 +76,14 @@ class SolarMasterCardEditor extends LitElement {
     .edit-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px; }
     button { flex: 1; padding: 10px; background: #333; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
     button.active { background: #ffc107; color: black; }
-    .editor-container { color: var(--primary-text-color); }
-    ha-form { --primary-text-color: #ffffff; --secondary-text-color: #bbbbbb; }
+    ha-form { --primary-text-color: #ffffff; }
   `;
 }
 customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
 /**
  * ==========================================
- * ⚡ CORPS DE LA CARTE (V3.5 FULL)
+ * ⚡ CORPS DE LA CARTE (V3.6 FULL + OBJECTIFS)
  * ==========================================
  */
 class SolarMasterCard extends LitElement {
@@ -124,16 +124,32 @@ class SolarMasterCard extends LitElement {
   _renderSolar() {
     const c = this.config;
     const prod = this._getVal(c.total_now);
+    const target = this._getVal(c.solar_target);
     const sun = this.hass.states['sun.sun'];
     const elev = sun ? sun.attributes.elevation : 0;
     const azi = sun ? sun.attributes.azimuth : 0;
     const pos = ((elev + 20) / 110) * 100;
+
+    // Calcul de la barre d'objectif
+    const currentVal = parseFloat(prod.val) || 0;
+    const targetVal = parseFloat(target.val) || 1; // Évite division par 0
+    const progress = Math.min(100, (currentVal / targetVal) * 100);
 
     return html`
       <div class="page">
         <div class="header-prod">
             <div class="c-label">PRODUCTION ACTUELLE</div>
             <div class="big-val-titan">${prod.val}<small>W</small></div>
+            
+            <div class="target-container">
+                <div class="target-bar">
+                    <div class="target-fill" style="width: ${progress}%"></div>
+                </div>
+                <div class="target-labels">
+                    <span>Objectif: ${target.val}${target.unit}</span>
+                    <span>${progress.toFixed(0)}%</span>
+                </div>
+            </div>
         </div>
 
         <div class="cockpit-container">
@@ -234,6 +250,12 @@ class SolarMasterCard extends LitElement {
     .big-val-titan small { font-size: 22px; margin-left: 5px; }
     .c-label { font-size: 11px; color: #ffc107; font-weight: bold; letter-spacing: 1px; }
 
+    /* Styles Barre Objectif */
+    .target-container { width: 220px; margin: 10px auto 0; }
+    .target-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+    .target-fill { height: 100%; background: linear-gradient(90deg, #ffc107, #00f9f9); transition: width 1s ease-in-out; }
+    .target-labels { display: flex; justify-content: space-between; font-size: 9px; margin-top: 4px; color: #aaa; font-weight: bold; text-transform: uppercase; }
+
     .cockpit-container { position: relative; height: 160px; margin-top: 5px; }
     .sun-svg-bg { position: absolute; width: 100%; height: 100%; opacity: 0.25; }
     .sun-dot { position: absolute; bottom: 10px; transform: translateX(-50%); color: #ffc107; text-align: center; z-index: 5; }
@@ -284,6 +306,6 @@ customElements.define("solar-master-card", SolarMasterCard);
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: "solar-master-card",
-  name: "Solar Master v3.5 FINAL",
-  description: "Version complète sans oublis - FR"
+  name: "Solar Master v3.6 GOALS",
+  description: "Dashboard Solaire avec Objectifs du jour."
 });
