@@ -4,7 +4,6 @@ import {
   css
 } from "https://unpkg.com/lit-element@2.4.0/lit-element.js?module";
 
-// CONFIGURATION DE L'ÉDITEUR
 class SolarMasterCardEditor extends LitElement {
   static get properties() { return { hass: {}, _config: {}, _selectedTab: { type: String } }; }
   constructor() { super(); this._selectedTab = 'solar'; }
@@ -19,30 +18,30 @@ class SolarMasterCardEditor extends LitElement {
     const schemas = {
       solar: [
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200 } } },
-        { name: "entity_weather", label: "Météo", selector: { entity: { domain: "weather" } } },
-        { name: "total_now", label: "Production Actuelle (W)", selector: { entity: {} } },
-        { name: "total_obj_pct", label: "Objectif Prod (%)", selector: { entity: {} } },
-        { name: "grid_flow", label: "Réseau (W)", selector: { entity: {} } },
-        ...[1,2,3,4].map(i => [{ name: `p${i}_name`, label: `Nom P${i}` }, { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }]).flat(),
+        { name: "entity_weather", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
+        { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
+        { name: "total_obj_pct", label: "Objectif atteint (%)", selector: { entity: {} } },
+        { name: "grid_flow", label: "Flux Réseau (W)", selector: { entity: {} } },
+        ...[1,2,3,4].map(i => [{ name: `p${i}_name`, label: `Nom Panneau ${i}` }, { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }]).flat(),
         ...[1,2,3,4,5,6].map(i => [{ name: `d${i}_label`, label: `Diag ${i} Nom` }, { name: `d${i}_entity`, label: `Diag ${i} Entité`, selector: { entity: {} } }]).flat()
       ],
       batt: [
         ...[1,2,3,4].map(i => [
             { name: `b${i}_n`, label: `Nom Batterie ${i}` },
             { name: `b${i}_s`, label: `SOC % Bat ${i}`, selector: { entity: {} } },
-            { name: `b${i}_v`, label: `Sensor GAUCHE (V) ${i}`, selector: { entity: {} } },
+            { name: `b${i}_v`, label: `Sensor GAUCHE (ex: V) ${i}`, selector: { entity: {} } },
             { name: `b${i}_temp`, label: `Température ${i}`, selector: { entity: {} } },
             { name: `b${i}_cap`, label: `Capacité ${i}`, selector: { entity: {} } },
-            { name: `b${i}_a`, label: `Sensor DROITE (A) ${i}`, selector: { entity: {} } }
+            { name: `b${i}_a`, label: `Sensor DROITE (ex: A) ${i}`, selector: { entity: {} } }
         ]).flat()
       ],
       eco: [
         { name: "eco_money", label: "Total Économisé (€)", selector: { entity: {} } },
-        { name: "eco_day_euro", label: "Gain Jour (€)", selector: { entity: {} } },
+        { name: "eco_day_euro", label: "Gain du Jour (€)", selector: { entity: {} } },
         { name: "eco_year_euro", label: "Gain Annuel (€)", selector: { entity: {} } },
-        { name: "kwh_price", label: "Prix kWh (€)", selector: { entity: {} } },
+        { name: "kwh_price", label: "Prix du kWh (€)", selector: { entity: {} } },
         { name: "eco_target", label: "Objectif (€)", selector: { number: {} } },
-        { name: "main_cons_entity", label: "Conso Maison (W)", selector: { entity: {} } }
+        { name: "main_cons_entity", label: "Consommation Maison (W)", selector: { entity: {} } }
       ]
     };
     return html`
@@ -56,7 +55,6 @@ class SolarMasterCardEditor extends LitElement {
 }
 if (!customElements.get("solar-master-card-editor")) customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
-// CARTE PRINCIPALE
 class SolarMasterCard extends LitElement {
   static getConfigElement() { return document.createElement("solar-master-card-editor"); }
   static get properties() { return { hass: {}, config: {}, _tab: { type: String } }; }
@@ -116,10 +114,10 @@ class SolarMasterCard extends LitElement {
                                 <div class="r-h"><span>${c[`b${i}_n`]}</span> <b class="soc-v">${this._get(c[`b${i}_s`])}%</b></div>
                                 <div class="v-meter">${[...Array(40)].map((_, idx) => html`<div class="v-seg ${parseInt(this._get(c[`b${i}_s`])) > (idx * 2.5) ? 'on' : ''}"></div>`)}</div>
                                 <div class="r-f-grid-4">
-                                    <div class="r-f-box cyan">${this._get(c[`b${i}_v`])}<small>${this._getU(c[`b${i}_v` ])}</small></div>
+                                    <div class="r-f-box cyan">${this._get(c[`b${i}_v`])}<small>${this._getU(c[`b${i}_v`])}</small></div>
                                     <div class="r-f-box"><ha-icon icon="mdi:thermometer"></ha-icon>${this._get(c[`b${i}_temp`])}°</div>
                                     <div class="r-f-box"><ha-icon icon="mdi:battery-check"></ha-icon>${this._get(c[`b${i}_cap`])}</div>
-                                    <div class="r-f-box cyan">${this._get(c[`b${i}_a`])}<small>${this._getU(c[`b${i}_a` ])}</small></div>
+                                    <div class="r-f-box cyan">${this._get(c[`b${i}_a`])}<small>${this._getU(c[`b${i}_a`])}</small></div>
                                 </div>
                             </div>` : '')}
                     </div>`
@@ -163,7 +161,9 @@ class SolarMasterCard extends LitElement {
     .panels-row { display: flex; justify-content: space-around; margin-bottom: 25px; }
     .hud-circle { width: 85px; height: 85px; border-radius: 50%; border: 2px solid; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); }
     .scan { position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-radius: 50%; animation: rotate 3s linear infinite; top:-2px; left:-2px; padding:2px; box-sizing: content-box; }
-    .v { font-size: 22px; font-weight: 900; z-index: 2; position: relative; }
+    .val-container { position: absolute; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 2; }
+    .v { font-size: 22px; font-weight: 900; text-align: center; }
+    .hud-n { font-size: 10px; font-weight: 800; margin-top: 8px; text-align: center; opacity: 0.7; }
     .diag-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .d-box { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
     .d-v { display: block; font-size: 14px; font-weight: 800; color: #00f9f9; }
@@ -184,23 +184,20 @@ class SolarMasterCard extends LitElement {
     .green { color: #4caf50; }
     .yellow { color: #ffc107; }
     .footer { display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; margin-top: auto; }
-    .f-btn { opacity: 0.3; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 9px; font-weight: bold; }
+    .f-btn { opacity: 0.3; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 9px; font-weight: bold; transition: 0.3s; }
     .f-btn.active { opacity: 1; color: #ffc107; }
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     ha-icon { --mdc-icon-size: 20px; }
   `;
 }
 
-// DÉCLARATION POUR HOME ASSISTANT
-if (!customElements.get("solar-master-card")) {
-  customElements.define("solar-master-card", SolarMasterCard);
-  
-  // Ce bloc permet d'ajouter la carte via l'interface UI
+if (!customElements.get("solar-master-card-v54")) {
+  customElements.define("solar-master-card-v54", SolarMasterCard);
   window.customCards = window.customCards || [];
   window.customCards.push({
-    type: "solar-master-card",
-    name: "Solar Master Card V58",
+    type: "solar-master-card-v54",
+    name: "Solar Master Card V54",
     preview: true,
-    description: "Tableau de bord Solaire, Batteries et Économies"
+    description: "Version 54 - Météo FR & Cercles Centrés"
   });
 }
