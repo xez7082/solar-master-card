@@ -18,30 +18,30 @@ class SolarMasterCardEditor extends LitElement {
     const schemas = {
       solar: [
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200 } } },
-        { name: "entity_weather", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
-        { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
-        { name: "total_obj_pct", label: "Objectif atteint (%)", selector: { entity: {} } },
-        { name: "grid_flow", label: "Flux Réseau (W)", selector: { entity: {} } },
-        ...[1,2,3,4].map(i => [{ name: `p${i}_name`, label: `Nom Panneau ${i}` }, { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }]).flat(),
+        { name: "entity_weather", label: "Météo (Entité)", selector: { entity: { domain: "weather" } } },
+        { name: "total_now", label: "Production Actuelle (W)", selector: { entity: {} } },
+        { name: "total_obj_pct", label: "Objectif Production (%)", selector: { entity: {} } },
+        { name: "grid_flow", label: "Réseau (W)", selector: { entity: {} } },
+        ...[1,2,3,4].map(i => [{ name: `p${i}_name`, label: `Nom P${i}` }, { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }]).flat(),
         ...[1,2,3,4,5,6].map(i => [{ name: `d${i}_label`, label: `Diag ${i} Nom` }, { name: `d${i}_entity`, label: `Diag ${i} Entité`, selector: { entity: {} } }]).flat()
       ],
       batt: [
         ...[1,2,3,4].map(i => [
             { name: `b${i}_n`, label: `Nom Batterie ${i}` },
             { name: `b${i}_s`, label: `SOC % Bat ${i}`, selector: { entity: {} } },
-            { name: `b${i}_v`, label: `Sensor GAUCHE (ex: V) ${i}`, selector: { entity: {} } },
+            { name: `b${i}_v`, label: `Sensor GAUCHE (V) ${i}`, selector: { entity: {} } },
             { name: `b${i}_temp`, label: `Température ${i}`, selector: { entity: {} } },
             { name: `b${i}_cap`, label: `Capacité ${i}`, selector: { entity: {} } },
-            { name: `b${i}_a`, label: `Sensor DROITE (ex: A) ${i}`, selector: { entity: {} } }
+            { name: `b${i}_a`, label: `Sensor DROITE (A) ${i}`, selector: { entity: {} } }
         ]).flat()
       ],
       eco: [
         { name: "eco_money", label: "Total Économisé (€)", selector: { entity: {} } },
-        { name: "eco_day_euro", label: "Gain du Jour (€)", selector: { entity: {} } },
+        { name: "eco_day_euro", label: "Gain Jour (€)", selector: { entity: {} } },
         { name: "eco_year_euro", label: "Gain Annuel (€)", selector: { entity: {} } },
-        { name: "kwh_price", label: "Prix du kWh (€)", selector: { entity: {} } },
-        { name: "eco_target", label: "Objectif (€)", selector: { number: {} } },
-        { name: "main_cons_entity", label: "Consommation Maison (W)", selector: { entity: {} } }
+        { name: "kwh_price", label: "Prix kWh (€)", selector: { entity: {} } },
+        { name: "eco_target", label: "Objectif Mensuel (€)", selector: { number: {} } },
+        { name: "main_cons_entity", label: "Conso Maison (W)", selector: { entity: {} } }
       ]
     };
     return html`
@@ -184,20 +184,20 @@ class SolarMasterCard extends LitElement {
     .green { color: #4caf50; }
     .yellow { color: #ffc107; }
     .footer { display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #222; margin-top: auto; }
-    .f-btn { opacity: 0.3; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 9px; font-weight: bold; transition: 0.3s; }
+    .f-btn { opacity: 0.3; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 9px; font-weight: bold; }
     .f-btn.active { opacity: 1; color: #ffc107; }
     @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     ha-icon { --mdc-icon-size: 20px; }
   `;
 }
 
-if (!customElements.get("solar-master-card-v54")) {
-  customElements.define("solar-master-card-v54", SolarMasterCard);
+if (!customElements.get("solar-master-card")) {
+  customElements.define("solar-master-card", SolarMasterCard);
   window.customCards = window.customCards || [];
   window.customCards.push({
-    type: "solar-master-card-v54",
-    name: "Solar Master Card V54",
+    type: "solar-master-card",
+    name: "Solar Master Card",
     preview: true,
-    description: "Version 54 - Météo FR & Cercles Centrés"
+    description: "Carte Solaire, Batteries et Économies"
   });
 }
