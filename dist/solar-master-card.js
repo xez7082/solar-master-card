@@ -206,7 +206,7 @@ _renderSolar() {
           </div>
         </div>
 
-        <div class="neon-circles" style="display: flex; justify-content: space-around; margin: 5px 0;">
+        <div class="neon-circles" style="display: flex; justify-content: space-around; margin: 2px 0;">
           ${[1, 2, 3, 4].map(i => {
             const entityId = c[`p${i}_w`] || c[`panel${i}_production`];
             if(!entityId) return '';
@@ -214,11 +214,23 @@ _renderSolar() {
             const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
             return html`
               <div class="n-item" style="text-align: center;">
-                <div class="n-circle" style="width: 62px; height: 62px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 8px ${clr}; margin-bottom: 2px;">
-                   <span style="font-size: 18px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
-                   <span style="font-size: 9px; color: #888;">W</span>
+                <div class="n-circle" style="
+                  width: 72px; 
+                  height: 72px; 
+                  border-radius: 50%; 
+                  border: 2px solid ${clr}; 
+                  display: flex; 
+                  flex-direction: column; 
+                  align-items: center; 
+                  justify-content: center; 
+                  background: rgba(0,0,0,0.6); 
+                  box-shadow: inset 0 0 10px ${clr}, 0 0 5px rgba(0,0,0,0.5); 
+                  margin-bottom: 3px;
+                ">
+                   <span style="font-size: 20px; font-weight: 900; color: #fff; line-height: 1;">${Math.round(v.val)}</span>
+                   <span style="font-size: 10px; color: #888; font-weight: bold;">W</span>
                 </div>
-                <div style="font-size: 9px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || 'P'+i}</div>
+                <div style="font-size: 10px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || 'P'+i}</div>
               </div>`;
           })}
         </div>
