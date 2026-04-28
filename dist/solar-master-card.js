@@ -233,42 +233,54 @@ _renderWeather() {
     const elevation = sun.attributes.elevation || 0;
     const azimuth = sun.attributes.azimuth || 0;
     
-    // Calcul de l'arc solaire
-    const sunX = 100 - 80 * Math.cos((azimuth * Math.PI) / 180);
-    const sunY = 90 - 80 * Math.sin((elevation * Math.PI) / 180);
+    // Calcul de l'arc (On réduit le rayon à 70 et on aplatit l'affichage)
+    const sunX = 100 - 75 * Math.cos((azimuth * Math.PI) / 180);
+    const sunY = 85 - 50 * Math.sin((elevation * Math.PI) / 180); // Arc plus plat (50 au lieu de 80)
 
     return html`
-      <div class="page scroll" style="position: relative; z-index: 2; padding: 10px;">
+      <div class="page scroll" style="position: relative; z-index: 2; padding: 10px; display: flex; flex-direction: column; gap: 10px;">
         
-        <div style="background: rgba(0,0,0,0.5); border-radius: 12px; padding: 15px; border: 1px solid #1a1a1a; margin-bottom: 15px;">
-          <svg viewBox="0 0 200 100" style="width: 100%; height: auto;">
-            <path d="M 20,90 A 80,80 0 0 1 180,90" fill="none" stroke="#333" stroke-width="1" stroke-dasharray="2,2" />
-            <line x1="10" y1="90" x2="190" y2="90" stroke="#222" stroke-width="1" />
-            ${elevation > 0 ? html`<circle cx="${sunX}" cy="${sunY}" r="4" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />` : ''}
+        <div style="background: rgba(0,0,0,0.5); border-radius: 12px; padding: 10px; border: 1px solid #1a1a1a;">
+          <svg viewBox="0 0 200 70" style="width: 100%; height: auto; display: block;">
+            <line x1="10" y1="65" x2="190" y2="65" stroke="#222" stroke-width="1" />
+            <path d="M 25,65 A 75,45 0 0 1 175,65" fill="none" stroke="#333" stroke-width="1" stroke-dasharray="2,2" />
+            
+            ${elevation > 0 ? html`
+              <circle cx="${sunX}" cy="${sunY}" r="3.5" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />
+            ` : ''}
           </svg>
-          <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 10px; color: #888; font-family: monospace;">
-            <span>${sun.attributes.next_rising ? sun.attributes.next_rising.split('T')[1].substring(0, 5) : '--:--'}</span>
-            <span style="color: #ffc107;">${elevation.toFixed(1)}°</span>
-            <span>${sun.attributes.next_setting ? sun.attributes.next_setting.split('T')[1].substring(0, 5) : '--:--'}</span>
+          
+          <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 9px; color: #666; font-family: monospace; padding: 0 10px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                <span style="color: #444; font-size: 7px;">LEVÉE</span>
+                <span>${sun.attributes.next_rising ? sun.attributes.next_rising.split('T')[1].substring(0, 5) : '--:--'}</span>
+            </div>
+            <div style="text-align: center;">
+                <span style="color: #ffc107; font-size: 11px; font-weight: bold;">${elevation.toFixed(1)}°</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                <span style="color: #444; font-size: 7px;">COUCHER</span>
+                <span>${sun.attributes.next_setting ? sun.attributes.next_setting.split('T')[1].substring(0, 5) : '--:--'}</span>
+            </div>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
           ${[1, 2, 3, 4, 5, 6, 7, 8].map(i => {
-            const entityId = c[`w${i}_e`]; // Corrélation avec ton schéma (_e)
+            const entityId = c[`w${i}_e`];
             if (!entityId || !this.hass.states[entityId]) return '';
             
             const s = this._getVal(entityId);
-            const label = c[`w${i}_l`] || 'Sensor '+i; // Corrélation avec ton schéma (_l)
-            const icon = c[`w${i}_i`] || 'mdi:water'; // Corrélation avec ton schéma (_i)
+            const label = c[`w${i}_l`] || 'S'+i;
+            const icon = c[`w${i}_i`] || 'mdi:circle-small';
 
             return html`
-              <div style="background: rgba(10,10,10,0.8); padding: 10px; border-radius: 8px; border: 1px solid #222; display: flex; align-items: center; gap: 8px;">
+              <div style="background: rgba(10,10,10,0.8); padding: 8px 12px; border-radius: 8px; border: 1px solid #222; display: flex; align-items: center; gap: 10px; min-height: 45px;">
                 <ha-icon icon="${icon}" style="color: #00f9f9; --mdc-icon-size: 18px;"></ha-icon>
-                <div style="overflow: hidden;">
-                  <div style="font-size: 8px; color: #555; text-transform: uppercase; white-space: nowrap;">${label}</div>
-                  <div style="font-size: 13px; font-weight: bold; color: #fff;">
-                    ${s.val}<small style="font-size: 9px; color: #666; margin-left: 2px;">${s.unit}</small>
+                <div style="line-height: 1.2;">
+                  <div style="font-size: 8px; color: #555; text-transform: uppercase; letter-spacing: 0.5px;">${label}</div>
+                  <div style="font-size: 14px; font-weight: bold; color: #fff;">
+                    ${s.val}<span style="font-size: 9px; color: #00f9f9; margin-left: 2px;">${s.unit}</span>
                   </div>
                 </div>
               </div>`;
@@ -276,12 +288,12 @@ _renderWeather() {
         </div>
 
         ${c.moon_entity && this.hass.states[c.moon_entity] ? html`
-          <div style="margin-top: 15px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; border: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: space-between;">
-             <div style="display: flex; align-items: center; gap: 10px;">
-                <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 16px;"></ha-icon>
-                <span style="font-size: 10px; color: #aaa;">PHASE LUNAIRE</span>
+          <div style="background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 10px; border: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: space-between;">
+             <div style="display: flex; align-items: center; gap: 8px;">
+                <ha-icon icon="mdi:moon-waning-crescent" style="color: #aaa; --mdc-icon-size: 16px;"></ha-icon>
+                <span style="font-size: 9px; color: #888; letter-spacing: 1px;">PHASE LUNAIRE</span>
              </div>
-             <span style="font-size: 10px; color: #00f9f9; font-weight: bold;">${this.hass.states[c.moon_entity].state}</span>
+             <span style="font-size: 11px; color: #eee; font-weight: bold;">${this.hass.states[c.moon_entity].state}</span>
           </div>
         ` : ''}
 
