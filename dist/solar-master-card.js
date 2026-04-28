@@ -231,14 +231,14 @@ _renderBattery() {
       <div class="page scroll" style="position: relative; z-index: 2;">
         <div class="rack-container" style="display: flex; flex-direction: column; gap: 12px;">
           ${[1, 2, 3, 4].map(i => {
-            // Vérification si l'entité SOC existe
+            // Vérification si l'entité principale existe
             if (!c[`b${i}_s`] || !this.hass.states[c[`b${i}_s`]]) return '';
             
             const socVal = this._getVal(c[`b${i}_s`]).val;
             const soc = parseFloat(socVal) || 0;
-            const p = this._getVal(c[`b${i}_out`]);
-            const temp = this._getVal(c[`b${i}_t`]); 
-            const sortie = this._getVal(c[`b${i}_v`]); // On utilise bien 'sortie' ici
+            const p = this._getVal(c[`b${i}_out`]); // Flux global (charge/décharge)
+            const temp = this._getVal(c[`b${i}_t`]); // Température
+            const sortie = this._getVal(c[`b${i}_v`]); // C'est ici que tu dois mettre ton sensor de Watts de sortie dans l'éditeur
             
             // Logique de couleur dynamique
             let color = "#f44336";
@@ -275,8 +275,8 @@ _renderBattery() {
                   </div>
 
                   <div class="ex-item" style="display: flex; align-items: center; gap: 4px;">
-                    <ha-icon icon="mdi:flash" style="--mdc-icon-size: 14px; color: #ffc107;"></ha-icon>
-                    <span style="font-size: 11px; color: #eee;">${sortie.val}<small>${sortie.unit || 'V'}</small></span>
+                    <ha-icon icon="mdi:lightning-bolt" style="--mdc-icon-size: 14px; color: #ffc107;"></ha-icon>
+                    <span style="font-size: 11px; color: #eee;">${sortie.val}<small>W</small></span>
                   </div>
 
                   <div class="ex-item" style="display: flex; align-items: center; gap: 4px;">
