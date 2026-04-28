@@ -239,63 +239,33 @@ _renderWeather() {
     const elevation = sun.attributes.elevation ?? 0;
     const azimuth = sun.attributes.azimuth ?? 0;
 
-    const moonPhases = { 
-      'new_moon': 'Nouvelle Lune', 
-      'waxing_crescent': 'Premier Croissant', 
-      'first_quarter': 'Premier Quartier', 
-      'waxing_gibbous': 'Gibbeuse Croissante', 
-      'full_moon': 'Pleine Lune', 
-      'waning_gibbous': 'Gibbeuse Décroissante', 
-      'last_quarter': 'Dernier Quartier', 
-      'waning_crescent': 'Dernier Croissant' 
-    };
-    const phaseFr = moonPhases[this.hass.states[c.moon_entity]?.state] || 'Phase Inconnue';
-
-    // Calcul de la position du soleil sur l'arc
-    // On mappe l'azimuth (0-360) sur l'axe X (30-170)
-    const sunX = 35 + ((azimuth - 45) / 270) * 130;
-    // On utilise l'élévation pour la hauteur Y
-    const sunY = 60 - (Math.max(0, elevation) * 0.5);
+    // Calcul position soleil (plus compact)
+    const sunX = 30 + ((azimuth / 360) * 140); 
+    const sunY = 50 - (Math.max(0, elevation) * 0.4);
 
     return html`
-      <div class="page" style="height: 100%; max-height: 485px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; overflow: hidden; padding: 5px;">
+      <div class="page" style="height: 480px; padding: 5px; gap: 5px;">
         
-        <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 10px; align-items: center; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1);">
-          <div style="text-align: center; position: relative;">
-            <svg viewBox="0 0 200 80" style="width: 100%; height: auto; overflow: visible;">
-              <line x1="20" y1="65" x2="180" y2="65" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
-              
-              <path d="M 30,65 A 70,45 0 0 1 170,65" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4,4" />
-              
-              <g>
-                <circle cx="${sunX}" cy="${sunY}" r="6" fill="#ffc107" style="filter: drop-shadow(0 0 8px #ffc107);" />
-                <line x1="${sunX}" y1="${sunY-9}" x2="${sunX}" y2="${sunY-7}" stroke="#ffc107" stroke-width="1.5" />
-                <line x1="${sunX}" y1="${sunY+9}" x2="${sunX}" y2="${sunY+7}" stroke="#ffc107" stroke-width="1.5" />
-                <line x1="${sunX-9}" y1="${sunY}" x2="${sunX-7}" y2="${sunY}" stroke="#ffc107" stroke-width="1.5" />
-                <line x1="${sunX+9}" y1="${sunY}" x2="${sunX+7}" y2="${sunY}" stroke="#ffc107" stroke-width="1.5" />
-              </g>
-
-              <text x="20" y="78" fill="#aaa" font-size="8" font-weight="bold">EST</text>
-              <text x="165" y="78" fill="#aaa" font-size="8" font-weight="bold">OUEST</text>
-            </svg>
-            
-            <div style="display: flex; justify-content: space-around; font-size: 10px; color: #ffffff; margin-top: 5px; font-family: monospace; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 2px;">
-              <span title="Lever">${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
-              <span style="color:#ffc107; font-weight:bold;">${elevation.toFixed(1)}°</span>
-              <span title="Coucher">${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
-            </div>
-          </div>
+        <div style="background: rgba(255,255,255,0.03); border-radius: 10px; padding: 5px; border: 1px solid rgba(255,255,255,0.1); height: 110px;">
+          <svg viewBox="0 0 200 70" style="width: 100%; height: 75px; overflow: visible;">
+            <line x1="20" y1="60" x2="180" y2="60" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+            <path d="M 30,60 A 70,40 0 0 1 170,60" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" stroke-dasharray="3,3" />
+            <circle cx="${sunX}" cy="${sunY}" r="5" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />
+          </svg>
           
-          <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 10px; display: flex; flex-direction: column; gap: 5px;">
-             <div style="display: flex; align-items: center; gap: 6px;">
-               <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
-               <span style="font-size: 9px; font-weight: bold; color: #888;">LUNE</span>
-             </div>
-             <span style="font-size: 11px; color: white; font-weight: bold; line-height: 1.1;">${phaseFr}</span>
+          <div style="display: flex; justify-content: space-between; font-size: 9px; color: #888; margin-top: -10px; padding: 0 15px;">
+              <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
+              <span style="color:#ffc107; font-weight:bold;">${elevation.toFixed(1)}°</span>
+              <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+        <div style="background: rgba(255,255,255,0.03); padding: 5px 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px; height: 30px;">
+           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 16px;"></ha-icon>
+           <span style="font-size: 10px; color: white;">Lune: <b>${this.hass.states[c.moon_entity]?.state || 'N/A'}</b></span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; flex: 1;">
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
 
@@ -306,12 +276,17 @@ _renderMiniSensor(i) {
     const c = this.config;
     const entityId = c[`w${i}_e`];
     if (!entityId || !this.hass.states[entityId]) return html``;
-    const s = this._getVal(entityId);
+
+    const stateObj = this.hass.states[entityId];
     return html`
-      <div style="background: rgba(35,35,35,0.8); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 48px; box-sizing: border-box;">
-        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 16px; margin-bottom: 2px;"></ha-icon>
-        <span style="font-size: 7px; color: #aaa; text-transform: uppercase; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center;">${c[`w${i}_l`] || 'S' + i}</span>
-        <span style="font-size: 12px; font-weight: 900; color: white; line-height: 1;">${s.val}<small style="font-size: 8px; color: #00f9f9; margin-left: 1px;">${s.unit}</small></span>
+      <div style="background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 55px; padding: 2px;">
+        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 16px;"></ha-icon>
+        <span style="font-size: 7px; color: #777; text-transform: uppercase; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center;">
+          ${c[`w${i}_l`] || 'S'+i}
+        </span>
+        <span style="font-size: 11px; font-weight: bold; color: white;">
+          ${stateObj.state}<small style="font-size: 8px; color: #00f9f9; margin-left: 1px;">${stateObj.attributes.unit_of_measurement || ''}</small>
+        </span>
       </div>`;
 }
   
@@ -409,7 +384,13 @@ _renderBattery() {
     ha-card { background: #000; color: #fff; border-radius: 24px; overflow: hidden; font-family: 'Inter', sans-serif; }
     .card-wrapper { height: 100%; display: flex; flex-direction: column; background: linear-gradient(180deg, #0a0a0a 0%, #000 100%); }
     .view-port { flex: 1; padding: 25px; overflow: hidden; position: relative; }
-    .page { height: 100%; display: flex; flex-direction: column; }
+    .page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden; /* Empêche le scroll global */
+}
     .scroll { overflow-y: auto; }
     .scroll::-webkit-scrollbar { width: 4px; }
     .scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
