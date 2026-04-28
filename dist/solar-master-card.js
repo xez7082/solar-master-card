@@ -50,17 +50,15 @@ class SolarMasterCardEditor extends LitElement {
         ]).flat()
       ],
       tab_batt: [
-        // À répéter pour b1, b2, b3, b4 dans le schéma de l'éditeur
-        { name: "b1_t", label: "Température Batterie 1", selector: { entity: { domain: "sensor" } } },
-        { name: "b1_v", label: "Voltage Batt 1", selector: { entity: {} } },
-        { name: "b1_t", label: "Temp Batt 1", selector: { entity: {} } },
         { name: "batt_total_power", label: "Flux Total Batteries (W)", selector: { entity: {} } },
         { name: "batt_avg_soc", label: "SOC Moyen Global (%)", selector: { entity: {} } },
         ...[1, 2, 3, 4].map(i => [
           { name: `b${i}_n`, label: `Nom Batterie ${i}`, selector: { text: {} } },
           { name: `b${i}_s`, label: `SOC % ${i}`, selector: { entity: {} } },
           { name: `b${i}_cap`, label: `Capacité ${i}`, selector: { entity: {} } },
-          { name: `b${i}_out`, label: `Watts Entrée/Sortie ${i}`, selector: { entity: {} } }
+          { name: `b${i}_out`, label: `Watts Entrée/Sortie ${i}`, selector: { entity: {} } },
+          { name: `b${i}_s`, label: `Sortie Batt ${i}`, selector: { entity: {} } }, // <--- AJOUTÉ
+          { name: `b${i}_t`, label: `Température Batt ${i}`, selector: { entity: {} } } // <--- AJOUTÉ
         ]).flat()
       ],
       tab_eco: [
@@ -233,14 +231,16 @@ _renderBattery() {
       <div class="page scroll" style="position: relative; z-index: 2;">
         <div class="rack-container" style="display: flex; flex-direction: column; gap: 12px;">
           ${[1, 2, 3, 4].map(i => {
+            // On vérifie si l'entité SOC est configurée pour afficher la batterie
             if (!c[`b${i}_s`]) return '';
             
-            const soc = parseFloat(this._getVal(c[`b${i}_s`]).val);
+            const socVal = this._getVal(c[`b${i}_s`]).val;
+            const soc = parseFloat(socVal);
             const p = this._getVal(c[`b${i}_out`]);
-            const temp = this._getVal(c[`b${i}_t`]); // Récupération du sensor température
-            const volt = this._getVal(c[`b${i}_v`]); // Récupération du sensor voltage
+            const temp = this._getVal(c[`b${i}_t`]); // Sensor Température
+            const sortie = this._getVal(c[`b${i}_s`]); // Sensor Voltage
             
-            // Logique de couleur identique à ton cockpit
+            // Logique de couleur dynamique
             let color = "#f44336";
             if (soc >= 20) color = "#ff9800";
             if (soc >= 50) color = "#ffc107";
