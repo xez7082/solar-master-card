@@ -149,7 +149,7 @@ render() {
 
             <div class="nav-btn ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'} style="text-align:center; cursor:pointer; flex:1; color: ${this._tab === 'BATTERIE' ? '#00c853' : '#666'};">
               <ha-icon icon="mdi:battery-charging"></ha-icon>
-              <div style="font-size: 9px; margin-top: 4px;">ENERGIE</div>
+              <div style="font-size: 9px; margin-top: 4px;">BATTERIE</div>
             </div>
 
             <div class="nav-btn ${this._tab === 'ECONOMIE' ? 'active' : ''}" @click=${() => this._tab = 'ECONOMIE'} style="text-align:center; cursor:pointer; flex:1; color: ${this._tab === 'ECONOMIE' ? '#e91e63' : '#666'};">
