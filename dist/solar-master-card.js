@@ -41,12 +41,12 @@ class SolarMasterCardEditor extends LitElement {
         ]).flat()
       ],
       tab_weather: [
-        { name: "weather_entity", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
-        { name: "temp_ext", label: "Température Ext.", selector: { entity: {} } },
-        { name: "hum_ext", label: "Humidité Ext.", selector: { entity: {} } },
+        { name: "weather_entity", label: "Entité Météo Principale", selector: { entity: { domain: "weather" } } },
+        { name: "moon_entity", label: "Entité Lune", selector: { entity: {} } }, // Ajouté pour l'arc lunaire
         ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => [
            { name: `w${i}_l`, label: `Label Météo ${i}`, selector: { text: {} } },
-           { name: `w${i}_e`, label: `Entité Météo ${i}`, selector: { entity: {} } }
+           { name: `w${i}_e`, label: `Entité Météo ${i}`, selector: { entity: {} } },
+           { name: `w${i}_i`, label: `Icone Météo ${i} (mdi:...)`, selector: { text: {} } }
         ]).flat()
       ],
       tab_batt: [
