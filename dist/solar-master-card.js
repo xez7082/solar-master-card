@@ -215,22 +215,22 @@ _renderSolar() {
             return html`
               <div class="n-item" style="text-align: center;">
                 <div class="n-circle" style="
-                  width: 72px; 
-                  height: 72px; 
+                  width: 82px; 
+                  height: 82px; 
                   border-radius: 50%; 
-                  border: 2px solid ${clr}; 
+                  border: 3px solid ${clr}; 
                   display: flex; 
                   flex-direction: column; 
                   align-items: center; 
                   justify-content: center; 
-                  background: rgba(0,0,0,0.6); 
-                  box-shadow: inset 0 0 10px ${clr}, 0 0 5px rgba(0,0,0,0.5); 
-                  margin-bottom: 3px;
+                  background: rgba(0,0,0,0.7); 
+                  box-shadow: inset 0 0 12px ${clr}, 0 0 8px rgba(0,0,0,0.8); 
+                  margin-bottom: 2px;
                 ">
-                   <span style="font-size: 20px; font-weight: 900; color: #fff; line-height: 1;">${Math.round(v.val)}</span>
-                   <span style="font-size: 10px; color: #888; font-weight: bold;">W</span>
+                   <span style="font-size: 24px; font-weight: 900; color: #fff; line-height: 1;">${Math.round(v.val)}</span>
+                   <span style="font-size: 11px; color: #aaa; font-weight: bold; text-transform: uppercase;">Watts</span>
                 </div>
-                <div style="font-size: 10px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || 'P'+i}</div>
+                <div style="font-size: 11px; font-weight: bold; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">${c[`p${i}_name`] || 'P'+i}</div>
               </div>`;
           })}
         </div>
