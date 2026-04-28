@@ -255,9 +255,6 @@ _renderWeather() {
     const sunX = 35 + ((azimuth - 45) / 270) * 130;
     const sunY = 55 - (Math.max(0, elevation) * 0.5);
 
-_renderWeather() {
-    // ... (gardez le début du code inchangé : azimuth, sunX, sunY, etc.)
-
     return html`
       <div class="page" style="height: 100%; max-height: 485px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; overflow: hidden; padding: 5px;">
         
