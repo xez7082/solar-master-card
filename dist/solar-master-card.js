@@ -239,71 +239,67 @@ _renderWeather() {
     const elevation = sun.attributes.elevation ?? 0;
     const azimuth = sun.attributes.azimuth ?? 0;
 
-    const moonPhases = { 'new_moon': 'Nouvelle\nLune', 'waxing_crescent': 'Premier\nCroissant', 'first_quarter': 'Premier\nQuartier', 'waxing_gibbous': 'Gibbeuse\nCroissante', 'full_moon': 'Pleine\nLune', 'waning_gibbous': 'Gibbeuse\nDécroissante', 'last_quarter': 'Dernier\nQuartier', 'waning_crescent': 'Dernier\nCroissant' };
-    const phaseFr = moonPhases[this.hass.states[c.moon_entity]?.state] || 'Phase\nInconnue';
+    const moonPhases = { 'new_moon': 'Nouvelle Lune', 'waxing_crescent': 'Premier Croissant', 'first_quarter': 'Premier Quartier', 'waxing_gibbous': 'Gibbeuse Croissante', 'full_moon': 'Pleine Lune', 'waning_gibbous': 'Gibbeuse Décroissante', 'last_quarter': 'Dernier Quartier', 'waning_crescent': 'Dernier Croissant' };
+    const phaseFr = moonPhases[this.hass.states[c.moon_entity]?.state] || 'Phase Inconnue';
 
     const sunX = 35 + ((azimuth - 45) / 270) * 130;
-    const sunY = 65 - (Math.max(0, elevation) * 0.6);
+    const sunY = 55 - (Math.max(0, elevation) * 0.5); // Ajusté pour le nouveau viewBox
 
     return html`
-      <div class="page" style="height: 490px; max-height: 490px; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; box-sizing: border-box; pointer-events: none; position: relative; z-index: 2; overflow: hidden;">
+      <div class="page" style="height: 490px; max-height: 490px; padding: 10px; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 10px; box-sizing: border-box; overflow: hidden;">
         
-        <div style="display: flex; flex-direction: column; gap: 4px; pointer-events: auto;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 20px; pointer-events: none; align-items: center;">
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: flex-start;">
           
-          <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-            <svg viewBox="0 0 200 85" style="width: 100%; overflow: visible;">
-              <text x="15" y="76" fill="#ffffff" font-size="10" font-weight="bold">E</text>
-              <text x="175" y="76" fill="#ffffff" font-size="10" font-weight="bold">O</text>
-              <text x="96" y="12" fill="#ffc107" font-size="12" font-weight="bold">S</text>
-              <line x1="30" y1="65" x2="170" y2="65" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
-              <path d="M 35,65 A 65,50 0 0 1 165,65" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="4,4" />
+          <div style="width: 100%; display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 5px 0;">
+            <svg viewBox="0 0 200 70" style="width: 100%; overflow: visible;">
+              <text x="15" y="65" fill="#ffffff" font-size="9" font-weight="bold">E</text>
+              <text x="175" y="65" fill="#ffffff" font-size="9" font-weight="bold">O</text>
+              <text x="96" y="10" fill="#ffc107" font-size="10" font-weight="bold">S</text>
+              <line x1="30" y1="55" x2="170" y2="55" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+              <path d="M 35,55 A 65,40 0 0 1 165,55" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="4,2" />
               <g>
-                <circle cx="${sunX}" cy="${sunY}" r="7" fill="#ffc107" style="filter: drop-shadow(0 0 8px #ffc107);" />
-                <line x1="${sunX}" y1="${sunY-10}" x2="${sunX}" y2="${sunY-7}" stroke="#ffc107" stroke-width="2" />
-                <line x1="${sunX}" y1="${sunY+10}" x2="${sunX}" y2="${sunY+7}" stroke="#ffc107" stroke-width="2" />
-                <line x1="${sunX-10}" y1="${sunY}" x2="${sunX-7}" y2="${sunY}" stroke="#ffc107" stroke-width="2" />
-                <line x1="${sunX+10}" y1="${sunY}" x2="${sunX+7}" y2="${sunY}" stroke="#ffc107" stroke-width="2" />
+                <circle cx="${sunX}" cy="${sunY}" r="6" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />
               </g>
             </svg>
             
-            <div style="display: flex; justify-content: space-between; width: 85%; font-size: 11px; color: #ffffff; margin-top: 5px; font-weight: bold; font-family: monospace; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+            <div style="display: flex; justify-content: space-between; width: 90%; font-size: 10px; color: #ffffff; margin-top: 2px; font-weight: bold; font-family: monospace; padding: 2px 5px;">
               <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
               <span style="color: #ffc107;">${elevation.toFixed(1)}°</span>
               <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
             </div>
           </div>
 
-          <div style="background: rgba(30,30,30,0.95); padding: 8px 15px; border-radius: 10px; border: 1px solid #555; display: flex; align-items: center; gap: 15px; height: 42px; width: 85%; pointer-events: auto;">
-            <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 24px; filter: drop-shadow(0 0 5px #00f9f9);"></ha-icon>
-            <div style="display: flex; flex-direction: column; line-height: 1.1;">
-              <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.7;">PHASE LUNAIRE</span>
-              <span style="font-size: 14px; font-weight: 900; color: #ffffff;">${phaseFr}</span>
+          <div style="background: rgba(30,30,30,0.95); padding: 5px 10px; border-radius: 10px; border: 1px solid #444; display: flex; align-items: center; gap: 10px; height: 34px; width: 100%; box-sizing: border-box;">
+            <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
+            <div style="display: flex; flex-direction: column; line-height: 1;">
+              <span style="font-size: 7px; color: #aaa; text-transform: uppercase; font-weight: bold;">LUNE</span>
+              <span style="font-size: 11px; font-weight: bold; color: #ffffff; white-space: nowrap;">${phaseFr}</span>
             </div>
           </div>
 
         </div>
       </div>`;
-  }
+}
 
-  _renderMiniSensor(i) {
+_renderMiniSensor(i) {
     const c = this.config;
     const entityId = c[`w${i}_e`];
     if (!entityId || !this.hass.states[entityId]) return html``;
     const s = this._getVal(entityId);
     return html`
-      <div style="background: rgba(30,30,30,0.95); padding: 0 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 10px; height: 42px; box-sizing: border-box; pointer-events: auto;">
-        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 18px;"></ha-icon>
-        <div style="display: flex; flex-direction: column; line-height: 1;">
-          <span style="font-size: 8px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.8;">${c[`w${i}_l`] || 'S' + i}</span>
-          <span style="font-size: 14px; font-weight: 900; color: #ffffff;">${s.val}<small style="font-size: 10px; color: #00f9f9; margin-left: 2px;">${s.unit}</small></span>
+      <div style="background: rgba(30,30,30,0.95); padding: 0 10px; border-radius: 8px; border: 1px solid #444; display: flex; align-items: center; gap: 8px; height: 34px; box-sizing: border-box;">
+        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 16px;"></ha-icon>
+        <div style="display: flex; flex-direction: column; line-height: 1; overflow: hidden;">
+          <span style="font-size: 7px; color: #aaa; text-transform: uppercase; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c[`w${i}_l`] || 'S' + i}</span>
+          <span style="font-size: 13px; font-weight: 800; color: #ffffff;">${s.val}<small style="font-size: 9px; color: #00f9f9; margin-left: 1px;">${s.unit}</small></span>
         </div>
       </div>`;
-  }
-
+}
+  
 _renderBattery() {
     const c = this.config;
     return html`
