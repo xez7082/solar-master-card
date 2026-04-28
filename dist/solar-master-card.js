@@ -24,6 +24,10 @@ class SolarMasterCardEditor extends LitElement {
     if (!this.hass || !this._config) return html``;
     const schemas = {
       tab_solar: [
+        // Dans schemas -> tab_solar, ajoute ces 3 lignes :
+        { name: "bg_url", label: "URL de l'image de fond", selector: { text: {} } },
+        { name: "bg_opacity", label: "Opacité du fond (0.1 à 1)", selector: { number: { min: 0.1, max: 1, step: 0.1 } } },
+        { name: "solar_pct_sensor", label: "Sensor Pourcentage Objectif (%)", selector: { entity: {} } },
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200 } } },
         { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
         { name: "solar_target", label: "Objectif Jour (kWh)", selector: { entity: {} } },
@@ -122,51 +126,41 @@ class SolarMasterCard extends LitElement {
     `;
   }
 
-  _renderSolar() {
+_renderSolar() {
     const c = this.config;
     const prod = this._getVal(c.total_now);
     const target = this._getVal(c.solar_target);
-    const progress = Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
+    
+    // On utilise ton sensor de pourcentage s'il est renseigné, sinon calcul auto
+    const pct_entity = this._getVal(c.solar_pct_sensor);
+    const progress = c.solar_pct_sensor ? parseFloat(pct_entity.val) : Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
 
     return html`
-      <div class="page">
+      ${c.bg_url ? html`<div class="bg-overlay" style="background-image: url('${c.bg_url}'); opacity: ${c.bg_opacity || 0.3};"></div>` : ''}
+
+      <div class="page" style="position: relative; z-index: 2;">
         <div class="titan-header">
           <div class="big-val">${prod.val}<small>W</small></div>
           <div class="sub-txt">PUISSANCE PHOTOVOLTAÏQUE</div>
         </div>
 
         <div class="ruler-box">
-          <div class="r-labels"><span>OBJECTIF: ${target.val}kWh</span> <b>${progress.toFixed(1)}%</b></div>
+          <div class="r-labels">
+            <span>OBJECTIF: ${target.val}kWh</span> 
+            <b style="color: #ffc107; text-shadow: 0 0 5px #ffc107;">${progress.toFixed(1)}%</b>
+          </div>
           <div class="r-track">
             ${Array(25).fill().map((_, i) => html`<div class="seg ${i < progress / 4 ? 'active' : ''}"></div>`)}
           </div>
         </div>
 
         <div class="neon-circles">
-          ${[1, 2, 3, 4].map(i => {
-            if(!c[`p${i}_w`]) return '';
-            const v = this._getVal(c[`p${i}_w`]);
-            const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
-            return html`
-              <div class="n-item">
-                <div class="n-circle" style="--clr:${clr}">
-                   <span class="v">${Math.round(v.val)}</span><span class="u">W</span>
-                </div>
-                <div class="n-label">${c[`p${i}_name`] || 'PANEL '+i}</div>
-              </div>`;
-          })}
-        </div>
-
+           </div>
+        
         <div class="data-grid">
-          ${[4, 5, 6, 7, 8, 9].map(i => {
-            if(!c[`d${i}_entity`]) return '';
-            const d = this._getVal(c[`d${i}_entity`]);
-            return html`<div class="d-card"><span>${c[`d${i}_label`]}</span><b>${d.val}<small>${d.unit}</small></b></div>`;
-          })}
-        </div>
+           </div>
       </div>`;
   }
-
   _renderWeather() {
     const c = this.config;
     const sun = this.hass.states['sun.sun'];
@@ -261,6 +255,20 @@ _renderBattery() {
     .scroll { overflow-y: auto; }
     .scroll::-webkit-scrollbar { width: 4px; }
     .scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+    /* Ajoute ça dans le CSS */
+.bg-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+    pointer-events: none;
+}
+.view-port { 
+    position: relative; 
+    z-index: 1; /* Pour que les infos soient au-dessus de l'image */
+}
 
     /* DESIGN TITAN */
     .titan-header { text-align: center; margin-bottom: 30px; }
