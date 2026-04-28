@@ -165,9 +165,18 @@ render() {
   }
 _renderSolar() {
     const c = this.config;
-    const prod = this._getVal(c.total_now);
     
-    // On utilise 'c.conso_entity' qui vient de l'éditeur visuel
+    // Récupération des entités principales
+    const prod = this._getVal(c.total_now);
+    const target = this._getVal(c.solar_target);
+    
+    // Logique du pourcentage d'objectif (soit via un sensor, soit calculé)
+    const pct_entity = this._getVal(c.solar_pct_sensor);
+    const progress = c.solar_pct_sensor 
+      ? parseFloat(pct_entity.val) 
+      : Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
+    
+    // Gestion de la consommation dynamique (Import/Export) depuis l'éditeur
     const consoState = c.conso_entity ? this.hass.states[c.conso_entity] : null; 
     const consoVal = consoState ? parseFloat(consoState.state) : 0;
     const consoDisplay = Math.abs(consoVal).toFixed(0);
@@ -179,32 +188,72 @@ _renderSolar() {
           
           <div style="flex: 1; text-align: center;">
             ${consoVal > 0 ? html`
-              <div style="color: #ff4444; font-weight: 900;">
-                <ha-icon icon="mdi:transmission-tower" style="--mdc-icon-size: 22px;"></ha-icon><br>
+              <div style="color: #ff4444; font-weight: 900; animation: pulse 2s infinite;">
+                <ha-icon icon="mdi:transmission-tower" style="--mdc-icon-size: 24px;"></ha-icon><br>
                 <span style="font-size: 18px;">${consoDisplay} W</span>
               </div>
             ` : ''}
           </div>
 
-          <div style="flex: 1; text-align: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
-            <span style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold;">Production</span><br>
-            <span style="font-size: 24px; font-weight: 900; color: #ffc107;">${prod.val} W</span>
+          <div style="flex: 1; text-align: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 15px rgba(255,193,7,0.1);">
+            <span style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Production</span><br>
+            <span style="font-size: 26px; font-weight: 900; color: #ffc107;">${prod.val}<small style="font-size: 12px; margin-left: 2px;">W</small></span>
           </div>
 
           <div style="flex: 1; text-align: center;">
             ${consoVal < 0 ? html`
-              <div style="color: #00ff00; font-weight: 900;">
-                <ha-icon icon="mdi:export" style="--mdc-icon-size: 22px;"></ha-icon><br>
+              <div style="color: #00ff00; font-weight: 900; animation: pulse 2s infinite;">
+                <ha-icon icon="mdi:export" style="--mdc-icon-size: 24px;"></ha-icon><br>
                 <span style="font-size: 18px;">${consoDisplay} W</span>
               </div>
             ` : ''}
           </div>
         </div>
 
+        <div class="ruler-box" style="margin: 10px 0;">
+          <div style="display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-bottom: 5px; font-weight: bold;">
+            <span>OBJECTIF JOUR</span>
+            <span style="color: #ffc107;">${progress.toFixed(1)}%</span>
+          </div>
+          <div style="display: flex; gap: 3px; height: 8px;">
+            ${Array(20).fill().map((_, i) => html`
+              <div style="flex:1; background: ${i < (progress/5) ? '#ffc107' : '#1a1a1a'}; border-radius: 2px; box-shadow: ${i < (progress/5) ? '0 0 5px #ffc107' : 'none'};"></div>
+            `)}
+          </div>
         </div>
+
+        <div class="neon-circles" style="display: flex; justify-content: space-around; margin: 10px 0;">
+          ${[1, 2, 3, 4].map(i => {
+            const entityId = c[`p${i}_w`] || c[`panel${i}_production`];
+            if(!entityId) return '';
+            const v = this._getVal(entityId);
+            const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
+            return html`
+              <div class="n-item" style="text-align: center;">
+                <div class="n-circle" style="width: 68px; height: 68px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 10px ${clr}, 0 0 8px ${clr}; margin-bottom: 5px;">
+                   <span style="font-size: 16px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
+                   <span style="font-size: 8px; color: #888;">W</span>
+                </div>
+                <div style="font-size: 8px; font-weight: bold; color: #aaa; text-transform: uppercase; white-space: nowrap;">${c[`p${i}_name`] || 'P'+i}</div>
+              </div>`;
+          })}
+        </div>
+
+        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: auto;">
+          ${[4, 5, 6, 7, 8, 9].map(i => {
+            if(!c[`d${i}_entity`]) return '';
+            const d = this._getVal(c[`d${i}_entity`]);
+            return html`
+              <div class="d-card" style="background: rgba(30,30,30,0.4); padding: 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                <span style="font-size: 8px; color: #777; display: block; text-transform: uppercase; margin-bottom: 2px;">${c[`d${i}_label`]}</span>
+                <b style="font-size: 13px; color: #fff;">${d.val}<small style="font-size: 9px; margin-left: 2px; color: #00f9f9;">${d.unit}</small></b>
+              </div>`;
+          })}
+        </div>
+
+      </div>
     `;
 }
-
 _renderWeather() {
     const c = this.config;
     const sun = this.hass.states['sun.sun'];
