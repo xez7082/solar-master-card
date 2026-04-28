@@ -239,21 +239,21 @@ _renderWeather() {
     const sunY = 65 - (Math.max(0, elevation) * 0.6);
 
     return html`
-      <div class="page" style="height: 500px; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; box-sizing: border-box; pointer-events: none; position: relative; z-index: 2;">
+      <div class="page" style="height: 500px; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; box-sizing: border-box; pointer-events: none; position: relative; z-index: 2;">
         
         <div style="display: flex; flex-direction: column; gap: 5px; pointer-events: auto;">
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
 
-        <div style="display: flex; flex-direction: column; justify-content: space-between; pointer-events: none;">
+        <div style="display: flex; flex-direction: column; gap: 20px; pointer-events: none; align-items: center;">
           
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+          <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
             <svg viewBox="0 0 200 85" style="width: 100%; overflow: visible;">
               <text x="15" y="76" fill="#ffffff" font-size="10" font-weight="bold">E</text>
               <text x="175" y="76" fill="#ffffff" font-size="10" font-weight="bold">O</text>
               <text x="96" y="12" fill="#ffc107" font-size="12" font-weight="bold">S</text>
-              <line x1="30" y1="65" x2="170" y2="65" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
-              <path d="M 35,65 A 65,50 0 0 1 165,65" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4,4" />
+              <line x1="30" y1="65" x2="170" y2="65" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+              <path d="M 35,65 A 65,50 0 0 1 165,65" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="4,4" />
               <g>
                 <circle cx="${sunX}" cy="${sunY}" r="7" fill="#ffc107" style="filter: drop-shadow(0 0 8px #ffc107);" />
                 <line x1="${sunX}" y1="${sunY-10}" x2="${sunX}" y2="${sunY-7}" stroke="#ffc107" stroke-width="2" />
@@ -262,17 +262,18 @@ _renderWeather() {
                 <line x1="${sunX+10}" y1="${sunY}" x2="${sunX+7}" y2="${sunY}" stroke="#ffc107" stroke-width="2" />
               </g>
             </svg>
-            <div style="display: flex; justify-content: space-between; width: 85%; font-size: 11px; color: #ffffff; margin-top: 5px; font-weight: bold; font-family: monospace;">
+            
+            <div style="display: flex; justify-content: space-between; width: 85%; font-size: 11px; color: #ffffff; margin-top: 5px; font-weight: bold; font-family: monospace; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
               <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
               <span style="color: #ffc107;">${elevation.toFixed(1)}°</span>
               <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
             </div>
           </div>
 
-          <div style="background: rgba(30,30,30,0.95); padding: 8px 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 12px; height: 45px; pointer-events: auto; margin-bottom: 5px;">
-            <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 24px; filter: drop-shadow(0 0 5px #00f9f9);"></ha-icon>
+          <div style="background: rgba(30,30,30,0.95); padding: 8px 15px; border-radius: 10px; border: 1px solid #555; display: flex; align-items: center; gap: 15px; height: 45px; width: 85%; pointer-events: auto;">
+            <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 26px; filter: drop-shadow(0 0 5px #00f9f9);"></ha-icon>
             <div style="display: flex; flex-direction: column; line-height: 1.1;">
-              <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.8;">PHASE LUNAIRE</span>
+              <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.7;">PHASE LUNAIRE</span>
               <span style="font-size: 14px; font-weight: 900; color: #ffffff; white-space: pre-line;">${phaseFr}</span>
             </div>
           </div>
