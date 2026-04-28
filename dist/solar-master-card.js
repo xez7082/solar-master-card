@@ -1,4 +1,4 @@
-import {
+  import {
   LitElement,
   html,
   css
@@ -27,6 +27,7 @@ class SolarMasterCardEditor extends LitElement {
         // Dans schemas -> tab_solar, ajoute ces 3 lignes :
         { name: "bg_url", label: "URL de l'image de fond", selector: { text: {} } },
         { name: "bg_opacity", label: "Opacité du fond (0.1 à 1)", selector: { number: { min: 0.1, max: 1, step: 0.1 } } },
+        { name: "conso_entity", label: "Capteur Consommation/Import (W)", selector: { entity: {} } }, // <--- AJOUTE CETTE LIGNE
         { name: "solar_pct_sensor", label: "Sensor Pourcentage Objectif (%)", selector: { entity: {} } },
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200 } } },
         { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
@@ -54,11 +55,10 @@ class SolarMasterCardEditor extends LitElement {
         { name: "batt_avg_soc", label: "SOC Moyen Global (%)", selector: { entity: {} } },
         ...[1, 2, 3, 4].map(i => [
           { name: `b${i}_n`, label: `Nom Batterie ${i}`, selector: { text: {} } },
-          { name: `b${i}_s`, label: `SOC % ${i}`, selector: { entity: {} } },
-          { name: `b${i}_cap`, label: `Capacité ${i}`, selector: { entity: {} } },
-          { name: `b${i}_out`, label: `Watts Entrée/Sortie ${i}`, selector: { entity: {} } },
-          { name: `b${i}_s`, label: `Sortie Batt ${i}`, selector: { entity: {} } }, // <--- AJOUTÉ
-          { name: `b${i}_t`, label: `Température Batt ${i}`, selector: { entity: {} } } // <--- AJOUTÉ
+          { name: `b${i}_s`, label: `SOC % (État de charge) ${i}`, selector: { entity: {} } },
+          { name: `b${i}_t`, label: `Température ${i}`, selector: { entity: {} } },
+          { name: `b${i}_v`, label: `Puissance de Sortie (W) ${i}`, selector: { entity: {} } }, // Utilisé pour l'icône éclair
+          { name: `b${i}_out`, label: `Flux Entrée/Sortie (W) ${i}`, selector: { entity: {} } }, // Utilisé pour l'icône flèche
         ]).flat()
       ],
       tab_eco: [
@@ -165,15 +165,19 @@ render() {
 
 _renderSolar() {
     const c = this.config;
+    
+    // Récupération des entités principales
     const prod = this._getVal(c.total_now);
     const target = this._getVal(c.solar_target);
     
-    // Logique du pourcentage
+    // Logique du pourcentage d'objectif (soit via un sensor, soit calculé)
     const pct_entity = this._getVal(c.solar_pct_sensor);
-    const progress = c.solar_pct_sensor ? parseFloat(pct_entity.val) : Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
+    const progress = c.solar_pct_sensor 
+      ? parseFloat(pct_entity.val) 
+      : Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
     
-    // Gestion de la consommation (Rouge/Vert)
-    const consoState = this.hass.states['sensor.consommation_instantanee']; 
+    // Gestion de la consommation dynamique (Import/Export) depuis l'éditeur
+    const consoState = c.conso_entity ? this.hass.states[c.conso_entity] : null; 
     const consoVal = consoState ? parseFloat(consoState.state) : 0;
     const consoDisplay = Math.abs(consoVal).toFixed(0);
 
@@ -184,29 +188,41 @@ _renderSolar() {
           
           <div style="flex: 1; text-align: center;">
             ${consoVal > 0 ? html`
-              <div style="color: #ff4444; font-weight: 900;">
-                <ha-icon icon="mdi:transmission-tower" style="--mdc-icon-size: 22px;"></ha-icon><br>
+              <div style="color: #ff4444; font-weight: 900; animation: pulse 2s infinite;">
+                <ha-icon icon="mdi:transmission-tower" style="--mdc-icon-size: 24px;"></ha-icon><br>
                 <span style="font-size: 18px;">${consoDisplay} W</span>
               </div>
             ` : ''}
           </div>
 
-          <div style="flex: 1; text-align: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
-            <span style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold;">Production</span><br>
-            <span style="font-size: 24px; font-weight: 900; color: #ffc107;">${prod.val} W</span>
+          <div style="flex: 1; text-align: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 15px rgba(255,193,7,0.1);">
+            <span style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Production</span><br>
+            <span style="font-size: 26px; font-weight: 900; color: #ffc107;">${prod.val}<small style="font-size: 12px; margin-left: 2px;">W</small></span>
           </div>
 
           <div style="flex: 1; text-align: center;">
             ${consoVal < 0 ? html`
-              <div style="color: #00ff00; font-weight: 900;">
-                <ha-icon icon="mdi:export" style="--mdc-icon-size: 22px;"></ha-icon><br>
+              <div style="color: #00ff00; font-weight: 900; animation: pulse 2s infinite;">
+                <ha-icon icon="mdi:export" style="--mdc-icon-size: 24px;"></ha-icon><br>
                 <span style="font-size: 18px;">${consoDisplay} W</span>
               </div>
             ` : ''}
           </div>
         </div>
 
-        <div class="neon-circles" style="display: flex; justify-content: space-around; margin: 15px 0;">
+        <div class="ruler-box" style="margin: 10px 0;">
+          <div style="display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-bottom: 5px; font-weight: bold;">
+            <span>OBJECTIF JOUR</span>
+            <span style="color: #ffc107;">${progress.toFixed(1)}%</span>
+          </div>
+          <div style="display: flex; gap: 3px; height: 8px;">
+            ${Array(20).fill().map((_, i) => html`
+              <div style="flex:1; background: ${i < (progress/5) ? '#ffc107' : '#1a1a1a'}; border-radius: 2px; box-shadow: ${i < (progress/5) ? '0 0 5px #ffc107' : 'none'};"></div>
+            `)}
+          </div>
+        </div>
+
+        <div class="neon-circles" style="display: flex; justify-content: space-around; margin: 10px 0;">
           ${[1, 2, 3, 4].map(i => {
             const entityId = c[`p${i}_w`] || c[`panel${i}_production`];
             if(!entityId) return '';
@@ -214,23 +230,23 @@ _renderSolar() {
             const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
             return html`
               <div class="n-item" style="text-align: center;">
-                <div class="n-circle" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 10px ${clr}, 0 0 8px ${clr}; margin-bottom: 5px;">
+                <div class="n-circle" style="width: 68px; height: 68px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 10px ${clr}, 0 0 8px ${clr}; margin-bottom: 5px;">
                    <span style="font-size: 16px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
                    <span style="font-size: 8px; color: #888;">W</span>
                 </div>
-                <div style="font-size: 8px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || c[`panel${i}_name`] || 'P'+i}</div>
+                <div style="font-size: 8px; font-weight: bold; color: #aaa; text-transform: uppercase; white-space: nowrap;">${c[`p${i}_name`] || 'P'+i}</div>
               </div>`;
           })}
         </div>
 
-        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: auto;">
           ${[4, 5, 6, 7, 8, 9].map(i => {
             if(!c[`d${i}_entity`]) return '';
             const d = this._getVal(c[`d${i}_entity`]);
             return html`
-              <div class="d-card" style="background: rgba(30,30,30,0.4); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                <span style="font-size: 8px; color: #888; display: block; text-transform: uppercase; margin-bottom: 3px;">${c[`d${i}_label`]}</span>
-                <b style="font-size: 14px; color: #fff;">${d.val}<small style="font-size: 9px; margin-left: 2px; color: #00f9f9;">${d.unit}</small></b>
+              <div class="d-card" style="background: rgba(30,30,30,0.4); padding: 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                <span style="font-size: 8px; color: #777; display: block; text-transform: uppercase; margin-bottom: 2px;">${c[`d${i}_label`]}</span>
+                <b style="font-size: 13px; color: #fff;">${d.val}<small style="font-size: 9px; margin-left: 2px; color: #00f9f9;">${d.unit}</small></b>
               </div>`;
           })}
         </div>
@@ -317,70 +333,71 @@ _renderWeather() {
 _renderBattery() {
     const c = this.config;
     return html`
-      <div class="page scroll" style="position: relative; z-index: 2;">
-        <div class="rack-container" style="display: flex; flex-direction: column; gap: 12px;">
+      <div class="page" style="height: 490px; padding: 10px; overflow: hidden; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,200,83,0.1); padding: 12px; border-radius: 12px; border: 1px solid rgba(0,200,83,0.2); margin-bottom: 5px;">
+            <div>
+              <span style="font-size: 9px; color: #aaa; display: block; text-transform: uppercase;">SOC Global</span>
+              <b style="font-size: 20px; color: #00c853;">${this._getVal(c.batt_avg_soc).val}%</b>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 9px; color: #aaa; display: block; text-transform: uppercase;">Flux Total</span>
+              <b style="font-size: 20px; color: #ffc107;">${this._getVal(c.batt_total_power).val} W</b>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
           ${[1, 2, 3, 4].map(i => {
-            // Vérification si l'entité principale existe
+            // On vérifie si le SOC de la batterie est configuré
             if (!c[`b${i}_s`] || !this.hass.states[c[`b${i}_s`]]) return '';
             
-            const socVal = this._getVal(c[`b${i}_s`]).val;
-            const soc = parseFloat(socVal) || 0;
-            const p = this._getVal(c[`b${i}_out`]); // Flux global (charge/décharge)
-            const temp = this._getVal(c[`b${i}_t`]); // Température
-            const sortie = this._getVal(c[`b${i}_v`]); // C'est ici que tu dois mettre ton sensor de Watts de sortie dans l'éditeur
+            const soc = parseFloat(this._getVal(c[`b${i}_s`]).val) || 0;
+            const temp = this._getVal(c[`b${i}_t`]);
+            const powerSortie = this._getVal(c[`b${i}_v`]);
+            const fluxGlobal = parseFloat(this._getVal(c[`b${i}_out`]).val) || 0;
             
-            // Logique de couleur dynamique
-            let color = "#f44336";
-            if (soc >= 20) color = "#ff9800";
-            if (soc >= 50) color = "#ffc107";
-            if (soc >= 80) color = "#00c853";
+            // Couleur dynamique selon le SOC
+            let color = "#f44336"; // Rouge < 20%
+            if (soc >= 20) color = "#ff9800"; // Orange
+            if (soc >= 50) color = "#ffc107"; // Jaune
+            if (soc >= 80) color = "#00c853"; // Vert
             
-            const powerVal = parseFloat(p.val) || 0;
-
             return html`
-              <div class="rack-pro" style="background: rgba(0,0,0,0.7); padding: 12px; border-radius: 10px; border: 1px solid #1a1a1a; border-left: 3px solid ${color}; margin-bottom: 4px;">
+              <div style="background: rgba(20,20,20,0.8); padding: 10px; border-radius: 10px; border: 1px solid #333; border-left: 4px solid ${color};">
                 
-                <div class="rp-head" style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
-                  <span style="font-size: 11px; font-weight: bold; color: #888; letter-spacing: 1px;">${c[`b${i}_n`] || 'BATTERY '+i}</span>
-                  <b style="font-size: 16px; color: ${color};">${soc}%</b>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-size: 11px; font-weight: bold; color: #eee;">${c[`b${i}_n`] || 'BATTERIE '+i}</span>
+                  <b style="font-size: 14px; color: ${color};">${soc}%</b>
                 </div>
 
-                <div class="rp-segments" style="display: flex; gap: 2px; height: 4px; margin-bottom: 12px;">
-                  ${Array(30).fill().map((_, idx) => html`
-                    <div class="b-seg" style="
-                      flex: 1; 
-                      background: ${idx < soc / (100/30) ? color : '#111'};
-                      box-shadow: ${idx < soc / (100/30) ? '0 0 4px ' + color : 'none'};
-                      border-radius: 1px;">
-                    </div>
+                <div style="display: flex; gap: 2px; height: 5px; margin-bottom: 10px;">
+                  ${Array(20).fill().map((_, idx) => html`
+                    <div style="flex: 1; background: ${idx < soc / 5 ? color : '#111'}; border-radius: 1px; box-shadow: ${idx < soc / 5 ? '0 0 4px ' + color : 'none'};"></div>
                   `)}
                 </div>
 
-                <div class="rp-extras" style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid #1a1a1a;">
-                  
-                  <div class="ex-item" style="display: flex; align-items: center; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #222; padding-top: 6px;">
+                  <div style="display: flex; align-items: center; gap: 4px;">
                     <ha-icon icon="mdi:thermometer" style="--mdc-icon-size: 14px; color: #00f9f9;"></ha-icon>
-                    <span style="font-size: 11px; color: #eee;">${temp.val}<small>${temp.unit || '°C'}</small></span>
+                    <span style="font-size: 11px;">${temp.val}<small>${temp.unit || '°C'}</small></span>
                   </div>
-
-                  <div class="ex-item" style="display: flex; align-items: center; gap: 4px;">
+                  <div style="display: flex; align-items: center; gap: 4px;">
                     <ha-icon icon="mdi:lightning-bolt" style="--mdc-icon-size: 14px; color: #ffc107;"></ha-icon>
-                    <span style="font-size: 11px; color: #eee;">${sortie.val}<small>W</small></span>
+                    <span style="font-size: 11px;">${powerSortie.val}W</span>
                   </div>
-
-                  <div class="ex-item" style="display: flex; align-items: center; gap: 4px;">
-                    <ha-icon icon="${powerVal < 0 ? 'mdi:download' : 'mdi:upload'}" 
-                             style="--mdc-icon-size: 14px; color: ${powerVal < 0 ? '#00c853' : '#ff9800'};">
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <ha-icon icon="${fluxGlobal < 0 ? 'mdi:download' : 'mdi:upload'}" 
+                             style="--mdc-icon-size: 14px; color: ${fluxGlobal < 0 ? '#00c853' : '#ff9800'};">
                     </ha-icon>
-                    <span style="font-size: 11px; font-weight: bold; color: #fff;">${Math.abs(Math.round(powerVal))}W</span>
+                    <span style="font-size: 11px; font-weight: bold;">${Math.abs(fluxGlobal)}W</span>
                   </div>
-
                 </div>
+
               </div>`;
           })}
         </div>
       </div>`;
-  }
+}
   
   _renderEco() {
     const c = this.config;
