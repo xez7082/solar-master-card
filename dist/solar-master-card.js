@@ -107,9 +107,10 @@ class SolarMasterCard extends LitElement {
 render() {
     if (!this.config || !this.hass) return html``;
     const c = this.config;
+
     return html`
-      <ha-card style="height:${c.card_height || 750}px;">
-        <div class="card-wrapper">
+      <ha-card style="height:${c.card_height || 750}px; overflow: hidden; position: relative;">
+        <div class="card-wrapper" style="height: 100%; display: flex; flex-direction: column;">
           
           ${c.bg_url ? html`
             <div class="bg-overlay" style="
@@ -120,23 +121,47 @@ render() {
               z-index: 0; pointer-events: none;">
             </div>` : ''}
 
-          <div class="view-port" style="position: relative; z-index: 1;">
-            ${this._tab === 'SOLAIRE' ? this._renderSolar() : 
-              this._tab === 'METEO' ? this._renderWeather() :
-              this._tab === 'BATTERIE' ? this._renderBattery() : this._renderEco()}
+          <div class="view-port" style="flex: 1; position: relative; z-index: 1; overflow-y: auto;">
+            ${this._tab === 'SOLAIRE' ? this._renderSolar() : ''}
+            ${this._tab === 'METEO' ? this._renderWeather() : ''}
+            ${this._tab === 'BATTERIE' ? this._renderBattery() : ''}
+            ${this._tab === 'ECONOMIE' ? this._renderEco() : ''}
           </div>
 
-          <div class="nav-bar" style="position: relative; z-index: 2;">
-            <div class="nav-btn ${this._tab === 'SOLAIRE' ? 'active' : ''}" @click=${() => this._tab = 'SOLAIRE'}><ha-icon icon="mdi:solar-power-variant"></ha-icon><span>SOLAIRE</span></div>
-            <div class="nav-btn ${this._tab === 'METEO' ? 'active' : ''}" @click=${() => this._tab = 'METEO'}><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon><span>METEO</span></div>
-            <div class="nav-btn ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'}><ha-icon icon="mdi:battery-charging"></ha-icon><span>ENERGIE</span></div>
-            <div class="nav-btn ${this._tab === 'ECONOMIE' ? 'active' : ''}" @click=${() => this._tab = 'ECONOMIE'}><ha-icon icon="mdi:chart-areaspline"></ha-icon><span>ECO</span></div>
+          <div class="nav-bar" style="
+            display: flex; 
+            justify-content: space-around; 
+            background: rgba(0,0,0,0.8); 
+            border-top: 1px solid #222; 
+            padding: 10px 0; 
+            position: relative; 
+            z-index: 2;">
+            
+            <div class="nav-btn ${this._tab === 'SOLAIRE' ? 'active' : ''}" @click=${() => this._tab = 'SOLAIRE'} style="text-align:center; cursor:pointer; flex:1; color: ${this._tab === 'SOLAIRE' ? '#ffc107' : '#666'};">
+              <ha-icon icon="mdi:solar-power-variant"></ha-icon>
+              <div style="font-size: 9px; margin-top: 4px;">SOLAIRE</div>
+            </div>
+
+            <div class="nav-btn ${this._tab === 'METEO' ? 'active' : ''}" @click=${() => this._tab = 'METEO'} style="text-align:center; cursor:pointer; flex:1; color: ${this._tab === 'METEO' ? '#00f9f9' : '#666'};">
+              <ha-icon icon="mdi:weather-partly-cloudy"></ha-icon>
+              <div style="font-size: 9px; margin-top: 4px;">METEO</div>
+            </div>
+
+            <div class="nav-btn ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'} style="text-align:center; cursor:pointer; flex:1; color: ${this._tab === 'BATTERIE' ? '#00c853' : '#666'};">
+              <ha-icon icon="mdi:battery-charging"></ha-icon>
+              <div style="font-size: 9px; margin-top: 4px;">ENERGIE</div>
+            </div>
+
+            <div class="nav-btn ${this._tab === 'ECONOMIE' ? 'active' : ''}" @click=${() => this._tab = 'ECONOMIE'} style="text-align:center; cursor:pointer; flex:1; color: ${this._tab === 'ECONOMIE' ? '#e91e63' : '#666'};">
+              <ha-icon icon="mdi:chart-areaspline"></ha-icon>
+              <div style="font-size: 9px; margin-top: 4px;">ECO</div>
+            </div>
+
           </div>
         </div>
       </ha-card>
     `;
   }
-
   _renderSolar() {
     const c = this.config;
     const prod = this._getVal(c.total_now);
@@ -182,30 +207,62 @@ render() {
       </div>`;
   }
 
-  _renderWeather() {
+_renderWeather() {
     const c = this.config;
     const sun = this.hass.states['sun.sun'];
-    const weather = this._getVal(c.weather_entity);
+    
+    // Sécurité : si l'entité soleil n'est pas chargée
+    if (!sun) return html`<div style="color:red; padding:20px;">Attente de l'entité sun.sun...</div>`;
+
+    const elevation = sun.attributes.elevation || 0;
+    const azimuth = sun.attributes.azimuth || 0;
+    
+    // Calcul simplifié pour l'arc
+    const sunX = 100 - 80 * Math.cos((azimuth * Math.PI) / 180);
+    const sunY = 90 - 80 * Math.sin((elevation * Math.PI) / 180);
+
     return html`
-      <div class="page scroll">
-        <div class="weather-hero">
-            <div class="wh-temp">${this._getVal(c.temp_ext).val}°</div>
-            <div class="wh-icon"><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon></div>
-        </div>
+      <div class="page scroll" style="position: relative; z-index: 2; padding: 15px;">
         
-        <div class="sun-cockpit">
-            <div class="sc-item"><span>AZIMUT</span><b>${sun?.attributes.azimuth.toFixed(1)}°</b></div>
-            <div class="sc-item"><span>ELEVATION</span><b>${sun?.attributes.elevation.toFixed(1)}°</b></div>
-            <div class="sc-item"><span>HUMIDITÉ</span><b>${this._getVal(c.hum_ext).val}%</b></div>
+        <div style="background: rgba(0,0,0,0.5); border-radius: 12px; padding: 15px; border: 1px solid #222; margin-bottom: 15px;">
+          <svg viewBox="0 0 200 100" style="width: 100%; height: auto;">
+            <path d="M 20,90 A 80,80 0 0 1 180,90" fill="none" stroke="#444" stroke-width="1.5" stroke-dasharray="3" />
+            <line x1="10" y1="90" x2="190" y2="90" stroke="#333" stroke-width="1" />
+            ${elevation > 0 ? html`<circle cx="${sunX}" cy="${sunY}" r="5" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />` : ''}
+          </svg>
+          <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 10px; color: #888;">
+            <span>LEVÉE: ${sun.attributes.next_rising ? sun.attributes.next_rising.split('T')[1].substring(0, 5) : '--:--'}</span>
+            <span style="color: #ffc107; font-weight: bold;">${elevation.toFixed(1)}°</span>
+            <span>COUCHER: ${sun.attributes.next_setting ? sun.attributes.next_setting.split('T')[1].substring(0, 5) : '--:--'}</span>
+          </div>
         </div>
 
-        <div class="weather-grid-8">
-            ${[1,2,3,4,5,6,7,8].map(i => {
-                if(!c[`w${i}_e`]) return '';
-                const e = this._getVal(c[`w${i}_e`]);
-                return html`<div class="w-tile"><span>${c[`w${i}_l`]}</span><b>${e.val}${e.unit}</b></div>`;
-            })}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          ${[1, 2, 3, 4].map(i => {
+            const entityId = c[`w${i}_entity`];
+            if (!entityId || !this.hass.states[entityId]) return '';
+            const s = this._getVal(entityId);
+            return html`
+              <div style="background: rgba(15,15,15,0.9); padding: 12px; border-radius: 8px; border: 1px solid #222; display: flex; align-items: center; gap: 10px;">
+                <ha-icon icon="${c[`w${i}_icon`] || 'mdi:water'}" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
+                <div>
+                  <div style="font-size: 8px; color: #666; text-transform: uppercase;">${c[`w${i}_label`] || 'SENS '+i}</div>
+                  <div style="font-size: 14px; font-weight: bold; color: #fff;">${s.val}<small style="font-size: 10px; color: #444; margin-left: 2px;">${s.unit}</small></div>
+                </div>
+              </div>`;
+          })}
         </div>
+
+        ${c.moon_entity && this.hass.states[c.moon_entity] ? html`
+          <div style="margin-top: 15px; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 10px; border: 1px solid #222; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 18px;"></ha-icon>
+              <span style="font-size: 11px; color: #aaa;">PHASE LUNAIRE</span>
+            </div>
+            <span style="font-size: 11px; color: #00f9f9; font-weight: bold;">${this.hass.states[c.moon_entity].state}</span>
+          </div>
+        ` : ''}
+
       </div>`;
   }
 
@@ -215,23 +272,24 @@ _renderBattery() {
       <div class="page scroll" style="position: relative; z-index: 2;">
         <div class="rack-container" style="display: flex; flex-direction: column; gap: 12px;">
           ${[1, 2, 3, 4].map(i => {
-            // On vérifie si l'entité SOC est configurée pour afficher la batterie
-            if (!c[`b${i}_s`]) return '';
+            // Sécurité : on ne rend rien si le sensor SOC n'est pas là
+            if (!c[`b${i}_s`] || !this.hass.states[c[`b${i}_s`]]) return '';
             
-            const socVal = this._getVal(c[`b${i}_s`]).val;
-            const soc = parseFloat(socVal);
-            const p = this._getVal(c[`b${i}_out`]);
-            const temp = this._getVal(c[`b${i}_t`]); // Sensor Température
-            const volt = this._getVal(c[`b${i}_v`]); // Sensor Voltage
+            const soc = parseFloat(this._getVal(c[`b${i}_s`]).val) || 0;
+            const p = this._getVal(c[`b${i}_out`]); // Flux global
+            const temp = this._getVal(c[`b${i}_t`]); // Température
+            const sortie = this._getVal(c[`b${i}_v`]); // Ton sensor de puissance de sortie
             
-            // Logique de couleur dynamique
+            // Couleurs cockpit
             let color = "#f44336";
             if (soc >= 20) color = "#ff9800";
             if (soc >= 50) color = "#ffc107";
             if (soc >= 80) color = "#00c853";
             
+            const powerVal = parseFloat(p.val) || 0;
+
             return html`
-              <div class="rack-pro" style="background: rgba(0,0,0,0.7); padding: 12px; border-radius: 10px; border: 1px solid #1a1a1a; border-left: 3px solid ${color};">
+              <div class="rack-pro" style="background: rgba(0,0,0,0.7); padding: 12px; border-radius: 10px; border: 1px solid #1a1a1a; border-left: 3px solid ${color}; margin-bottom: 4px;">
                 
                 <div class="rp-head" style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
                   <span style="font-size: 11px; font-weight: bold; color: #888; letter-spacing: 1px;">${c[`b${i}_n`] || 'BATTERY '+i}</span>
@@ -257,15 +315,15 @@ _renderBattery() {
                   </div>
 
                   <div class="ex-item" style="display: flex; align-items: center; gap: 4px;">
-                    <ha-icon icon="mdi:flash" style="--mdc-icon-size: 14px; color: #ffc107;"></ha-icon>
-                    <span style="font-size: 11px; color: #eee;">${volt.val}<small>${volt.unit || 'V'}</small></span>
+                    <ha-icon icon="mdi:lightning-bolt" style="--mdc-icon-size: 14px; color: #ffc107;"></ha-icon>
+                    <span style="font-size: 11px; color: #eee;">${sortie.val}<small>W</small></span>
                   </div>
 
                   <div class="ex-item" style="display: flex; align-items: center; gap: 4px;">
-                    <ha-icon icon="${parseFloat(p.val) < 0 ? 'mdi:download' : 'mdi:upload'}" 
-                             style="--mdc-icon-size: 14px; color: ${parseFloat(p.val) < 0 ? '#00c853' : '#ff9800'};">
+                    <ha-icon icon="${powerVal < 0 ? 'mdi:download' : 'mdi:upload'}" 
+                             style="--mdc-icon-size: 14px; color: ${powerVal < 0 ? '#00c853' : '#ff9800'};">
                     </ha-icon>
-                    <span style="font-size: 11px; font-weight: bold; color: #fff;">${Math.abs(Math.round(p.val))}W</span>
+                    <span style="font-size: 11px; font-weight: bold; color: #fff;">${Math.abs(Math.round(powerVal))}W</span>
                   </div>
 
                 </div>
@@ -274,7 +332,6 @@ _renderBattery() {
         </div>
       </div>`;
   }
-
   _renderEco() {
     const c = this.config;
     return html`
