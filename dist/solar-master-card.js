@@ -201,49 +201,69 @@ _renderSolar() {
 _renderWeather() {
     const c = this.config;
     const sun = this.hass.states['sun.sun'];
-    if (!sun) return html`<div>Entité sun.sun non trouvée</div>`;
+    
+    // Sécurité : Si l'entité soleil n'est pas là, on affiche un message au lieu de tout bloquer
+    if (!sun) return html`<div style="padding:20px; color:red;">Entité sun.sun non trouvée</div>`;
 
-    // Calcul de la position du soleil sur l'arc (0 à 180 degrés)
     const elevation = sun.attributes.elevation || 0;
     const azimuth = sun.attributes.azimuth || 0;
     
-    // On transforme l'élévation en position sur un arc de 180°
-    // Si élévation < 0, le soleil est "sous l'horizon"
-    const sunPos = elevation > 0 ? (azimuth % 180) : -1; 
+    // Calcul pour placer le soleil sur l'arc SVG
+    // On mappe l'azimut (0-360) sur l'arc (20-180)
+    const sunX = 100 - 80 * Math.cos((azimuth * Math.PI) / 180);
+    const sunY = 90 - 80 * Math.sin((elevation * Math.PI) / 180);
 
     return html`
-      <div class="page scroll" style="position: relative; z-index: 2;">
+      <div class="page scroll" style="position: relative; z-index: 2; padding: 10px;">
         
-        <div class="sun-arc-container" style="text-align: center; margin-bottom: 20px; position: relative; padding: 20px 0;">
-          <svg viewBox="0 0 200 100" style="width: 80%; max-width: 300px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));">
-            <path d="M 20,90 A 80,80 0 0 1 180,90" fill="none" stroke="#333" stroke-width="2" stroke-dasharray="4" />
+        <div class="sun-arc-box" style="background: rgba(0,0,0,0.4); border-radius: 15px; padding: 15px; margin-bottom: 15px; border: 1px solid #1a1a1a;">
+          <div style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Position Solaire</div>
+          
+          <svg viewBox="0 0 200 100" style="width: 100%; height: auto;">
+            <path d="M 20,90 A 80,80 0 0 1 180,90" fill="none" stroke="#333" stroke-width="1" stroke-dasharray="2,2" />
+            <line x1="10" y1="90" x2="190" y2="90" stroke="#222" stroke-width="1" />
             
             ${elevation > 0 ? html`
-              <circle cx="${100 - 80 * Math.cos((azimuth * Math.PI) / 180)}" 
-                      cy="${90 - 80 * Math.sin((elevation * Math.PI) / 180)}" 
-                      r="5" fill="#ffc107" style="filter: drop-shadow(0 0 8px #ffc107);" />
+              <circle cx="${sunX}" cy="${sunY}" r="4" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />
             ` : ''}
           </svg>
           
-          <div style="display: flex; justify-content: space-between; width: 80%; margin: -10px auto 0; font-size: 10px; color: #666;">
-            <span>LEVÉE: ${new Date(sun.attributes.next_rising).toLocaleTimeString([], {hour: '2h', minute: '2h'})}</span>
-            <span>COUCHER: ${new Date(sun.attributes.next_setting).toLocaleTimeString([], {hour: '2h', minute: '2h'})}</span>
+          <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; color: #aaa; font-family: monospace;">
+            <span><ha-icon icon="mdi:sunrise" style="--mdc-icon-size: 12px;"></ha-icon> ${new Date(sun.attributes.next_rising).toLocaleTimeString([], {hour: '2h', minute: '2h'})}</span>
+            <span style="color: #ffc107;">${elevation.toFixed(1)}°</span>
+            <span><ha-icon icon="mdi:sunset" style="--mdc-icon-size: 12px;"></ha-icon> ${new Date(sun.attributes.next_setting).toLocaleTimeString([], {hour: '2h', minute: '2h'})}</span>
           </div>
         </div>
 
         <div class="weather-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-           ${this._renderWeatherDetails()} </div>
-
-        <div class="moon-info" style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
-           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9;"></ha-icon>
-           <div style="font-size: 11px;">
-              <div style="color: #aaa; text-transform: uppercase; font-size: 8px;">Phase Lunaire</div>
-              <div>${this.hass.states[c.moon_entity]?.state || 'N/A'}</div>
-           </div>
+          ${[1, 2, 3, 4].map(i => {
+            const entityId = c[`w${i}_entity`];
+            if (!entityId) return '';
+            const s = this._getVal(entityId);
+            return html`
+              <div class="w-card" style="background: rgba(10,10,10,0.8); padding: 12px; border-radius: 10px; border: 1px solid #1a1a1a; display: flex; align-items: center; gap: 10px;">
+                <ha-icon icon="${c[`w${i}_icon`] || 'mdi:water'}" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
+                <div>
+                  <div style="font-size: 8px; color: #555; text-transform: uppercase;">${c[`w${i}_label`]}</div>
+                  <div style="font-size: 14px; font-weight: bold; color: #fff;">${s.val}<small style="font-size: 10px; color: #666; margin-left: 2px;">${s.unit}</small></div>
+                </div>
+              </div>`;
+          })}
         </div>
+
+        ${c.moon_entity ? html`
+          <div class="moon-box" style="margin-top: 15px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; border: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9;"></ha-icon>
+              <span style="font-size: 11px; color: #eee;">Phase Lunaire</span>
+            </div>
+            <span style="font-size: 11px; color: #00f9f9; font-weight: bold;">${this.hass.states[c.moon_entity]?.state}</span>
+          </div>
+        ` : ''}
 
       </div>`;
   }
+  
 _renderBattery() {
     const c = this.config;
     return html`
