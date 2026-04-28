@@ -6,7 +6,7 @@ import {
 
 /**
  * ==========================================
- * 🧠 EDITEUR DE LA CARTE (V4.7)
+ * 🧠 EDITEUR DE LA CARTE (V4.8)
  * ==========================================
  */
 class SolarMasterCardEditor extends LitElement {
@@ -56,6 +56,7 @@ class SolarMasterCardEditor extends LitElement {
       tab_eco: [
         { name: "eco_money", label: "Économies Totales (€)", selector: { entity: {} } },
         { name: "eco_day_euro", label: "Gain Jour (€)", selector: { entity: {} } },
+        { name: "eco_year_euro", label: "Gain Année (€)", selector: { entity: {} } },
         { name: "main_cons", label: "Conso Maison (W)", selector: { entity: {} } },
         ...[1, 2, 3, 4, 5, 6].map(i => [
            { name: `e${i}_l`, label: `Label Éco ${i}`, selector: { text: {} } },
@@ -80,7 +81,7 @@ customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
 /**
  * ==========================================
- * ⚡ CORPS DE LA CARTE (ULTIMATE V4.7)
+ * ⚡ CORPS DE LA CARTE (ULTIMATE V4.8)
  * ==========================================
  */
 class SolarMasterCard extends LitElement {
@@ -249,20 +250,49 @@ class SolarMasterCard extends LitElement {
   _renderEco() {
     const c = this.config;
     return html`<div class="page scroll">
-      <div class="eco-hero">
-        <div class="e-l">ÉCONOMIES TOTALES</div>
-        <div class="e-v">${this._getVal(c.eco_money).val}€</div>
-        <div class="e-sub">JOUR: <b>${this._getVal(c.eco_day_euro).val}€</b></div>
+      <div class="eco-finance-hub">
+          <div class="finance-card main">
+              <div class="f-label">VALEUR TOTALE ÉCONOMISÉE</div>
+              <div class="f-value">${this._getVal(c.eco_money).val}€</div>
+          </div>
+          <div class="finance-row">
+              <div class="finance-card">
+                  <span class="f-sub">JOUR</span>
+                  <b class="f-gain">+${this._getVal(c.eco_day_euro).val}€</b>
+              </div>
+              <div class="finance-card">
+                  <span class="f-sub">ANNÉE</span>
+                  <b class="f-gain">+${this._getVal(c.eco_year_euro).val}€</b>
+              </div>
+          </div>
       </div>
-      <div class="main-cons-card">
-        <span class="m-l">MAISON</span>
-        <span class="m-v">${this._getVal(c.main_cons).val}<small>W</small></span>
+      
+      <div class="cons-dashboard">
+          <div class="cons-header">PUISSANCE CONSOMMÉE PAR LA MAISON</div>
+          <div class="cons-main">
+              <div class="cons-visual">
+                  <div class="cons-glow"></div>
+                  <ha-icon icon="mdi:home-lightning-bolt"></ha-icon>
+              </div>
+              <div class="cons-val-wrap">
+                  <span class="cons-val">${this._getVal(c.main_cons).val}</span>
+                  <span class="cons-unit">WATTS</span>
+              </div>
+          </div>
       </div>
-      <div class="extra-eco-grid">
+
+      <div class="eco-insights-grid">
         ${[1,2,3,4,5,6].map(i => {
             if(!c[`e${i}_e`]) return '';
             const e = this._getVal(c[`e${i}_e`]);
-            return html`<div class="eco-card"><span class="e-label">${c[`e${i}_l`]}</span><span class="e-val">${e.val}<small>${e.unit}</small></span></div>`;
+            return html`
+              <div class="insight-tile">
+                <div class="i-top">
+                    <span class="i-label">${c[`e${i}_l`]}</span>
+                    <ha-icon icon="mdi:trending-down"></ha-icon>
+                </div>
+                <div class="i-val">${e.val}<small>${e.unit}</small></div>
+              </div>`;
         })}
       </div>
     </div>`;
@@ -282,7 +312,7 @@ class SolarMasterCard extends LitElement {
     
     /* Solar HUD */
     .header-prod { text-align:center; margin-bottom:15px; }
-    .big-val-titan { font-size:55px; font-weight:900; color:#ffc107; line-height:1; }
+    .big-val-titan { font-size:75px; font-weight:900; color:#ffc107; line-height:1; }
     .target-container { width:100%; max-width:280px; margin:10px auto; }
     .target-bar { height:6px; background:#1a1a1a; border-radius:3px; overflow:hidden; border:1px solid #333; }
     .target-fill { height:100%; background:#ffc107; box-shadow: 0 0 10px rgba(255,193,7,0.4); }
@@ -298,20 +328,17 @@ class SolarMasterCard extends LitElement {
     /* Météo Station V3 */
     .weather-station-v3 { background:rgba(255,255,255,0.04); border:1px solid #333; padding:20px; border-radius:20px; margin-bottom:15px; }
     .ws-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-    .ws-temp { font-size:35px; font-weight:900; }
+    .ws-temp { font-size:45px; font-weight:900; }
     .ws-icon-box { text-align:right; color:#ffc107; }
     .ws-icon-box ha-icon { --mdc-icon-size:40px; }
     .ws-desc { font-size:11px; font-weight:bold; text-transform:uppercase; color:#aaa; }
-
     .sun-dashboard { display:grid; grid-template-columns: 1fr 1fr; gap:10px; padding:15px; background:rgba(0,249,249,0.05); border-radius:15px; margin-bottom:15px; border:1px solid rgba(0,249,249,0.1); }
     .sun-stat { display:flex; align-items:center; gap:12px; }
     .sun-stat ha-icon { color:#00f9f9; --mdc-icon-size:24px; }
     .stat-content span { font-size:8px; color:#aaa; display:block; }
     .stat-content b { font-size:16px; color:#fff; }
-
     .astro-footer { display:flex; justify-content:space-between; font-size:9px; color:#777; border-top:1px solid #222; padding-top:12px; }
     .astro-footer b { color:#fff; }
-
     .weather-grid-8 { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
     .w-card { background:rgba(255,255,255,0.03); padding:12px; border-radius:10px; border:1px solid #222; }
     .w-l { font-size:8px; color:#888; display:block; text-transform:uppercase; }
@@ -324,28 +351,47 @@ class SolarMasterCard extends LitElement {
     .r-fill { height:100%; transition:0.5s; }
     .r-foot { font-size:10px; color:#888; }
 
-    /* Cockpit */
+    /* Économie V4.8 Presentation Refonte */
+    .eco-finance-hub { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+    .finance-card { background:rgba(76,175,80,0.08); border:1px solid rgba(76,175,80,0.15); border-radius:16px; padding:15px; }
+    .finance-card.main { text-align:center; background: linear-gradient(180deg, rgba(76,175,80,0.15) 0%, transparent 100%); }
+    .f-label { font-size:10px; font-weight:bold; color:#4caf50; letter-spacing:1px; margin-bottom:5px; }
+    .f-value { font-size:48px; font-weight:900; color:#4caf50; text-shadow: 0 0 15px rgba(76,175,80,0.3); }
+    .finance-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .f-sub { font-size:9px; color:#aaa; display:block; }
+    .f-gain { font-size:18px; color:#fff; }
+
+    .cons-dashboard { background:#0a0a0a; border:1px solid #1a1a1a; padding:15px; border-radius:20px; margin-bottom:20px; }
+    .cons-header { font-size:9px; font-weight:bold; color:#888; text-align:center; margin-bottom:12px; letter-spacing:1px; }
+    .cons-main { display:flex; align-items:center; justify-content:center; gap:20px; }
+    .cons-visual { position:relative; width:45px; height:45px; display:flex; align-items:center; justify-content:center; }
+    .cons-glow { position:absolute; width:100%; height:100%; background:#4caf50; border-radius:50%; filter:blur(15px); opacity:0.15; }
+    .cons-visual ha-icon { color:#4caf50; --mdc-icon-size: 32px; z-index:1; }
+    .cons-val-wrap { display:flex; flex-direction:column; }
+    .cons-val { font-size:32px; font-weight:900; color:#fff; line-height:1; }
+    .cons-unit { font-size:10px; color:#4caf50; font-weight:bold; }
+
+    .eco-insights-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .insight-tile { background:rgba(255,255,255,0.03); border:1px solid #1a1a1a; padding:12px; border-radius:12px; }
+    .i-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:5px; }
+    .i-label { font-size:9px; color:#aaa; text-transform:uppercase; font-weight:bold; }
+    .i-top ha-icon { --mdc-icon-size:14px; color:#4caf50; opacity:0.5; }
+    .i-val { font-size:16px; font-weight:bold; color:#4caf50; }
+    .i-val small { font-size:10px; margin-left:2px; }
+
+    /* Cockpit & Global */
     .cockpit { display:flex; justify-content:space-between; margin:15px 0; }
     .mini-diag { background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; width:100px; border-left:3px solid #00f9f9; }
     .mini-diag.r { border-left:none; border-right:3px solid #ffc107; text-align:right; }
     .m-l { font-size:8px; color:#888; display:block; text-transform:uppercase; }
     .m-v { font-size:14px; font-weight:bold; }
-
-    /* Footer */
-    .footer { display:flex; justify-content:space-around; padding-top:20px; border-top:1px solid #222; margin-top:auto; }
+    .footer { display:flex; justify-content:space-around; align-items:center; padding-top:20px; border-top: 1px solid #222; margin-top:auto; }
     .f-btn { cursor:pointer; opacity:0.3; transition:0.3s; color:#fff; }
     .f-btn.active { opacity:1; color:#ffc107; transform:translateY(-2px); }
     .f-btn ha-icon { --mdc-icon-size:26px; }
-
-    .scroll { overflow-y:auto; }
+    .scroll { overflow-y:auto; padding-right:5px; }
     .scroll::-webkit-scrollbar { width:3px; }
     .scroll::-webkit-scrollbar-thumb { background:#444; }
-
-    .eco-hero { text-align:center; padding:20px; background:rgba(76,175,80,0.05); border-radius:15px; margin-bottom:15px; }
-    .e-v { font-size:50px; font-weight:900; color:#4caf50; }
-    .main-cons-card { background:#0a0a0a; padding:15px; border-radius:12px; text-align:center; border:1px solid #4caf5022; margin-bottom:15px; }
-    .extra-eco-grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-    .eco-card { background:rgba(255,255,255,0.02); padding:12px; border-radius:10px; border:1px solid #222; }
   `;
 }
 customElements.define("solar-master-card", SolarMasterCard);
