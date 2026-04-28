@@ -50,6 +50,9 @@ class SolarMasterCardEditor extends LitElement {
         ]).flat()
       ],
       tab_batt: [
+        // À ajouter dans tab_batt pour chaque batterie (exemple pour b1, répète pour b2, b3, b4)
+        { name: "b1_v", label: "Voltage Batt 1", selector: { entity: {} } },
+        { name: "b1_t", label: "Temp Batt 1", selector: { entity: {} } },
         { name: "batt_total_power", label: "Flux Total Batteries (W)", selector: { entity: {} } },
         { name: "batt_avg_soc", label: "SOC Moyen Global (%)", selector: { entity: {} } },
         ...[1, 2, 3, 4].map(i => [
@@ -207,26 +210,65 @@ render() {
       </div>`;
   }
 
-  _renderBattery() {
+_renderBattery() {
     const c = this.config;
-    const avg = this._getVal(c.batt_avg_soc);
-    const flow = this._getVal(c.batt_total_power);
     return html`
-      <div class="page scroll">
-        <div class="batt-master">
-            <div class="bm-soc">${avg.val}%</div>
-            <div class="bm-flow ${parseFloat(flow.val) < 0 ? 'charge' : ''}">${flow.val}W</div>
-        </div>
-        <div class="rack-container">
+      <div class="page scroll" style="position: relative; z-index: 2;">
+        <div class="rack-container" style="display: flex; flex-direction: column; gap: 15px;">
           ${[1, 2, 3, 4].map(i => {
             if (!c[`b${i}_s`]) return '';
-            const soc = this._getVal(c[`b${i}_s`]);
+            
+            const soc = parseFloat(this._getVal(c[`b${i}_s`]).val);
             const p = this._getVal(c[`b${i}_out`]);
+            const extra1 = this._getVal(c[`b${i}_v`]); // Sensor Voltage
+            const extra2 = this._getVal(c[`b${i}_t`]); // Sensor Température
+            
+            // Logique de couleur
+            let color = "#f44336";
+            if (soc >= 20) color = "#ff9800";
+            if (soc >= 50) color = "#ffc107";
+            if (soc >= 80) color = "#00c853";
+            
             return html`
-              <div class="rack-pro">
-                <div class="rp-head"><span>${c[`b${i}_n`] || 'BATT '+i}</span><b>${soc.val}%</b></div>
-                <div class="rp-bar"><div class="rp-fill" style="width:${soc.val}%"></div></div>
-                <div class="rp-foot">CAP: ${this._getVal(c[`b${i}_cap`]).val} | FLUX: ${p.val}W</div>
+              <div class="rack-pro" style="background: rgba(10,10,10,0.8); padding: 15px; border-radius: 12px; border: 1px solid #1a1a1a; border-left: 4px solid ${color};">
+                
+                <div class="rp-head" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <span style="font-size: 12px; font-weight: bold; color: #aaa;">${c[`b${i}_n`] || 'RACK '+i}</span>
+                  <b style="font-size: 18px; color: ${color}; text-shadow: 0 0 10px ${color}55;">${soc}%</b>
+                </div>
+
+                <div class="rp-segments" style="display: flex; gap: 3px; height: 8px; margin-bottom: 12px;">
+                  ${Array(20).fill().map((_, idx) => html`
+                    <div class="b-seg" style="
+                      flex: 1; 
+                      border-radius: 1px; 
+                      background: ${idx < soc / 5 ? color : '#1a1a1a'};
+                      box-shadow: ${idx < soc / 5 ? '0 0 5px ' + color : 'none'};
+                      opacity: ${idx < soc / 5 ? '1' : '0.3'};">
+                    </div>
+                  `)}
+                </div>
+
+                <div class="rp-extras" style="display: flex; justify-content: space-between; border-top: 1px solid #222; pt: 10px; margin-top: 5px; padding-top: 10px;">
+                  
+                  <div class="ex-item" style="display: flex; align-items: center; gap: 5px;">
+                    <ha-icon icon="mdi:flash" style="--mdc-icon-size: 14px; color: #ffc107;"></ha-icon>
+                    <span style="font-size: 11px;">${extra1.val}<small>${extra1.unit}</small></span>
+                  </div>
+
+                  <div class="ex-item" style="display: flex; align-items: center; gap: 5px;">
+                    <ha-icon icon="mdi:thermometer" style="--mdc-icon-size: 14px; color: #00f9f9;"></ha-icon>
+                    <span style="font-size: 11px;">${extra2.val}<small>${extra2.unit}</small></span>
+                  </div>
+
+                  <div class="ex-item" style="display: flex; align-items: center; gap: 5px;">
+                    <ha-icon icon="${parseFloat(p.val) < 0 ? 'mdi:arrow-down-bold' : 'mdi:arrow-up-bold'}" 
+                             style="--mdc-icon-size: 14px; color: ${parseFloat(p.val) < 0 ? '#00c853' : '#ffc107'};">
+                    </ha-icon>
+                    <span style="font-size: 11px; font-weight: bold;">${Math.abs(p.val)}W</span>
+                  </div>
+
+                </div>
               </div>`;
           })}
         </div>
