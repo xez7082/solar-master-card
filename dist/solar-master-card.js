@@ -232,6 +232,7 @@ _renderWeather() {
     const elevation = sun.attributes.elevation || 0;
     const azimuth = sun.attributes.azimuth || 0;
 
+    // Traduction française des phases lunaires
     const moonState = this.hass.states[c.moon_entity]?.state;
     const moonPhases = {
       'new_moon': 'Nouvelle\nLune',
@@ -245,8 +246,11 @@ _renderWeather() {
     };
     const phaseFr = moonPhases[moonState] || moonState || 'Phase\nInconnue';
 
-    // Calcul azimut corrigé (E=90, S=180, O=270)
-    const sunX = 30 + (140 * ((azimuth - 90) / 180));
+    /* CALCUL DE POSITION :
+       On prend une marge large (de 45° à 315°) pour que le soleil soit visible 
+       même s'il ne se lève pas pile à l'Est (90°).
+    */
+    const sunX = Math.max(25, Math.min(175, 25 + (150 * ((azimuth - 45) / 270))));
     const sunY = 65 - (Math.max(0, elevation) * 0.5); 
 
     return html`
@@ -258,13 +262,15 @@ _renderWeather() {
 
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; pointer-events: none;">
           <svg viewBox="0 0 200 85" style="width: 100%;">
-            <text x="22" y="76" fill="#555" font-size="7" font-weight="bold">E</text>
-            <text x="172" y="76" fill="#555" font-size="7" font-weight="bold">O</text>
+            <text x="20" y="76" fill="#555" font-size="7" font-weight="bold">E</text>
+            <text x="175" y="76" fill="#555" font-size="7" font-weight="bold">O</text>
             <text x="97" y="12" fill="#ff9800" font-size="8" font-weight="bold" opacity="0.6">S</text>
+
             <line x1="30" y1="65" x2="170" y2="65" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+            
             <path d="M 35,65 A 65,50 0 0 1 165,65" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-dasharray="2,2" />
             
-            ${elevation > 0 && azimuth >= 90 && azimuth <= 270 ? html`
+            ${elevation > 0 ? html`
               <line x1="${sunX}" y1="65" x2="${sunX}" y2="${sunY}" stroke="#ffc107" stroke-width="0.5" stroke-dasharray="1,1" opacity="0.6" />
               <foreignObject x="${sunX - 9}" y="${sunY - 9}" width="18" height="18">
                 <div style="color: #ffc107; filter: drop-shadow(0 0 4px #ffc107); text-align:center;">
@@ -279,10 +285,11 @@ _renderWeather() {
               </foreignObject>
             `}
           </svg>
-          <div style="display: flex; justify-content: space-between; width: 75%; font-size: 9px; color: #666; margin-top: -8px; font-family: monospace;">
-            <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
-            <span style="color: #ffc107; font-weight: bold;">${elevation.toFixed(1)}°</span>
-            <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
+          
+          <div style="display: flex; justify-content: space-between; width: 80%; font-size: 9px; color: #666; margin-top: -8px; font-family: monospace;">
+            <span>${sun.attributes.next_rising ? sun.attributes.next_rising.split('T')[1].substring(0, 5) : '--:--'}</span>
+            <span style="color: #ffc107; font-weight: bold;">${elevation.toFixed(1)}° | ${azimuth.toFixed(0)}°</span>
+            <span>${sun.attributes.next_setting ? sun.attributes.next_setting.split('T')[1].substring(0, 5) : '--:--'}</span>
           </div>
         </div>
 
