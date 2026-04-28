@@ -243,39 +243,30 @@ _renderWeather() {
     const sunX = 30 + ((azimuth / 360) * 140); 
     const sunY = 50 - (Math.max(0, elevation) * 0.4);
 
-    return html`
-      <div class="page" style="height: 480px; padding: 5px; gap: 5px;">
+   return html`
+      <div class="page" style="display: flex; flex-direction: column; gap: 10px; padding: 5px; box-sizing: border-box;">
         
-        <div style="background: rgba(255,255,255,0.03); border-radius: 10px; padding: 5px; border: 1px solid rgba(255,255,255,0.1); height: 110px;">
-          <svg viewBox="0 0 200 70" style="width: 100%; height: 75px; overflow: visible;">
+        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1);">
+          <svg viewBox="0 0 200 70" style="width: 100%; height: 80px; overflow: visible;">
             <line x1="20" y1="60" x2="180" y2="60" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
-            <path d="M 30,60 A 70,40 0 0 1 170,60" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" stroke-dasharray="3,3" />
-            <circle cx="${sunX}" cy="${sunY}" r="5" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />
+            <path d="M 30,60 A 70,40 0 0 1 170,60" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="4,4" />
+            <circle cx="${sunX}" cy="${sunY}" r="5" fill="#ffc107" />
           </svg>
-          
-          <div style="display: flex; justify-content: space-between; font-size: 9px; color: #888; margin-top: -10px; padding: 0 15px;">
+          <div style="display: flex; justify-content: space-between; font-size: 9px; color: #888; margin-top: -5px; padding: 0 15px;">
               <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
-              <span style="color:#ffc107; font-weight:bold;">${elevation.toFixed(1)}°</span>
+              <span style="color:#ffc107;">${elevation.toFixed(1)}°</span>
               <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
           </div>
         </div>
 
-        <div style="background: rgba(255,255,255,0.03); padding: 5px 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px; height: 30px;">
-           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 16px;"></ha-icon>
-           <span style="font-size: 10px; color: white;">Lune: <b>${this.hass.states[c.moon_entity]?.state || 'N/A'}</b></span>
+        <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px; height: 35px; border: 1px solid rgba(255,255,255,0.05);">
+           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 18px;"></ha-icon>
+           <span style="font-size: 11px; color: white; font-weight: bold;">Lune : ${this.hass.states[c.moon_entity]?.state || 'N/A'}</span>
         </div>
 
-       <div style="
-  display: grid; 
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 4px;                /* Espace minimal entre les boîtes */
-  align-content: start;    /* SUPPRIME L'ESPACE ENTRE LES LIGNES */
-  justify-content: start;  /* SUPPRIME L'ESPACE EN BAS */
-  flex: 0;                 /* Empêche la grille de s'étirer verticalement */
-  margin-top: 5px;
-">
-  ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
-</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">
+          ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
+        </div>
 
       </div>`;
 }
