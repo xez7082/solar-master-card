@@ -235,14 +235,13 @@ _renderWeather() {
     const moonPhases = { 'new_moon': 'Nouvelle\nLune', 'waxing_crescent': 'Premier\nCroissant', 'first_quarter': 'Premier\nQuartier', 'waxing_gibbous': 'Gibbeuse\nCroissante', 'full_moon': 'Pleine\nLune', 'waning_gibbous': 'Gibbeuse\nDécroissante', 'last_quarter': 'Dernier\nQuartier', 'waning_crescent': 'Dernier\nCroissant' };
     const phaseFr = moonPhases[this.hass.states[c.moon_entity]?.state] || 'Phase\nInconnue';
 
-    // Position du soleil recalculée pour ton azimut de 153.9°
     const sunX = 35 + ((azimuth - 45) / 270) * 130;
     const sunY = 65 - (Math.max(0, elevation) * 0.6);
 
     return html`
-      <div class="page" style="height: 500px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; box-sizing: border-box; pointer-events: none; position: relative; z-index: 2;">
+      <div class="page" style="height: 500px; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 5px; box-sizing: border-box; pointer-events: none; position: relative; z-index: 2;">
         
-        <div style="display: flex; flex-direction: column; gap: 6px; pointer-events: auto;">
+        <div style="display: flex; flex-direction: column; gap: 5px; pointer-events: auto;">
           ${[1, 2, 3, 4].map(i => this._renderMiniSensor(i))}
         </div>
 
@@ -253,9 +252,7 @@ _renderWeather() {
             <text x="96" y="12" fill="#ffc107" font-size="12" font-weight="bold">S</text>
             <line x1="30" y1="65" x2="170" y2="65" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
             <path d="M 35,65 A 65,50 0 0 1 165,65" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4,4" />
-            
             <g>
-              <line x1="${sunX}" y1="65" x2="${sunX}" y2="${sunY}" stroke="#ffc107" stroke-width="1" stroke-dasharray="2,2" opacity="0.6" />
               <circle cx="${sunX}" cy="${sunY}" r="7" fill="#ffc107" style="filter: drop-shadow(0 0 8px #ffc107);" />
               <line x1="${sunX}" y1="${sunY-10}" x2="${sunX}" y2="${sunY-7}" stroke="#ffc107" stroke-width="2" />
               <line x1="${sunX}" y1="${sunY+10}" x2="${sunX}" y2="${sunY+7}" stroke="#ffc107" stroke-width="2" />
@@ -270,11 +267,11 @@ _renderWeather() {
           </div>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 6px; pointer-events: auto;">
-          ${[5, 6, 7, 8].map(i => this._renderMiniSensor(i))}
+        <div style="display: flex; flex-direction: column; gap: 5px; pointer-events: auto;">
+          ${[5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
 
-        <div style="background: rgba(30,30,30,0.95); padding: 8px 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 12px; height: 46px; align-self: start; pointer-events: auto;">
+        <div style="background: rgba(30,30,30,0.95); padding: 8px 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 12px; height: 45px; align-self: start; pointer-events: auto;">
           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 24px;"></ha-icon>
           <div style="display: flex; flex-direction: column; line-height: 1.1;">
             <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.8;">PHASE LUNAIRE</span>
@@ -287,18 +284,16 @@ _renderWeather() {
   _renderMiniSensor(i) {
     const c = this.config;
     const entityId = c[`w${i}_e`];
-    if (!entityId || !this.hass.states[entityId]) return html`<div style="height:46px;"></div>`;
+    if (!entityId || !this.hass.states[entityId]) return html``;
     const s = this._getVal(entityId);
-    
-    // On récupère le label depuis la config (w1_l, w2_l, etc.)
-    const label = c[`w${i}_l`] || 'CAPTEUR ' + i;
+    const label = c[`w${i}_l`] || 'S' + i;
 
     return html`
-      <div style="background: rgba(30,30,30,0.95); padding: 8px 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 10px; height: 46px; box-sizing: border-box; pointer-events: auto;">
+      <div style="background: rgba(30,30,30,0.95); padding: 0 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 10px; height: 45px; box-sizing: border-box; pointer-events: auto;">
         <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
         <div style="display: flex; flex-direction: column; line-height: 1.1;">
           <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.8;">${label}</span>
-          <span style="font-size: 16px; font-weight: 900; color: #ffffff;">${s.val}<small style="font-size: 10px; color: #00f9f9; margin-left: 2px;">${s.unit}</small></span>
+          <span style="font-size: 15px; font-weight: 900; color: #ffffff;">${s.val}<small style="font-size: 10px; color: #00f9f9; margin-left: 2px;">${s.unit}</small></span>
         </div>
       </div>`;
   }
