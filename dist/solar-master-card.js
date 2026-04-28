@@ -215,11 +215,11 @@ _renderSolar() {
             const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
             return html`
               <div class="n-item" style="text-align: center;">
-                <div class="n-circle" style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 8px ${clr}; margin-bottom: 2px;">
-                   <span style="font-size: 14px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
-                   <span style="font-size: 8px; color: #888;">W</span>
+                <div class="n-circle" style="width: 75px; height: 75px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 8px ${clr}; margin-bottom: 2px;">
+                   <span style="font-size: 15px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
+                   <span style="font-size: 10px; color: #888;">W</span>
                 </div>
-                <div style="font-size: 8px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || 'P'+i}</div>
+                <div style="font-size: 10px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || 'P'+i}</div>
               </div>`;
           })}
         </div>
@@ -262,7 +262,7 @@ _renderWeather() {
             <path d="M 30,60 A 70,40 0 0 1 170,60" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="4,4" />
             <circle cx="${sunX}" cy="${sunY}" r="5" fill="#ffc107" />
           </svg>
-          <div style="display: flex; justify-content: space-between; font-size: 9px; color: #888; margin-top: -5px; padding: 0 15px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-top: -5px; padding: 0 15px;">
               <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
               <span style="color:#ffc107;">${elevation.toFixed(1)}°</span>
               <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
@@ -271,7 +271,7 @@ _renderWeather() {
 
         <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px; height: 35px; border: 1px solid rgba(255,255,255,0.05);">
            <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 18px;"></ha-icon>
-           <span style="font-size: 11px; color: white; font-weight: bold;">Lune : ${this.hass.states[c.moon_entity]?.state || 'N/A'}</span>
+           <span style="font-size: 13px; color: white; font-weight: bold;">Lune : ${this.hass.states[c.moon_entity]?.state || 'N/A'}</span>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">
