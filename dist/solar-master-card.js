@@ -255,7 +255,7 @@ class SolarMasterCard extends LitElement {
 
     /* DESIGN TITAN */
     .titan-header { text-align: center; margin-bottom: 30px; }
-    .big-val { font-size: 82px; font-weight: 900; color: #ffc107; line-height: 1; text-shadow: 0 0 20px rgba(255,193,7,0.3); }
+    .big-val { font-size: 52px; font-weight: 900; color: #ffc107; line-height: 1; text-shadow: 0 0 20px rgba(255,193,7,0.3); }
     .big-val small { font-size: 24px; color: #fff; opacity: 0.6; }
     .sub-txt { font-size: 10px; letter-spacing: 4px; color: #666; margin-top: 10px; }
 
@@ -297,7 +297,7 @@ class SolarMasterCard extends LitElement {
 
     /* BATTERY */
     .batt-master { display: flex; justify-content: space-between; background: #0d1a0d; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #1a331a; }
-    .bm-soc { font-size: 40px; font-weight: 900; color: #00c853; }
+    .bm-soc { font-size: 20px; font-weight: 900; color: #00c853; }
     .bm-flow { font-size: 20px; font-weight: bold; color: #ffc107; }
     .bm-flow.charge { color: #00c853; }
     .rack-pro { background: #0a0a0a; padding: 15px; border-radius: 12px; border: 1px solid #1a1a1a; margin-bottom: 10px; }
@@ -308,7 +308,7 @@ class SolarMasterCard extends LitElement {
 
     /* ECO */
     .eco-hero { text-align: center; padding: 30px; background: rgba(76, 175, 80, 0.1); border-radius: 20px; margin-bottom: 20px; }
-    .eh-val { font-size: 50px; font-weight: 900; color: #4caf50; }
+    .eh-val { font-size: 30px; font-weight: 900; color: #4caf50; }
     .conso-bar { display: flex; justify-content: space-between; background: #111; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
     .eco-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .es-card { background: #0a0a0a; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; border: 1px solid #1a1a1a; }
