@@ -235,29 +235,22 @@ _renderWeather() {
     const moonPhases = { 'new_moon': 'Nouvelle\nLune', 'waxing_crescent': 'Premier\nCroissant', 'first_quarter': 'Premier\nQuartier', 'waxing_gibbous': 'Gibbeuse\nCroissante', 'full_moon': 'Pleine\nLune', 'waning_gibbous': 'Gibbeuse\nDécroissante', 'last_quarter': 'Dernier\nQuartier', 'waning_crescent': 'Dernier\nCroissant' };
     const phaseFr = moonPhases[this.hass.states[c.moon_entity]?.state] || 'Phase\nInconnue';
 
-    // --- CORRECTION MATHEMATIQUE ---
-    // On mappe l'azimut (course du soleil) sur l'arc visible du SVG.
-    // Est (90°) -> X=35 | Sud (180°) -> X=100 | Ouest (270°) -> X=165
-    let sunX = 100; // Position par défaut (Sud)
+    // Calcul de position sécurisé
+    let sunX = 100; 
     if (azimuth <= 90) sunX = 35;
     else if (azimuth >= 270) sunX = 165;
-    else {
-      // Calcul proportionnel : (azimuth - 90) / (270 - 90) * (largeur de l'arc) + décalage
-      sunX = 35 + ((azimuth - 90) / 180) * 130;
-    }
-
-    // Hauteur : Elevation 0° -> Y=65 | Elevation 90° -> Y=15
+    else { sunX = 35 + ((azimuth - 90) / 180) * 130; }
     const sunY = 65 - (Math.max(0, elevation) * 0.55);
 
     return html`
-      <div class="page" style="height: 500px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; box-sizing: border-box; pointer-events: none; position: relative; z-index: 2;">
+      <div class="page" style="height: 500px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; box-sizing: border-box; position: relative; z-index: 1; pointer-events: none;">
         
         <div style="display: flex; flex-direction: column; gap: 6px; pointer-events: auto;">
           ${[1, 2, 3, 4].map(i => this._renderMiniSensor(i))}
         </div>
 
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
-          <svg viewBox="0 0 200 85" style="width: 100%; overflow: visible;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; pointer-events: none;">
+          <svg viewBox="0 0 200 85" style="width: 100%; overflow: visible; pointer-events: none;">
             <text x="15" y="76" fill="#ffffff" font-size="10" font-weight="bold">E</text>
             <text x="175" y="76" fill="#ffffff" font-size="10" font-weight="bold">O</text>
             <text x="96" y="12" fill="#ffc107" font-size="12" font-weight="bold">S</text>
@@ -278,7 +271,6 @@ _renderWeather() {
               <circle cx="100" cy="45" r="5" fill="#00f9f9" opacity="0.3" />
             `}
           </svg>
-          
           <div style="display: flex; justify-content: space-between; width: 85%; font-size: 11px; color: #ffffff; margin-top: -5px; font-weight: bold; font-family: monospace;">
             <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
             <span style="color: #ffc107;">${elevation.toFixed(1)}°</span>
@@ -290,12 +282,27 @@ _renderWeather() {
           ${[5, 6, 7, 8].map(i => this._renderMiniSensor(i))}
         </div>
 
-        <div style="background: rgba(30,30,30,0.95); padding: 8px 12px; border-radius: 10px; border: 1px solid #555; display: flex; align-items: center; gap: 12px; height: 46px; align-self: start; pointer-events: auto;">
+        <div style="background: rgba(30,30,30,0.95); padding: 8px 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 12px; height: 46px; align-self: start; pointer-events: auto;">
           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 24px; filter: drop-shadow(0 0 5px #00f9f9);"></ha-icon>
           <div style="display: flex; flex-direction: column; line-height: 1.1;">
-            <span style="font-size: 9px; color: #bbb; text-transform: uppercase; font-weight: bold;">PHASE LUNAIRE</span>
+            <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold;">PHASE LUNAIRE</span>
             <span style="font-size: 14px; font-weight: 900; color: #ffffff; white-space: pre-line;">${phaseFr}</span>
           </div>
+        </div>
+      </div>`;
+  }
+
+  _renderMiniSensor(i) {
+    const c = this.config;
+    const entityId = c[`w${i}_e`];
+    if (!entityId || !this.hass.states[entityId]) return html`<div style="height:46px;"></div>`;
+    const s = this._getVal(entityId);
+    return html`
+      <div style="background: rgba(30,30,30,0.95); padding: 8px 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 10px; height: 46px; box-sizing: border-box; pointer-events: auto;">
+        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
+        <div style="display: flex; flex-direction: column; line-height: 1.1;">
+          <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.9;">${c[`w${i}_l`] || 'S'+i}</span>
+          <span style="font-size: 16px; font-weight: 900; color: #ffffff;">${s.val}<small style="font-size: 10px; color: #00f9f9; margin-left: 2px;">${s.unit}</small></span>
         </div>
       </div>`;
   }
