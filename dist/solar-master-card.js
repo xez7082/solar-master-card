@@ -255,34 +255,17 @@ _renderWeather() {
     const sunX = 35 + ((azimuth - 45) / 270) * 130;
     const sunY = 55 - (Math.max(0, elevation) * 0.5);
 
+_renderWeather() {
+    // ... (gardez le début du code inchangé : azimuth, sunX, sunY, etc.)
+
     return html`
-      <div class="page" style="height: 100%; max-height: 485px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; overflow: hidden; padding: 5px;">
+      <div class="page" style="height: 100%; max-height: 485px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; overflow: hidden; padding: 5px;">
         
         <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 10px; align-items: center; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 8px; border: 1px solid rgba(255,255,255,0.05);">
-          <div style="text-align: center;">
-            <svg viewBox="0 0 200 70" style="width: 100%; height: auto; overflow: visible;">
-              <line x1="30" y1="60" x2="170" y2="60" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
-              <path d="M 35,60 A 65,45 0 0 1 165,60" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="4,4" />
-              <circle cx="${sunX}" cy="${sunY}" r="6" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />
-            </svg>
-            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #aaa; padding: 0 10px; font-family: monospace;">
-              <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
-              <span style="color:#ffc107; font-weight:bold;">${elevation.toFixed(1)}°</span>
-              <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
-            </div>
           </div>
-          
-          <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 12px; display: flex; flex-direction: column; gap: 4px;">
-             <div style="display: flex; align-items: center; gap: 6px;">
-               <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
-               <span style="font-size: 9px; font-weight: bold; color: #888; text-transform: uppercase;">Lune</span>
-             </div>
-             <span style="font-size: 11px; color: white; font-weight: bold; line-height: 1.2;">${phaseFr}</span>
-          </div>
-        </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-          ${[1, 2, 3, 4, 5, 6, 7].map(i => this._renderMiniSensor(i))}
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
+          ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
 
       </div>`;
@@ -294,12 +277,10 @@ _renderMiniSensor(i) {
     if (!entityId || !this.hass.states[entityId]) return html``;
     const s = this._getVal(entityId);
     return html`
-      <div style="background: rgba(30,30,30,0.95); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; height: 38px; box-sizing: border-box;">
-        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 18px;"></ha-icon>
-        <div style="display: flex; flex-direction: column; justify-content: center; overflow: hidden;">
-          <span style="font-size: 7px; color: #aaa; text-transform: uppercase; font-weight: bold; white-space: nowrap;">${c[`w${i}_l`] || 'S' + i}</span>
-          <span style="font-size: 13px; font-weight: 900; color: white; line-height: 1;">${s.val}<small style="font-size: 9px; color: #00f9f9; margin-left: 2px;">${s.unit}</small></span>
-        </div>
+      <div style="background: rgba(30,30,30,0.95); padding: 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 45px; box-sizing: border-box; text-align: center;">
+        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 14px; margin-bottom: 2px;"></ha-icon>
+        <span style="font-size: 7px; color: #aaa; text-transform: uppercase; font-weight: bold; white-space: nowrap; overflow: hidden; width: 100%;">${c[`w${i}_l`] || 'S' + i}</span>
+        <span style="font-size: 11px; font-weight: 900; color: white; line-height: 1;">${s.val}<small style="font-size: 8px; color: #00f9f9;">${s.unit}</small></span>
       </div>`;
 }
   
