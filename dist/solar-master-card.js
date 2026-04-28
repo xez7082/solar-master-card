@@ -109,7 +109,7 @@ render() {
     const c = this.config;
 
     return html`
-      <ha-card style="height:${c.card_height || 750}px; overflow: hidden; position: relative;">
+      <ha-card style="height:${c.card_height || 500}px; overflow: hidden; position: relative;">
         <div class="card-wrapper" style="height: 100%; display: flex; flex-direction: column;">
           
           ${c.bg_url ? html`
@@ -162,6 +162,7 @@ render() {
       </ha-card>
     `;
   }
+  
 _renderSolar() {
     const c = this.config;
     const prod = this._getVal(c.total_now);
