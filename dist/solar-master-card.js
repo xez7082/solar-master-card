@@ -107,9 +107,10 @@ class SolarMasterCard extends LitElement {
 render() {
     if (!this.config || !this.hass) return html``;
     const c = this.config;
+
     return html`
-      <ha-card style="height:${c.card_height || 750}px;">
-        <div class="card-wrapper">
+      <ha-card style="height:${c.card_height || 750}px; overflow: hidden; position: relative;">
+        <div class="card-wrapper" style="height: 100%; display: flex; flex-direction: column;">
           
           ${c.bg_url ? html`
             <div class="bg-overlay" style="
@@ -120,17 +121,42 @@ render() {
               z-index: 0; pointer-events: none;">
             </div>` : ''}
 
-          <div class="view-port" style="position: relative; z-index: 1;">
-            ${this._tab === 'SOLAIRE' ? this._renderSolar() : 
-              this._tab === 'METEO' ? this._renderWeather() :
-              this._tab === 'BATTERIE' ? this._renderBattery() : this._renderEco()}
+          <div class="view-port" style="flex: 1; position: relative; z-index: 1; overflow-y: auto;">
+            ${this._tab === 'SOLAIRE' ? this._renderSolar() : ''}
+            ${this._tab === 'METEO' ? this._renderWeather() : ''}
+            ${this._tab === 'BATTERIE' ? this._renderBattery() : ''}
+            ${this._tab === 'ECONOMIE' ? this._renderEco() : ''}
           </div>
 
-          <div class="nav-bar" style="position: relative; z-index: 2;">
-            <div class="nav-btn ${this._tab === 'SOLAIRE' ? 'active' : ''}" @click=${() => this._tab = 'SOLAIRE'}><ha-icon icon="mdi:solar-power-variant"></ha-icon><span>SOLAIRE</span></div>
-            <div class="nav-btn ${this._tab === 'METEO' ? 'active' : ''}" @click=${() => this._tab = 'METEO'}><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon><span>METEO</span></div>
-            <div class="nav-btn ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'}><ha-icon icon="mdi:battery-charging"></ha-icon><span>ENERGIE</span></div>
-            <div class="nav-btn ${this._tab === 'ECONOMIE' ? 'active' : ''}" @click=${() => this._tab = 'ECONOMIE'}><ha-icon icon="mdi:chart-areaspline"></ha-icon><span>ECO</span></div>
+          <div class="nav-bar" style="
+            display: flex; 
+            justify-content: space-around; 
+            background: rgba(0,0,0,0.8); 
+            border-top: 1px solid #222; 
+            padding: 10px 0; 
+            position: relative; 
+            z-index: 2;">
+            
+            <div class="nav-btn ${this._tab === 'SOLAIRE' ? 'active' : ''}" @click=${() => this._tab = 'SOLAIRE'} style="text-align:center; cursor:pointer; flex:1; color: ${this._tab === 'SOLAIRE' ? '#ffc107' : '#666'};">
+              <ha-icon icon="mdi:solar-power-variant"></ha-icon>
+              <div style="font-size: 9px; margin-top: 4px;">SOLAIRE</div>
+            </div>
+
+            <div class="nav-btn ${this._tab === 'METEO' ? 'active' : ''}" @click=${() => this._tab = 'METEO'} style="text-align:center; cursor:pointer; flex:1; color: ${this._tab === 'METEO' ? '#00f9f9' : '#666'};">
+              <ha-icon icon="mdi:weather-partly-cloudy"></ha-icon>
+              <div style="font-size: 9px; margin-top: 4px;">METEO</div>
+            </div>
+
+            <div class="nav-btn ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'} style="text-align:center; cursor:pointer; flex:1; color: ${this._tab === 'BATTERIE' ? '#00c853' : '#666'};">
+              <ha-icon icon="mdi:battery-charging"></ha-icon>
+              <div style="font-size: 9px; margin-top: 4px;">ENERGIE</div>
+            </div>
+
+            <div class="nav-btn ${this._tab === 'ECONOMIE' ? 'active' : ''}" @click=${() => this._tab = 'ECONOMIE'} style="text-align:center; cursor:pointer; flex:1; color: ${this._tab === 'ECONOMIE' ? '#e91e63' : '#666'};">
+              <ha-icon icon="mdi:chart-areaspline"></ha-icon>
+              <div style="font-size: 9px; margin-top: 4px;">ECO</div>
+            </div>
+
           </div>
         </div>
       </ha-card>
