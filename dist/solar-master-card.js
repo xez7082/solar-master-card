@@ -6,7 +6,7 @@ import {
 
 /**
  * ==========================================
- * 🧠 EDITEUR DE LA CARTE (Version 3.7 FR)
+ * 🧠 EDITEUR DE LA CARTE (Interface FR Totale)
  * ==========================================
  */
 class SolarMasterCardEditor extends LitElement {
@@ -22,12 +22,18 @@ class SolarMasterCardEditor extends LitElement {
 
   render() {
     if (!this.hass || !this._config) return html``;
-    
     const schemas = {
       tab_solar: [
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200 } } },
+        { name: "bg_url", label: "URL Image de Fond", selector: { text: {} } },
         { name: "total_now", label: "Entité Production Totale (W)", selector: { entity: {} } },
-        { name: "solar_target", label: "Entité Objectif du jour (kWh)", selector: { entity: {} } },
+        { name: "solar_target", label: "Entité Objectif (kWh)", selector: { entity: {} } },
+        { name: "title_left", label: "Titre Groupe Gauche", selector: { text: {} } },
+        { name: "title_right", label: "Titre Groupe Droite", selector: { text: {} } },
+        ...[4, 5, 6, 7, 8, 9].map(i => [
+          { name: `d${i}_label`, label: `Label Capteur D${i}`, selector: { text: {} } },
+          { name: `d${i}_entity`, label: `Entité D${i}`, selector: { entity: {} } }
+        ]).flat(),
         ...[1, 2, 3, 4].map(i => [
           { name: `p${i}_name`, label: `Nom Panneau P${i}`, selector: { text: {} } },
           { name: `p${i}_w`, label: `Entité Watts P${i}`, selector: { entity: {} } },
@@ -35,56 +41,53 @@ class SolarMasterCardEditor extends LitElement {
         ]).flat()
       ],
       tab_weather: [
-        { name: "weather_entity", label: "Entité Météo (weather.xxx)", selector: { entity: {} } },
-        { name: "temp_entity", label: "Entité Température Extérieure", selector: { entity: {} } },
-        { name: "hum_entity", label: "Entité Humidité", selector: { entity: {} } }
+        { name: "weather_entity", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
+        { name: "temp_ext", label: "Température Extérieure", selector: { entity: {} } },
+        { name: "hum_ext", label: "Humidité Extérieure", selector: { entity: {} } }
       ],
       tab_batt: [...[1, 2, 3, 4].map(i => [
         { name: `b${i}_n`, label: `Nom Batterie ${i}`, selector: { text: {} } },
         { name: `b${i}_s`, label: `Entité SOC % ${i}`, selector: { entity: {} } },
-        { name: `b${i}_out`, label: `Entité Sortie (W/A) ${i}`, selector: { entity: {} } }
+        { name: `b${i}_cap`, label: `Entité Capacité ${i}`, selector: { entity: {} } },
+        { name: `b${i}_temp`, label: `Entité Température ${i}`, selector: { entity: {} } },
+        { name: `b${i}_out`, label: `Entité Sortie ${i}`, selector: { entity: {} } },
+        { name: `b${i}_conn`, label: `Entité Connexion ${i}`, selector: { entity: {} } }
       ]).flat()],
       tab_eco: [
         { name: "eco_money", label: "Total Économies (€)", selector: { entity: {} } },
-        { name: "main_cons_entity", label: "Conso Maison (W)", selector: { entity: {} } }
+        { name: "eco_day_euro", label: "Gain Jour (€)", selector: { entity: {} } },
+        { name: "eco_year_euro", label: "Gain Année (€)", selector: { entity: {} } },
+        { name: "main_cons", label: "Conso Maison (W)", selector: { entity: {} } }
       ]
     };
 
     return html`
       <div class="edit-tabs">
         <button class="${this._selectedTab === 'tab_solar' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_solar'}>SOLAIRE</button>
-        <button class="${this._selectedTab === 'tab_weather' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_weather'}>MÉTÉO</button>
+        <button class="${this._selectedTab === 'tab_weather' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_weather'}>MÉTÉO/ASTRO</button>
         <button class="${this._selectedTab === 'tab_batt' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_batt'}>BATTERIES</button>
         <button class="${this._selectedTab === 'tab_eco' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_eco'}>ÉCONOMIE</button>
       </div>
-      <div class="editor-container">
-        <ha-form .hass=${this.hass} .data=${this._config} .schema=${schemas[this._selectedTab]} @value-changed=${this._valueChanged}></ha-form>
-      </div>
+      <ha-form .hass=${this.hass} .data=${this._config} .schema=${schemas[this._selectedTab]} @value-changed=${this._valueChanged}></ha-form>
     `;
   }
-
-  static styles = css`
-    .edit-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-    button { flex: 1; padding: 8px; background: #222; color: #eee; border: 1px solid #444; border-radius: 4px; cursor: pointer; font-size: 10px; }
-    button.active { background: #ffc107; color: #000; border-color: #ffc107; }
-  `;
+  static styles = css`.edit-tabs { display: flex; gap: 4px; margin-bottom: 15px; } button { flex: 1; padding: 8px; font-size: 9px; cursor: pointer; background: #222; color: #fff; border: 1px solid #444; } button.active { background: #ffc107; color: #000; }`;
 }
 customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
 /**
  * ==========================================
- * ⚡ CORPS DE LA CARTE (Version 3.7)
+ * ⚡ CORPS DE LA CARTE (ULTIMATE TITAN V3.8)
  * ==========================================
  */
 class SolarMasterCard extends LitElement {
   static getConfigElement() { return document.createElement("solar-master-card-editor"); }
   static get properties() { return { hass: {}, config: {}, _tab: { type: String } }; }
-  
   constructor() { super(); this._tab = 'SOLAIRE'; }
   setConfig(config) { this.config = config; }
 
   _getVal(id) {
-    if (!this.hass || !id || !this.hass.states[id]) return { val: '0', unit: '', attr: {} };
+    if (!this.hass || !id || !this.hass.states[id]) return { val: '0', unit: '' };
     const s = this.hass.states[id];
     return { val: s.state, unit: s.attributes.unit_of_measurement || '', attr: s.attributes };
   }
@@ -92,9 +95,9 @@ class SolarMasterCard extends LitElement {
   render() {
     if (!this.config || !this.hass) return html``;
     const c = this.config;
-    
     return html`
       <ha-card style="height:${c.card_height || 650}px;">
+        ${c.bg_url ? html`<div class="bg-layer" style="background-image:url('${c.bg_url}'); opacity:0.3;"></div>` : ''}
         <div class="overlay">
           <div class="main-content">
             ${this._tab === 'SOLAIRE' ? this._renderSolar() : 
@@ -102,10 +105,10 @@ class SolarMasterCard extends LitElement {
               this._tab === 'BATTERIE' ? this._renderBattery() : this._renderEco()}
           </div>
           <div class="footer">
-            <div class="f-btn ${this._tab === 'SOLAIRE' ? 'active' : ''}" @click=${() => this._tab = 'SOLAIRE'}>Solaire</div>
-            <div class="f-btn ${this._tab === 'METEO' ? 'active' : ''}" @click=${() => this._tab = 'METEO'}>Météo</div>
-            <div class="f-btn ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'}>Batteries</div>
-            <div class="f-btn ${this._tab === 'ECONOMIE' ? 'active' : ''}" @click=${() => this._tab = 'ECONOMIE'}>Éco</div>
+            <div class="f-btn ${this._tab === 'SOLAIRE' ? 'active' : ''}" @click=${() => this._tab = 'SOLAIRE'}>SOLAIRE</div>
+            <div class="f-btn ${this._tab === 'METEO' ? 'active' : ''}" @click=${() => this._tab = 'METEO'}>MÉTÉO</div>
+            <div class="f-btn ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'}>BATTERIES</div>
+            <div class="f-btn ${this._tab === 'ECONOMIE' ? 'active' : ''}" @click=${() => this._tab = 'ECONOMIE'}>ÉCO</div>
           </div>
         </div>
       </ha-card>
@@ -116,25 +119,37 @@ class SolarMasterCard extends LitElement {
     const c = this.config;
     const prod = this._getVal(c.total_now);
     const target = this._getVal(c.solar_target);
-    const monthName = new Date().toLocaleString('fr-FR', { month: 'long' });
+    const sun = this.hass.states['sun.sun'];
+    const elev = sun ? sun.attributes.elevation : 0;
+    const pos = ((elev + 20) / 110) * 100;
+    const month = new Date().toLocaleString('fr-FR', { month: 'long' }).toUpperCase();
 
-    const currentW = parseFloat(prod.val) || 0;
-    const targetKwh = parseFloat(target.val) || 1;
-    const progress = Math.min(100, (currentW / (targetKwh * 1000)) * 100);
+    const progress = Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
 
     return html`
       <div class="page">
-        <div class="month-tag">${monthName.toUpperCase()}</div>
         <div class="header-prod">
-            <div class="c-label">PRODUCTION ACTUELLE</div>
+            <div class="month-tag">${month}</div>
             <div class="big-val-titan">${prod.val}<small>W</small></div>
-            
-            <div class="target-box">
-                <div class="target-bar"><div class="target-fill" style="width: ${progress}%"></div></div>
-                <div class="target-info">
-                    <span>Objectif: <b>${targetKwh} kWh</b></span>
-                    <span>Progression: <b>${progress.toFixed(1)}%</b></span>
-                </div>
+            <div class="target-container">
+                <div class="target-bar"><div class="target-fill" style="width:${progress}%"></div></div>
+                <div class="target-text">Objectif: <b>${target.val} kWh</b> • <b>${progress.toFixed(1)}%</b></div>
+            </div>
+        </div>
+
+        <div class="cockpit-container">
+            <svg viewBox="0 0 400 100" preserveAspectRatio="none" class="sun-svg-bg"><path d="M0,90 Q200,-20 400,90" fill="none" stroke="rgba(255,193,7,0.3)" stroke-width="2" stroke-dasharray="5"/></svg>
+            <div class="sun-dot" style="left: ${Math.max(5, Math.min(95, pos))}%"><ha-icon icon="mdi:white-balance-sunny"></ha-icon><span>${elev.toFixed(1)}°</span></div>
+            <div class="cockpit">
+              <div class="side">
+                <div class="group-title">${c.title_left || 'GAUCHE'}</div>
+                ${[4, 5, 6].map(i => this._renderDiag(i, 'l'))}
+              </div>
+              <div class="center-spacer"></div>
+              <div class="side">
+                <div class="group-title right">${c.title_right || 'DROITE'}</div>
+                ${[7, 8, 9].map(i => this._renderDiag(i, 'r'))}
+              </div>
             </div>
         </div>
 
@@ -151,47 +166,43 @@ class SolarMasterCard extends LitElement {
                   <div class="v" style="color:${colors[i-1]}">${Math.round(val.val)}</div>
                 </div>
                 <div class="hud-n">${c[`p${i}_name`] || 'P'+i}</div>
-                <div class="hud-sub-val">${sub.val}<small>${sub.unit}</small></div>
+                <div class="hud-sub">${sub.val}<small>${sub.unit}</small></div>
               </div>`;
           })}
         </div>
       </div>`;
   }
 
+  _renderDiag(i, side) {
+    const c = this.config;
+    if (!c[`d${i}_entity`]) return html`<div class="mini-diag empty"></div>`;
+    const d = this._getVal(c[`d${i}_entity`]);
+    return html`<div class="mini-diag ${side}"><span class="m-l">${c[`d${i}_label`] || 'DONNÉE'}</span><span class="m-v">${d.val}<small>${d.unit}</small></span></div>`;
+  }
+
   _renderWeather() {
     const sun = this.hass.states['sun.sun'];
     const weather = this._getVal(this.config.weather_entity);
-    const temp = this._getVal(this.config.temp_entity);
-    
-    const formatTime = (iso) => {
-        if(!iso) return "--:--";
-        return new Date(iso).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
-    };
+    const formatTime = (iso) => iso ? new Date(iso).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}) : '--:--';
 
     return html`
-      <div class="page">
-        <div class="weather-grid">
-            <div class="astro-card">
-                <div class="astro-title">ASTRONOMIE</div>
-                <div class="astro-row">
-                    <div class="astro-item"><ha-icon icon="mdi:compass-outline"></ha-icon><span>AZIMUT</span><b>${sun ? sun.attributes.azimuth : '--'}°</b></div>
-                    <div class="astro-item"><ha-icon icon="mdi:angle-acute"></ha-icon><span>ÉLÉVATION</span><b>${sun ? sun.attributes.elevation : '--'}°</b></div>
-                </div>
-                <div class="astro-row">
-                    <div class="astro-item"><ha-icon icon="mdi:weather-sunset-down"></ha-icon><span>COUCHER</span><b>${formatTime(sun?.attributes.next_setting)}</b></div>
-                    <div class="astro-item"><ha-icon icon="mdi:weather-night"></ha-icon><span>CRÉPUSCULE</span><b>${formatTime(sun?.attributes.next_dusk)}</b></div>
-                </div>
+      <div class="page p-grid">
+        <div class="astro-card">
+            <div class="card-head">ASTRO COCKPIT</div>
+            <div class="a-grid">
+                <div class="a-item"><ha-icon icon="mdi:compass-outline"></ha-icon>Azimut<b>${sun?.attributes.azimuth}°</b></div>
+                <div class="a-item"><ha-icon icon="mdi:angle-acute"></ha-icon>Élévation<b>${sun?.attributes.elevation}°</b></div>
+                <div class="a-item"><ha-icon icon="mdi:weather-sunset-down"></ha-icon>Coucher<b>${formatTime(sun?.attributes.next_setting)}</b></div>
+                <div class="a-item"><ha-icon icon="mdi:weather-night"></ha-icon>Crépuscule<b>${formatTime(sun?.attributes.next_dusk)}</b></div>
             </div>
-
-            <div class="weather-card">
-                <div class="astro-title">MÉTÉO ACTUELLE</div>
-                <div class="w-main">
-                    <ha-icon icon="mdi:thermometer"></ha-icon>
-                    <span>${temp.val}°C</span>
-                </div>
-                <div class="w-status">${weather.val.toUpperCase()}</div>
-                <div class="w-sub">Humidité: ${this._getVal(this.config.hum_entity).val}%</div>
+        </div>
+        <div class="astro-card">
+            <div class="card-head">CONDITIONS MÉTÉO</div>
+            <div class="w-row">
+                <div class="w-val">${this._getVal(this.config.temp_ext).val}°C</div>
+                <div class="w-st">${weather.val.toUpperCase()}</div>
             </div>
+            <div class="w-hum">Humidité: ${this._getVal(this.config.hum_ext).val}%</div>
         </div>
       </div>`;
   }
@@ -199,15 +210,20 @@ class SolarMasterCard extends LitElement {
   _renderBattery() {
     const c = this.config;
     return html`<div class="page scroll">
-      ${[1, 2, 3, 4].map(i => {
+      ${[1,2,3,4].map(i => {
         if (!c[`b${i}_s`]) return '';
         const soc = this._getVal(c[`b${i}_s`]);
+        const conn = this._getVal(c[`b${i}_conn`]).val.toLowerCase();
+        const online = ['on','online','connected','vrai','true'].includes(conn);
         return html`
           <div class="rack">
-            <div class="r-h"><span>${c[`b${i}_n`] || 'BATTERIE '+i}</span><span class="soc-pct">${soc.val}%</span></div>
+            <div class="r-h"><span>${c[`b${i}_n`] || 'BAT '+i}</span><b>${soc.val}%</b></div>
             <div class="v-meter">${[...Array(10)].map((_, idx) => html`<div class="v-seg ${parseInt(soc.val) > (idx * 10) ? 'on' : ''}"></div>`)}</div>
-            <div class="r-grid-compact">
-                <div class="r-item"><span>SORTIE</span><br><b>${this._getVal(c[`b${i}_out`]).val}</b></div>
+            <div class="r-stats">
+                <div>Capacité: <b>${this._getVal(c[`b${i}_cap`]).val}</b></div>
+                <div>Temp: <b>${this._getVal(c[`b${i}_temp`]).val}°</b></div>
+                <div>Sortie: <b>${this._getVal(c[`b${i}_out`]).val}</b></div>
+                <div style="color:${online?'#4caf50':'#f44336'}">Etat: <b>${online?'OK':'OFF'}</b></div>
             </div>
           </div>`;
       })}
@@ -217,58 +233,78 @@ class SolarMasterCard extends LitElement {
   _renderEco() {
     const c = this.config;
     return html`<div class="page">
-      <div class="eco-main-card">
-        <div class="e-header">ÉCONOMIES TOTALES</div>
-        <div class="e-value-big">${this._getVal(c.eco_money).val}€</div>
+      <div class="eco-hero">
+        <div class="e-l">ÉCONOMIES RÉALISÉES</div>
+        <div class="e-v">${this._getVal(c.eco_money).val}€</div>
+        <div class="e-sub"><span>JOUR: <b>+${this._getVal(c.eco_day_euro).val}€</b></span><span>ANNÉE: <b>+${this._getVal(c.eco_year_euro).val}€</b></span></div>
       </div>
-      <div class="eco-details-grid">
-        <div class="e-detail"><span>CONSO MAISON</span><b>${this._getVal(c.main_cons_entity).val}W</b></div>
+      <div class="mini-diag" style="width:100%; margin-top:20px; border-left:4px solid #4caf50">
+        <span class="m-l">CONSOMMATION MAISON</span><span class="m-v">${this._getVal(c.main_cons).val}W</span>
       </div>
     </div>`;
   }
 
   static styles = css`
-    ha-card { background:#000; color:#fff; border-radius:20px; overflow:hidden; font-family: sans-serif; }
-    .overlay { height:100%; display:flex; flex-direction:column; padding:15px; background:rgba(0,0,0,0.85); box-sizing:border-box; }
+    ha-card { background:#000; color:#fff; border-radius:24px; overflow:hidden; font-family: sans-serif; position:relative; }
+    .bg-layer { position:absolute; top:0; left:0; width:100%; height:100%; background-size:cover; z-index:0; }
+    .overlay { position:relative; z-index:1; height:100%; display:flex; flex-direction:column; padding:20px; background:rgba(0,0,0,0.8); box-sizing:border-box; }
     
-    .month-tag { text-align: center; color: #ffc107; font-size: 10px; font-weight: bold; letter-spacing: 2px; margin-bottom: 5px; }
-    .header-prod { text-align: center; margin-bottom: 20px; }
-    .big-val-titan { font-size:60px; font-weight:900; color:#ffc107; line-height:1; }
-    .big-val-titan small { font-size: 18px; }
-    .c-label { font-size: 10px; opacity: 0.7; font-weight: bold; }
+    .header-prod { text-align:center; margin-bottom:10px; }
+    .month-tag { color:#ffc107; font-size:10px; font-weight:bold; letter-spacing:2px; margin-bottom:5px; }
+    .big-val-titan { font-size:72px; font-weight:900; color:#ffc107; line-height:0.8; text-shadow:0 0 15px rgba(255,193,7,0.4); }
+    .big-val-titan small { font-size:22px; margin-left:5px; }
+    .target-container { width:220px; margin:15px auto 0; }
+    .target-bar { height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden; }
+    .target-fill { height:100%; background:#ffc107; box-shadow:0 0 10px #ffc107; }
+    .target-text { font-size:9px; color:#aaa; margin-top:5px; text-transform:uppercase; }
 
-    .target-box { width: 80%; margin: 15px auto; }
-    .target-bar { height: 6px; background: #222; border-radius: 3px; overflow: hidden; }
-    .target-fill { height: 100%; background: #ffc107; box-shadow: 0 0 10px #ffc107; }
-    .target-info { display: flex; justify-content: space-between; font-size: 10px; margin-top: 5px; color: #aaa; }
+    .cockpit-container { position:relative; height:160px; }
+    .sun-svg-bg { position:absolute; width:100%; height:100%; opacity:0.3; }
+    .sun-dot { position:absolute; bottom:10px; transform:translateX(-50%); color:#ffc107; text-align:center; }
+    .sun-dot span { font-size:11px; font-weight:bold; display:block; }
+    .cockpit { display:flex; justify-content:space-between; align-items:flex-end; height:100%; padding-bottom:5px; }
+    .side { flex:1.3; }
+    .center-spacer { flex:1; }
+    .group-title { font-size:10px; font-weight:900; color:#00f9f9; text-transform:uppercase; margin-bottom:5px; }
+    .group-title.right { text-align:right; color:#ffc107; }
+    .mini-diag { background:rgba(0,0,0,0.5); padding:8px; border-radius:8px; margin:5px 0; border-left:3px solid #00f9f9; }
+    .mini-diag.r { border-left:none; border-right:3px solid #ffc107; text-align:right; }
+    .m-l { font-size:8px; color:#aaa; display:block; text-transform:uppercase; font-weight:bold; }
+    .m-v { font-size:14px; font-weight:bold; }
 
-    .panels-row { display: flex; justify-content: space-around; margin-top: 20px; }
-    .hud-circle { width: 50px; height: 50px; border-radius: 50%; border: 2px solid; display: flex; align-items: center; justify-content: center; }
-    .hud-n { font-size: 9px; font-weight: bold; margin-top: 5px; text-align: center; }
-    .hud-sub-val { font-size: 10px; text-align: center; color: #aaa; }
+    .panels-row { display:flex; justify-content:space-around; margin-top:30px; }
+    .hud-circle { width:65px; height:65px; border-radius:50%; border:2px solid; position:relative; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); }
+    .scan { position:absolute; width:100%; height:100%; border:2px solid transparent; border-radius:50%; animation:rotate 4s linear infinite; top:-2px; left:-2px; padding:2px; box-sizing:content-box; }
+    @keyframes rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    .hud-n { font-size:10px; font-weight:bold; text-align:center; margin-top:8px; text-transform:uppercase; }
+    .hud-sub { font-size:11px; text-align:center; color:#aaa; }
 
-    /* Météo Styles */
-    .weather-grid { display: flex; flex-direction: column; gap: 15px; }
-    .astro-card, .weather-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid #333; }
-    .astro-title { font-size: 10px; color: #ffc107; font-weight: bold; margin-bottom: 10px; }
-    .astro-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-    .astro-item { display: flex; flex-direction: column; width: 45%; }
-    .astro-item span { font-size: 8px; color: #aaa; }
-    .astro-item b { font-size: 14px; }
-    .w-main { font-size: 30px; font-weight: bold; text-align: center; }
-    .w-status { text-align: center; color: #ffc107; font-weight: bold; font-size: 12px; }
-    .w-sub { text-align: center; font-size: 10px; color: #aaa; margin-top: 5px; }
+    .p-grid { display:flex; flex-direction:column; gap:15px; }
+    .astro-card { background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; border:1px solid #333; }
+    .card-head { font-size:10px; color:#ffc107; font-weight:bold; margin-bottom:10px; }
+    .a-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .a-item { font-size:9px; color:#aaa; display:flex; flex-direction:column; }
+    .a-item b { font-size:14px; color:#fff; }
+    .w-row { display:flex; justify-content:center; align-items:center; gap:20px; }
+    .w-val { font-size:40px; font-weight:900; }
+    .w-st { font-size:14px; color:#ffc107; font-weight:bold; }
 
-    .rack { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin-bottom: 10px; }
-    .v-meter { display: flex; gap: 2px; height: 5px; margin: 5px 0; }
-    .v-seg { flex: 1; background: #222; }
-    .v-seg.on { background: #4caf50; }
+    .rack { background:rgba(255,255,255,0.05); padding:12px; border-radius:12px; margin-bottom:10px; border-left:4px solid #4caf50; }
+    .v-meter { display:flex; gap:3px; height:8px; margin:8px 0; }
+    .v-seg { flex:1; background:#222; }
+    .v-seg.on { background:#4caf50; box-shadow:0 0 5px #4caf50; }
+    .r-stats { display:grid; grid-template-columns:1fr 1fr; gap:5px; font-size:10px; color:#aaa; }
+    .r-stats b { color:#fff; }
 
-    .footer { display: flex; justify-content: space-around; padding-top: 15px; border-top: 1px solid #333; margin-top: auto; }
-    .f-btn { cursor: pointer; opacity: 0.5; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-    .f-btn.active { opacity: 1; color: #ffc107; }
-    .scroll { overflow-y: auto; max-height: 450px; }
+    .eco-hero { background:rgba(76,175,80,0.1); padding:20px; border-radius:15px; text-align:center; border:1px solid #4caf5044; }
+    .e-l { font-size:10px; color:#4caf50; font-weight:bold; }
+    .e-v { font-size:50px; font-weight:900; color:#4caf50; }
+    .e-sub { display:flex; justify-content:space-around; font-size:10px; margin-top:10px; }
+
+    .footer { display:flex; justify-content:space-around; padding-top:15px; border-top:1px solid #333; margin-top:auto; }
+    .f-btn { cursor:pointer; opacity:0.4; font-size:11px; font-weight:bold; text-transform:uppercase; }
+    .f-btn.active { opacity:1; color:#ffc107; border-bottom:2px solid #ffc107; padding-bottom:5px; }
+    .scroll { overflow-y:auto; max-height:480px; }
   `;
 }
-
 customElements.define("solar-master-card", SolarMasterCard);
