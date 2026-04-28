@@ -404,7 +404,7 @@ _renderBattery() {
 
     /* DESIGN TITAN */
     .titan-header { text-align: center; margin-bottom: 30px; }
-    .big-val { font-size: 82px; font-weight: 900; color: #ffc107; line-height: 1; text-shadow: 0 0 20px rgba(255,193,7,0.3); }
+    .big-val { font-size: 42px; font-weight: 900; color: #ffc107; line-height: 1; text-shadow: 0 0 20px rgba(255,193,7,0.3); }
     .big-val small { font-size: 24px; color: #fff; opacity: 0.6; }
     .sub-txt { font-size: 10px; letter-spacing: 4px; color: #666; margin-top: 10px; }
 
