@@ -235,8 +235,7 @@ _renderWeather() {
     const moonPhases = { 'new_moon': 'Nouvelle\nLune', 'waxing_crescent': 'Premier\nCroissant', 'first_quarter': 'Premier\nQuartier', 'waxing_gibbous': 'Gibbeuse\nCroissante', 'full_moon': 'Pleine\nLune', 'waning_gibbous': 'Gibbeuse\nDécroissante', 'last_quarter': 'Dernier\nQuartier', 'waning_crescent': 'Dernier\nCroissant' };
     const phaseFr = moonPhases[this.hass.states[c.moon_entity]?.state] || 'Phase\nInconnue';
 
-    // --- CALCUL DE POSITION OPTIMISÉ POUR TES VALEURS ---
-    // Azimut 153.9° -> Doit être entre l'Est (90) et le Sud (180)
+    // Position du soleil recalculée pour ton azimut de 153.9°
     const sunX = 35 + ((azimuth - 45) / 270) * 130;
     const sunY = 65 - (Math.max(0, elevation) * 0.6);
 
@@ -252,7 +251,6 @@ _renderWeather() {
             <text x="15" y="76" fill="#ffffff" font-size="10" font-weight="bold">E</text>
             <text x="175" y="76" fill="#ffffff" font-size="10" font-weight="bold">O</text>
             <text x="96" y="12" fill="#ffc107" font-size="12" font-weight="bold">S</text>
-
             <line x1="30" y1="65" x2="170" y2="65" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
             <path d="M 35,65 A 65,50 0 0 1 165,65" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4,4" />
             
@@ -265,7 +263,6 @@ _renderWeather() {
               <line x1="${sunX+10}" y1="${sunY}" x2="${sunX+7}" y2="${sunY}" stroke="#ffc107" stroke-width="2" />
             </g>
           </svg>
-
           <div style="display: flex; justify-content: space-between; width: 85%; font-size: 11px; color: #ffffff; margin-top: 5px; font-weight: bold; font-family: monospace;">
             <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
             <span style="color: #ffc107;">${elevation.toFixed(1)}°</span>
@@ -278,9 +275,9 @@ _renderWeather() {
         </div>
 
         <div style="background: rgba(30,30,30,0.95); padding: 8px 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 12px; height: 46px; align-self: start; pointer-events: auto;">
-          <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 24px; filter: drop-shadow(0 0 5px #00f9f9);"></ha-icon>
+          <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 24px;"></ha-icon>
           <div style="display: flex; flex-direction: column; line-height: 1.1;">
-            <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold;">PHASE LUNAIRE</span>
+            <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.8;">PHASE LUNAIRE</span>
             <span style="font-size: 14px; font-weight: 900; color: #ffffff; white-space: pre-line;">${phaseFr}</span>
           </div>
         </div>
@@ -292,11 +289,15 @@ _renderWeather() {
     const entityId = c[`w${i}_e`];
     if (!entityId || !this.hass.states[entityId]) return html`<div style="height:46px;"></div>`;
     const s = this._getVal(entityId);
+    
+    // On récupère le label depuis la config (w1_l, w2_l, etc.)
+    const label = c[`w${i}_l`] || 'CAPTEUR ' + i;
+
     return html`
       <div style="background: rgba(30,30,30,0.95); padding: 8px 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 10px; height: 46px; box-sizing: border-box; pointer-events: auto;">
         <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
         <div style="display: flex; flex-direction: column; line-height: 1.1;">
-          <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold;">${c[`w${i}_l`] || 'S'+i}</span>
+          <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.8;">${label}</span>
           <span style="font-size: 16px; font-weight: 900; color: #ffffff;">${s.val}<small style="font-size: 10px; color: #00f9f9; margin-left: 2px;">${s.unit}</small></span>
         </div>
       </div>`;
