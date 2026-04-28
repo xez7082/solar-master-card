@@ -232,7 +232,7 @@ _renderWeather() {
     const elevation = sun.attributes.elevation || 0;
     const azimuth = sun.attributes.azimuth || 0;
 
-    // Traduction française des phases lunaires
+    // Traduction française
     const moonState = this.hass.states[c.moon_entity]?.state;
     const moonPhases = {
       'new_moon': 'Nouvelle\nLune',
@@ -246,8 +246,12 @@ _renderWeather() {
     };
     const phaseFr = moonPhases[moonState] || moonState || 'Phase\nInconnue';
 
-    // Positionnement du soleil sur l'arc (X: 30-170, Y: 15-65)
-    const sunX = 30 + (140 * (azimuth / 360));
+    /* CALCUL DE POSITION (Hémisphère Nord) :
+       - Le soleil est au Sud (S) à 180°.
+       - On affiche la plage de l'arc de l'Est (90°) à l'Ouest (270°).
+       - On mappe ces 180° de différence sur l'axe X (30 à 170).
+    */
+    const sunX = 30 + (140 * ((azimuth - 90) / 180));
     const sunY = 65 - (Math.max(0, elevation) * 0.5); 
 
     return html`
@@ -261,27 +265,35 @@ _renderWeather() {
           <svg viewBox="0 0 200 85" style="width: 100%;">
             <text x="22" y="76" fill="#555" font-size="7" font-weight="bold">E</text>
             <text x="172" y="76" fill="#555" font-size="7" font-weight="bold">O</text>
-            <text x="97" y="12" fill="#00f9f9" font-size="7" font-weight="bold" opacity="0.4">N</text>
+            <text x="97" y="12" fill="#ff9800" font-size="8" font-weight="bold" opacity="0.6">S</text>
 
             <line x1="30" y1="65" x2="170" y2="65" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
             
             <path d="M 35,65 A 65,50 0 0 1 165,65" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-dasharray="2,2" />
             
-            ${elevation > 0 ? html`
+            ${elevation > 0 && azimuth >= 90 && azimuth <= 270 ? html`
               <line x1="${sunX}" y1="65" x2="${sunX}" y2="${sunY}" stroke="#ffc107" stroke-width="0.5" stroke-dasharray="1,1" opacity="0.6" />
               <circle cx="${sunX}" cy="65" r="1.5" fill="#ffc107" opacity="0.4" />
             ` : ''}
 
-            <foreignObject x="${sunX - 9}" y="${sunY - 9}" width="18" height="18">
-              <div style="color: ${elevation > 0 ? '#ffc107' : '#00f9f9'}; filter: drop-shadow(0 0 4px ${elevation > 0 ? '#ffc107' : '#00f9f9'}); text-align:center;">
-                <ha-icon icon="${elevation > 0 ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'}" style="--mdc-icon-size: 18px;"></ha-icon>
-              </div>
-            </foreignObject>
+            ${elevation > 0 && azimuth >= 90 && azimuth <= 270 ? html`
+              <foreignObject x="${sunX - 9}" y="${sunY - 9}" width="18" height="18">
+                <div style="color: #ffc107; filter: drop-shadow(0 0 4px #ffc107); text-align:center;">
+                  <ha-icon icon="mdi:white-balance-sunny" style="--mdc-icon-size: 18px;"></ha-icon>
+                </div>
+              </foreignObject>
+            ` : html`
+              <foreignObject x="91" y="45" width="18" height="18">
+                <div style="color: #00f9f9; opacity: 0.3; text-align:center;">
+                  <ha-icon icon="mdi:moon-waning-crescent" style="--mdc-icon-size: 18px;"></ha-icon>
+                </div>
+              </foreignObject>
+            `}
           </svg>
           
           <div style="display: flex; justify-content: space-between; width: 75%; font-size: 9px; color: #666; margin-top: -8px; font-family: monospace;">
             <span>${sun.attributes.next_rising ? sun.attributes.next_rising.split('T')[1].substring(0, 5) : '--:--'}</span>
-            <span style="color: #ffc107;">${elevation.toFixed(1)}°</span>
+            <span style="color: #ffc107; font-weight: bold;">${elevation.toFixed(1)}° | ${azimuth.toFixed(0)}°</span>
             <span>${sun.attributes.next_setting ? sun.attributes.next_setting.split('T')[1].substring(0, 5) : '--:--'}</span>
           </div>
         </div>
@@ -298,23 +310,6 @@ _renderWeather() {
           </div>
         </div>
 
-      </div>`;
-  }
-
-  // Fonction utilitaire pour générer les capteurs
-  _renderMiniSensor(i) {
-    const c = this.config;
-    const entityId = c[`w${i}_e`];
-    if (!entityId || !this.hass.states[entityId]) return html`<div style="height:46px;"></div>`;
-    const s = this._getVal(entityId);
-    
-    return html`
-      <div style="background: rgba(15,15,15,0.8); padding: 8px 12px; border-radius: 10px; border: 1px solid #222; display: flex; align-items: center; gap: 10px; height: 46px; box-sizing: border-box;">
-        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 18px;"></ha-icon>
-        <div style="display: flex; flex-direction: column; line-height: 1.1;">
-          <span style="font-size: 7px; color: #555; text-transform: uppercase; font-weight: bold;">${c[`w${i}_l`] || 'S'+i}</span>
-          <span style="font-size: 14px; font-weight: 900; color: #fff;">${s.val}<small style="font-size: 9px; color: #00f9f9; margin-left: 2px;">${s.unit}</small></span>
-        </div>
       </div>`;
   }
   
