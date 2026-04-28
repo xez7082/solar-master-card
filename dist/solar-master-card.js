@@ -198,33 +198,52 @@ _renderSolar() {
       </div>`;
   }
   
-  _renderWeather() {
+_renderWeather() {
     const c = this.config;
     const sun = this.hass.states['sun.sun'];
-    const weather = this._getVal(c.weather_entity);
+    if (!sun) return html`<div>Entité sun.sun non trouvée</div>`;
+
+    // Calcul de la position du soleil sur l'arc (0 à 180 degrés)
+    const elevation = sun.attributes.elevation || 0;
+    const azimuth = sun.attributes.azimuth || 0;
+    
+    // On transforme l'élévation en position sur un arc de 180°
+    // Si élévation < 0, le soleil est "sous l'horizon"
+    const sunPos = elevation > 0 ? (azimuth % 180) : -1; 
+
     return html`
-      <div class="page scroll">
-        <div class="weather-hero">
-            <div class="wh-temp">${this._getVal(c.temp_ext).val}°</div>
-            <div class="wh-icon"><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon></div>
-        </div>
+      <div class="page scroll" style="position: relative; z-index: 2;">
         
-        <div class="sun-cockpit">
-            <div class="sc-item"><span>AZIMUT</span><b>${sun?.attributes.azimuth.toFixed(1)}°</b></div>
-            <div class="sc-item"><span>ELEVATION</span><b>${sun?.attributes.elevation.toFixed(1)}°</b></div>
-            <div class="sc-item"><span>HUMIDITÉ</span><b>${this._getVal(c.hum_ext).val}%</b></div>
+        <div class="sun-arc-container" style="text-align: center; margin-bottom: 20px; position: relative; padding: 20px 0;">
+          <svg viewBox="0 0 200 100" style="width: 80%; max-width: 300px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));">
+            <path d="M 20,90 A 80,80 0 0 1 180,90" fill="none" stroke="#333" stroke-width="2" stroke-dasharray="4" />
+            
+            ${elevation > 0 ? html`
+              <circle cx="${100 - 80 * Math.cos((azimuth * Math.PI) / 180)}" 
+                      cy="${90 - 80 * Math.sin((elevation * Math.PI) / 180)}" 
+                      r="5" fill="#ffc107" style="filter: drop-shadow(0 0 8px #ffc107);" />
+            ` : ''}
+          </svg>
+          
+          <div style="display: flex; justify-content: space-between; width: 80%; margin: -10px auto 0; font-size: 10px; color: #666;">
+            <span>LEVÉE: ${new Date(sun.attributes.next_rising).toLocaleTimeString([], {hour: '2h', minute: '2h'})}</span>
+            <span>COUCHER: ${new Date(sun.attributes.next_setting).toLocaleTimeString([], {hour: '2h', minute: '2h'})}</span>
+          </div>
         </div>
 
-        <div class="weather-grid-8">
-            ${[1,2,3,4,5,6,7,8].map(i => {
-                if(!c[`w${i}_e`]) return '';
-                const e = this._getVal(c[`w${i}_e`]);
-                return html`<div class="w-tile"><span>${c[`w${i}_l`]}</span><b>${e.val}${e.unit}</b></div>`;
-            })}
+        <div class="weather-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+           ${this._renderWeatherDetails()} </div>
+
+        <div class="moon-info" style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9;"></ha-icon>
+           <div style="font-size: 11px;">
+              <div style="color: #aaa; text-transform: uppercase; font-size: 8px;">Phase Lunaire</div>
+              <div>${this.hass.states[c.moon_entity]?.state || 'N/A'}</div>
+           </div>
         </div>
+
       </div>`;
   }
-
 _renderBattery() {
     const c = this.config;
     return html`
