@@ -207,7 +207,7 @@ _renderSolar() {
             const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
             return html`
               <div class="n-item" style="text-align: center;">
-                <div class="n-circle" style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 8px ${clr}; margin-bottom: 2px;">
+                <div class="n-circle" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 8px ${clr}; margin-bottom: 2px;">
                    <span style="font-size: 14px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
                    <span style="font-size: 8px; color: #888;">W</span>
                 </div>
@@ -222,7 +222,7 @@ _renderSolar() {
             const d = this._getVal(c[`d${i}_entity`]);
             return html`
               <div class="d-card" style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center; height: 45px; display: flex; flex-direction: column; justify-content: center;">
-                <span style="font-size: 7px; color: #777; display: block; text-transform: uppercase; line-height: 1; margin-bottom: 2px;">${c[`d${i}_label`] || 'D'+i}</span>
+                <span style="font-size: 7px; color: #e6e6e6; display: block; text-transform: uppercase; line-height: 1; margin-bottom: 2px;">${c[`d${i}_label`] || 'D'+i}</span>
                 <b style="font-size: 12px; color: #fff; line-height: 1;">${d.val}<small style="font-size: 8px; margin-left: 1px; color: #00f9f9;">${d.unit}</small></b>
               </div>`;
           })}
