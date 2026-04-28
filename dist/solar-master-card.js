@@ -396,12 +396,12 @@ _renderBattery() {
             <div class="eh-sub">GAIN TOTAL RÉALISÉ</div>
         </div>
         <div class="conso-bar">
-            <span>CONSO MAISON</span>
+            <span>CONSOMMATION INSTANTANÉ</span>
             <b>${this._getVal(c.main_cons).val} W</b>
         </div>
         <div class="eco-stats-grid">
-            <div class="es-card"><span>JOUR</span><b>${this._getVal(c.eco_day_euro).val}€</b></div>
-            <div class="es-card"><span>ANNÉE</span><b>${this._getVal(c.eco_year_euro).val}€</b></div>
+            <div class="es-card"><span>GAIN DU JOUR</span><b>${this._getVal(c.eco_day_euro).val} €</b></div>
+            <div class="es-card"><span>GAIN DE L'ANNÉE</span><b>${this._getVal(c.eco_year_euro).val} €</b></div>
             ${[1,2,3,4,5,6].map(i => {
                 if(!c[`e${i}_e`]) return '';
                 const e = this._getVal(c[`e${i}_e`]);
