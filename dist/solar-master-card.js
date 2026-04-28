@@ -229,20 +229,19 @@ _renderWeather() {
     const sun = this.hass.states['sun.sun'];
     if (!sun) return html`<div style="color:red;padding:20px;">ENTITÉ SUN INTROUVABLE</div>`;
 
-    // Valeurs de test si les attributs sont manquants
     const elevation = sun.attributes.elevation ?? 0;
     const azimuth = sun.attributes.azimuth ?? 0;
 
     const moonPhases = { 'new_moon': 'Nouvelle\nLune', 'waxing_crescent': 'Premier\nCroissant', 'first_quarter': 'Premier\nQuartier', 'waxing_gibbous': 'Gibbeuse\nCroissante', 'full_moon': 'Pleine\nLune', 'waning_gibbous': 'Gibbeuse\nDécroissante', 'last_quarter': 'Dernier\nQuartier', 'waning_crescent': 'Dernier\nCroissant' };
     const phaseFr = moonPhases[this.hass.states[c.moon_entity]?.state] || 'Phase\nInconnue';
 
-    // CALCUL DE POSITION FORCÉ : On mappe 0-360 sur 30-170
-    const sunX = 30 + (azimuth / 360) * 140;
-    // On limite sunY entre 15 et 65 pour qu'il soit toujours sur l'arc
-    const sunY = Math.max(15, Math.min(65, 65 - (elevation * 0.5)));
+    // --- CALCUL DE POSITION OPTIMISÉ POUR TES VALEURS ---
+    // Azimut 153.9° -> Doit être entre l'Est (90) et le Sud (180)
+    const sunX = 35 + ((azimuth - 45) / 270) * 130;
+    const sunY = 65 - (Math.max(0, elevation) * 0.6);
 
     return html`
-      <div class="page" style="height: 500px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; box-sizing: border-box; pointer-events: none; position: relative; z-index: 10;">
+      <div class="page" style="height: 500px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; box-sizing: border-box; pointer-events: none; position: relative; z-index: 2;">
         
         <div style="display: flex; flex-direction: column; gap: 6px; pointer-events: auto;">
           ${[1, 2, 3, 4].map(i => this._renderMiniSensor(i))}
@@ -258,7 +257,7 @@ _renderWeather() {
             <path d="M 35,65 A 65,50 0 0 1 165,65" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4,4" />
             
             <g>
-              <line x1="${sunX}" y1="65" x2="${sunX}" y2="${sunY}" stroke="#ffc107" stroke-width="1" stroke-dasharray="2,2" />
+              <line x1="${sunX}" y1="65" x2="${sunX}" y2="${sunY}" stroke="#ffc107" stroke-width="1" stroke-dasharray="2,2" opacity="0.6" />
               <circle cx="${sunX}" cy="${sunY}" r="7" fill="#ffc107" style="filter: drop-shadow(0 0 8px #ffc107);" />
               <line x1="${sunX}" y1="${sunY-10}" x2="${sunX}" y2="${sunY-7}" stroke="#ffc107" stroke-width="2" />
               <line x1="${sunX}" y1="${sunY+10}" x2="${sunX}" y2="${sunY+7}" stroke="#ffc107" stroke-width="2" />
@@ -266,10 +265,6 @@ _renderWeather() {
               <line x1="${sunX+10}" y1="${sunY}" x2="${sunX+7}" y2="${sunY}" stroke="#ffc107" stroke-width="2" />
             </g>
           </svg>
-          
-          <div style="background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 5px; color: #00f9f9; font-size: 9px; margin-top: 5px;">
-             DEBUG: ELEV: ${elevation} | AZIM: ${azimuth}
-          </div>
 
           <div style="display: flex; justify-content: space-between; width: 85%; font-size: 11px; color: #ffffff; margin-top: 5px; font-weight: bold; font-family: monospace;">
             <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
@@ -283,10 +278,10 @@ _renderWeather() {
         </div>
 
         <div style="background: rgba(30,30,30,0.95); padding: 8px 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 12px; height: 46px; align-self: start; pointer-events: auto;">
-          <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 24px;"></ha-icon>
+          <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 24px; filter: drop-shadow(0 0 5px #00f9f9);"></ha-icon>
           <div style="display: flex; flex-direction: column; line-height: 1.1;">
             <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold;">PHASE LUNAIRE</span>
-            <span style="font-size: 14px; font-weight: 900; color: #ffffff;">${phaseFr}</span>
+            <span style="font-size: 14px; font-weight: 900; color: #ffffff; white-space: pre-line;">${phaseFr}</span>
           </div>
         </div>
       </div>`;
