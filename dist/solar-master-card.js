@@ -40,13 +40,13 @@ class SolarMasterCardEditor extends LitElement {
           { name: `d${i}_entity`, label: `Entité Extra ${i}`, selector: { entity: {} } }
         ]).flat()
       ],
-      tab_weather: [
-        { name: "weather_entity", label: "Entité Météo", selector: { entity: { domain: "weather" } } },
-        { name: "temp_ext", label: "Température Ext.", selector: { entity: {} } },
-        { name: "hum_ext", label: "Humidité Ext.", selector: { entity: {} } },
+     tab_weather: [
+        { name: "weather_entity", label: "Entité Météo Principale", selector: { entity: { domain: "weather" } } },
+        { name: "moon_entity", label: "Entité Lune", selector: { entity: {} } }, // Ajouté pour l'arc lunaire
         ...[1, 2, 3, 4, 5, 6, 7, 8].map(i => [
            { name: `w${i}_l`, label: `Label Météo ${i}`, selector: { text: {} } },
-           { name: `w${i}_e`, label: `Entité Météo ${i}`, selector: { entity: {} } }
+           { name: `w${i}_e`, label: `Entité Météo ${i}`, selector: { entity: {} } },
+           { name: `w${i}_i`, label: `Icone Météo ${i} (mdi:...)`, selector: { text: {} } }
         ]).flat()
       ],
       tab_batt: [
@@ -162,107 +162,118 @@ render() {
       </ha-card>
     `;
   }
-  _renderSolar() {
+_renderSolar() {
     const c = this.config;
     const prod = this._getVal(c.total_now);
-    const target = this._getVal(c.solar_target);
-    const progress = Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
+    
+    // On utilise 'c.conso_entity' qui vient de l'éditeur visuel
+    const consoState = c.conso_entity ? this.hass.states[c.conso_entity] : null; 
+    const consoVal = consoState ? parseFloat(consoState.state) : 0;
+    const consoDisplay = Math.abs(consoVal).toFixed(0);
 
     return html`
-      <div class="page">
-        <div class="titan-header">
-          <div class="big-val">${prod.val}<small>W</small></div>
-          <div class="sub-txt">PUISSANCE PHOTOVOLTAÏQUE</div>
-        </div>
+      <div class="page" style="height: 490px; padding: 10px; overflow: hidden; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 5px;">
+          
+          <div style="flex: 1; text-align: center;">
+            ${consoVal > 0 ? html`
+              <div style="color: #ff4444; font-weight: 900;">
+                <ha-icon icon="mdi:transmission-tower" style="--mdc-icon-size: 22px;"></ha-icon><br>
+                <span style="font-size: 18px;">${consoDisplay} W</span>
+              </div>
+            ` : ''}
+          </div>
 
-        <div class="ruler-box">
-          <div class="r-labels"><span>OBJECTIF: ${target.val}kWh</span> <b>${progress.toFixed(1)}%</b></div>
-          <div class="r-track">
-            ${Array(25).fill().map((_, i) => html`<div class="seg ${i < progress / 4 ? 'active' : ''}"></div>`)}
+          <div style="flex: 1; text-align: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
+            <span style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold;">Production</span><br>
+            <span style="font-size: 24px; font-weight: 900; color: #ffc107;">${prod.val} W</span>
+          </div>
+
+          <div style="flex: 1; text-align: center;">
+            ${consoVal < 0 ? html`
+              <div style="color: #00ff00; font-weight: 900;">
+                <ha-icon icon="mdi:export" style="--mdc-icon-size: 22px;"></ha-icon><br>
+                <span style="font-size: 18px;">${consoDisplay} W</span>
+              </div>
+            ` : ''}
           </div>
         </div>
 
-        <div class="neon-circles">
-          ${[1, 2, 3, 4].map(i => {
-            if(!c[`p${i}_w`]) return '';
-            const v = this._getVal(c[`p${i}_w`]);
-            const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
-            return html`
-              <div class="n-item">
-                <div class="n-circle" style="--clr:${clr}">
-                   <span class="v">${Math.round(v.val)}</span><span class="u">W</span>
-                </div>
-                <div class="n-label">${c[`p${i}_name`] || 'PANEL '+i}</div>
-              </div>`;
-          })}
         </div>
-
-        <div class="data-grid">
-          ${[4, 5, 6, 7, 8, 9].map(i => {
-            if(!c[`d${i}_entity`]) return '';
-            const d = this._getVal(c[`d${i}_entity`]);
-            return html`<div class="d-card"><span>${c[`d${i}_label`]}</span><b>${d.val}<small>${d.unit}</small></b></div>`;
-          })}
-        </div>
-      </div>`;
-  }
+    `;
+}
 
 _renderWeather() {
     const c = this.config;
     const sun = this.hass.states['sun.sun'];
-    
-    // Sécurité : si l'entité soleil n'est pas chargée
-    if (!sun) return html`<div style="color:red; padding:20px;">Attente de l'entité sun.sun...</div>`;
+    if (!sun) return html`<div style="color:red;padding:20px;">ENTITÉ SUN INTROUVABLE</div>`;
 
-    const elevation = sun.attributes.elevation || 0;
-    const azimuth = sun.attributes.azimuth || 0;
-    
-    // Calcul simplifié pour l'arc
-    const sunX = 100 - 80 * Math.cos((azimuth * Math.PI) / 180);
-    const sunY = 90 - 80 * Math.sin((elevation * Math.PI) / 180);
+    const elevation = sun.attributes.elevation ?? 0;
+    const azimuth = sun.attributes.azimuth ?? 0;
+
+    const moonPhases = { 'new_moon': 'Nouvelle\nLune', 'waxing_crescent': 'Premier\nCroissant', 'first_quarter': 'Premier\nQuartier', 'waxing_gibbous': 'Gibbeuse\nCroissante', 'full_moon': 'Pleine\nLune', 'waning_gibbous': 'Gibbeuse\nDécroissante', 'last_quarter': 'Dernier\nQuartier', 'waning_crescent': 'Dernier\nCroissant' };
+    const phaseFr = moonPhases[this.hass.states[c.moon_entity]?.state] || 'Phase\nInconnue';
+
+    const sunX = 35 + ((azimuth - 45) / 270) * 130;
+    const sunY = 65 - (Math.max(0, elevation) * 0.6);
 
     return html`
-      <div class="page scroll" style="position: relative; z-index: 2; padding: 15px;">
+      <div class="page" style="height: 490px; max-height: 490px; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; box-sizing: border-box; pointer-events: none; position: relative; z-index: 2; overflow: hidden;">
         
-        <div style="background: rgba(0,0,0,0.5); border-radius: 12px; padding: 15px; border: 1px solid #222; margin-bottom: 15px;">
-          <svg viewBox="0 0 200 100" style="width: 100%; height: auto;">
-            <path d="M 20,90 A 80,80 0 0 1 180,90" fill="none" stroke="#444" stroke-width="1.5" stroke-dasharray="3" />
-            <line x1="10" y1="90" x2="190" y2="90" stroke="#333" stroke-width="1" />
-            ${elevation > 0 ? html`<circle cx="${sunX}" cy="${sunY}" r="5" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />` : ''}
-          </svg>
-          <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 10px; color: #888;">
-            <span>LEVÉE: ${sun.attributes.next_rising ? sun.attributes.next_rising.split('T')[1].substring(0, 5) : '--:--'}</span>
-            <span style="color: #ffc107; font-weight: bold;">${elevation.toFixed(1)}°</span>
-            <span>COUCHER: ${sun.attributes.next_setting ? sun.attributes.next_setting.split('T')[1].substring(0, 5) : '--:--'}</span>
-          </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; pointer-events: auto;">
+          ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          ${[1, 2, 3, 4].map(i => {
-            const entityId = c[`w${i}_entity`];
-            if (!entityId || !this.hass.states[entityId]) return '';
-            const s = this._getVal(entityId);
-            return html`
-              <div style="background: rgba(15,15,15,0.9); padding: 12px; border-radius: 8px; border: 1px solid #222; display: flex; align-items: center; gap: 10px;">
-                <ha-icon icon="${c[`w${i}_icon`] || 'mdi:water'}" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
-                <div>
-                  <div style="font-size: 8px; color: #666; text-transform: uppercase;">${c[`w${i}_label`] || 'SENS '+i}</div>
-                  <div style="font-size: 14px; font-weight: bold; color: #fff;">${s.val}<small style="font-size: 10px; color: #444; margin-left: 2px;">${s.unit}</small></div>
-                </div>
-              </div>`;
-          })}
-        </div>
-
-        ${c.moon_entity && this.hass.states[c.moon_entity] ? html`
-          <div style="margin-top: 15px; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 10px; border: 1px solid #222; display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 18px;"></ha-icon>
-              <span style="font-size: 11px; color: #aaa;">PHASE LUNAIRE</span>
+        <div style="display: flex; flex-direction: column; gap: 20px; pointer-events: none; align-items: center;">
+          
+          <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+            <svg viewBox="0 0 200 85" style="width: 100%; overflow: visible;">
+              <text x="15" y="76" fill="#ffffff" font-size="10" font-weight="bold">E</text>
+              <text x="175" y="76" fill="#ffffff" font-size="10" font-weight="bold">O</text>
+              <text x="96" y="12" fill="#ffc107" font-size="12" font-weight="bold">S</text>
+              <line x1="30" y1="65" x2="170" y2="65" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+              <path d="M 35,65 A 65,50 0 0 1 165,65" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="4,4" />
+              <g>
+                <circle cx="${sunX}" cy="${sunY}" r="7" fill="#ffc107" style="filter: drop-shadow(0 0 8px #ffc107);" />
+                <line x1="${sunX}" y1="${sunY-10}" x2="${sunX}" y2="${sunY-7}" stroke="#ffc107" stroke-width="2" />
+                <line x1="${sunX}" y1="${sunY+10}" x2="${sunX}" y2="${sunY+7}" stroke="#ffc107" stroke-width="2" />
+                <line x1="${sunX-10}" y1="${sunY}" x2="${sunX-7}" y2="${sunY}" stroke="#ffc107" stroke-width="2" />
+                <line x1="${sunX+10}" y1="${sunY}" x2="${sunX+7}" y2="${sunY}" stroke="#ffc107" stroke-width="2" />
+              </g>
+            </svg>
+            
+            <div style="display: flex; justify-content: space-between; width: 85%; font-size: 11px; color: #ffffff; margin-top: 5px; font-weight: bold; font-family: monospace; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">
+              <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
+              <span style="color: #ffc107;">${elevation.toFixed(1)}°</span>
+              <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
             </div>
-            <span style="font-size: 11px; color: #00f9f9; font-weight: bold;">${this.hass.states[c.moon_entity].state}</span>
           </div>
-        ` : ''}
 
+          <div style="background: rgba(30,30,30,0.95); padding: 8px 15px; border-radius: 10px; border: 1px solid #555; display: flex; align-items: center; gap: 15px; height: 42px; width: 85%; pointer-events: auto;">
+            <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 24px; filter: drop-shadow(0 0 5px #00f9f9);"></ha-icon>
+            <div style="display: flex; flex-direction: column; line-height: 1.1;">
+              <span style="font-size: 9px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.7;">PHASE LUNAIRE</span>
+              <span style="font-size: 14px; font-weight: 900; color: #ffffff;">${phaseFr}</span>
+            </div>
+          </div>
+
+        </div>
+      </div>`;
+  }
+
+  _renderMiniSensor(i) {
+    const c = this.config;
+    const entityId = c[`w${i}_e`];
+    if (!entityId || !this.hass.states[entityId]) return html``;
+    const s = this._getVal(entityId);
+    return html`
+      <div style="background: rgba(30,30,30,0.95); padding: 0 12px; border-radius: 10px; border: 1px solid #666; display: flex; align-items: center; gap: 10px; height: 42px; box-sizing: border-box; pointer-events: auto;">
+        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 18px;"></ha-icon>
+        <div style="display: flex; flex-direction: column; line-height: 1;">
+          <span style="font-size: 8px; color: #ffffff; text-transform: uppercase; font-weight: bold; opacity: 0.8;">${c[`w${i}_l`] || 'S' + i}</span>
+          <span style="font-size: 14px; font-weight: 900; color: #ffffff;">${s.val}<small style="font-size: 10px; color: #00f9f9; margin-left: 2px;">${s.unit}</small></span>
+        </div>
       </div>`;
   }
 
