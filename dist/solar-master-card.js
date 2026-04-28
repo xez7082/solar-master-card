@@ -168,61 +168,76 @@ _renderSolar() {
     const prod = this._getVal(c.total_now);
     const target = this._getVal(c.solar_target);
     
-    // Logique du pourcentage (Sensor dédié ou calcul auto)
+    // Logique du pourcentage
     const pct_entity = this._getVal(c.solar_pct_sensor);
     const progress = c.solar_pct_sensor ? parseFloat(pct_entity.val) : Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
+    
+    // Gestion de la consommation (Rouge/Vert)
+    const consoState = this.hass.states['sensor.consommation_instantanee']; 
+    const consoVal = consoState ? parseFloat(consoState.state) : 0;
+    const consoDisplay = Math.abs(consoVal).toFixed(0);
 
     return html`
-    
-      <div class="page" style="position: relative; z-index: 1;">
-        <div class="titan-header">
-          <div class="big-val">${prod.val}<small>W</small></div>
-          <div class="sub-txt">PUISSANCE PHOTOVOLTAÏQUE</div>
+      <div class="page" style="height: 490px; padding: 10px; overflow: hidden; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 5px;">
+          
+          <div style="flex: 1; text-align: center;">
+            ${consoVal > 0 ? html`
+              <div style="color: #ff4444; font-weight: 900;">
+                <ha-icon icon="mdi:transmission-tower" style="--mdc-icon-size: 22px;"></ha-icon><br>
+                <span style="font-size: 18px;">${consoDisplay} W</span>
+              </div>
+            ` : ''}
+          </div>
+
+          <div style="flex: 1; text-align: center; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
+            <span style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold;">Production</span><br>
+            <span style="font-size: 24px; font-weight: 900; color: #ffc107;">${prod.val} W</span>
+          </div>
+
+          <div style="flex: 1; text-align: center;">
+            ${consoVal < 0 ? html`
+              <div style="color: #00ff00; font-weight: 900;">
+                <ha-icon icon="mdi:export" style="--mdc-icon-size: 22px;"></ha-icon><br>
+                <span style="font-size: 18px;">${consoDisplay} W</span>
+              </div>
+            ` : ''}
+          </div>
         </div>
 
-        <div class="ruler-box">
-          <div class="r-labels">
-            <span>OBJECTIF: ${target.val}kWh</span> 
-            <b style="color: #ffc107; text-shadow: 0 0 10px rgba(255,193,7,0.5);">${progress.toFixed(1)}%</b>
-          </div>
-          <div class="r-track">
-            ${Array(25).fill().map((_, i) => html`
-              <div class="seg ${i < progress / 4 ? 'active' : ''}" 
-                   style="${i < progress / 4 ? 'background: #ffc107; box-shadow: 0 0 8px #ffc107;' : 'background: #1a1a1a;'}">
-              </div>`)}
-          </div>
-        </div>
-
-        <div class="neon-circles" style="display: flex; justify-content: space-around; margin-bottom: 30px;">
+        <div class="neon-circles" style="display: flex; justify-content: space-around; margin: 15px 0;">
           ${[1, 2, 3, 4].map(i => {
-            const entityId = c[`p${i}_w`] || c[`panel${i}_production`]; // Supporte les deux noms de config
+            const entityId = c[`p${i}_w`] || c[`panel${i}_production`];
             if(!entityId) return '';
             const v = this._getVal(entityId);
             const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
             return html`
               <div class="n-item" style="text-align: center;">
-                <div class="n-circle" style="width: 75px; height: 75px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 12px ${clr}, 0 0 10px ${clr}; margin-bottom: 8px; --clr:${clr}">
-                   <span class="v" style="font-size: 18px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
-                   <span class="u" style="font-size: 8px; color: #888;">W</span>
+                <div class="n-circle" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 10px ${clr}, 0 0 8px ${clr}; margin-bottom: 5px;">
+                   <span style="font-size: 16px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
+                   <span style="font-size: 8px; color: #888;">W</span>
                 </div>
-                <div class="n-label" style="font-size: 9px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || c[`panel${i}_name`] || 'PANEL '+i}</div>
+                <div style="font-size: 8px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || c[`panel${i}_name`] || 'P'+i}</div>
               </div>`;
           })}
         </div>
 
-        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
           ${[4, 5, 6, 7, 8, 9].map(i => {
             if(!c[`d${i}_entity`]) return '';
             const d = this._getVal(c[`d${i}_entity`]);
             return html`
-              <div class="d-card" style="background: rgba(10,10,10,0.8); padding: 12px; border-radius: 10px; border: 1px solid #1a1a1a;">
-                <span style="font-size: 8px; color: #555; display: block; text-transform: uppercase;">${c[`d${i}_label`]}</span>
-                <b style="font-size: 14px; color: #fff;">${d.val}<small style="font-size: 10px; margin-left: 2px; color: #666;">${d.unit}</small></b>
+              <div class="d-card" style="background: rgba(30,30,30,0.4); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                <span style="font-size: 8px; color: #888; display: block; text-transform: uppercase; margin-bottom: 3px;">${c[`d${i}_label`]}</span>
+                <b style="font-size: 14px; color: #fff;">${d.val}<small style="font-size: 9px; margin-left: 2px; color: #00f9f9;">${d.unit}</small></b>
               </div>`;
           })}
         </div>
-      </div>`;
-  }
+
+      </div>
+    `;
+}
   
 _renderWeather() {
     const c = this.config;
