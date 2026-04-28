@@ -168,7 +168,6 @@ _renderSolar() {
     const prod = this._getVal(c.total_now);
     const target = this._getVal(c.solar_target);
     
-    // Calcul du pourcentage et du mois
     const pct_entity = this._getVal(c.solar_pct_sensor);
     const progress = c.solar_pct_sensor ? parseFloat(pct_entity.val) : Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
     const moisActuel = new Date().toLocaleDateString('fr-FR', { month: 'long' }).toUpperCase();
@@ -182,20 +181,20 @@ _renderSolar() {
         
         <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
           <div style="flex: 1; text-align: center;">
-            ${consoVal > 0 ? html`<div style="color: #ff4444; font-weight: 900;"><ha-icon icon="mdi:transmission-tower" style="--mdc-icon-size: 20px;"></ha-icon><br><span style="font-size: 14px;">${consoDisplay} W</span></div>` : ''}
+            ${consoVal > 0 ? html`<div style="color: #ff4444; font-weight: 900;"><ha-icon icon="mdi:transmission-tower" style="--mdc-icon-size: 20px;"></ha-icon><br><span style="font-size: 18px;">${consoDisplay} W</span></div>` : ''}
           </div>
 
           <div style="flex: 1.5; text-align: center; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-            <div style="font-size: 8px; color: #ffc107; text-transform: uppercase; font-weight: bold; margin-bottom: -2px;">${moisActuel}</div>
-            <span style="font-size: 24px; font-weight: 900; color: #ffc107; line-height: 1;">${prod.val} <small style="font-size: 10px;">W</small></span>
+            <div style="font-size: 10px; color: #ffc107; text-transform: uppercase; font-weight: bold; margin-bottom: -2px;">${moisActuel}</div>
+            <span style="font-size: 30px; font-weight: 900; color: #ffc107; line-height: 1;">${prod.val} <small style="font-size: 12px;">W</small></span>
             <div style="display: flex; justify-content: center; gap: 8px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 2px; padding-top: 2px;">
-              <span style="font-size: 9px; color: #aaa;">OBJ: <b style="color: #fff;">${target.val}</b></span>
-              <span style="font-size: 9px; color: #aaa;">RÉAL: <b style="color: #00f9f9;">${Math.round(progress)}%</b></span>
+              <span style="font-size: 11px; color: #aaa;">OBJ: <b style="color: #fff;">${target.val}</b></span>
+              <span style="font-size: 11px; color: #aaa;">RÉAL: <b style="color: #00f9f9;">${Math.round(progress)}%</b></span>
             </div>
           </div>
 
           <div style="flex: 1; text-align: center;">
-            ${consoVal < 0 ? html`<div style="color: #00ff00; font-weight: 900;"><ha-icon icon="mdi:export" style="--mdc-icon-size: 20px;"></ha-icon><br><span style="font-size: 14px;">${consoDisplay} W</span></div>` : ''}
+            ${consoVal < 0 ? html`<div style="color: #00ff00; font-weight: 900;"><ha-icon icon="mdi:export" style="--mdc-icon-size: 20px;"></ha-icon><br><span style="font-size: 18px;">${consoDisplay} W</span></div>` : ''}
           </div>
         </div>
 
@@ -215,24 +214,24 @@ _renderSolar() {
             const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
             return html`
               <div class="n-item" style="text-align: center;">
-                <div class="n-circle" style="width: 75px; height: 75px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 8px ${clr}; margin-bottom: 2px;">
-                   <span style="font-size: 15px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
-                   <span style="font-size: 10px; color: #888;">W</span>
+                <div class="n-circle" style="width: 62px; height: 62px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 8px ${clr}; margin-bottom: 2px;">
+                   <span style="font-size: 18px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
+                   <span style="font-size: 9px; color: #888;">W</span>
                 </div>
-                <div style="font-size: 10px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || 'P'+i}</div>
+                <div style="font-size: 9px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || 'P'+i}</div>
               </div>`;
           })}
         </div>
 
-        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; align-content: start;">
+        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; align-content: start;">
           ${[4, 5, 6, 7, 8, 9].map(i => {
             const entityId = c[`d${i}_entity`];
             if(!entityId) return '';
             const d = this._getVal(entityId);
             return html`
-              <div class="d-card" style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center; height: 45px; display: flex; flex-direction: column; justify-content: center;">
-                <span style="font-size: 7px; color: #e6e6e6; display: block; text-transform: uppercase; line-height: 1; margin-bottom: 2px;">${c[`d${i}_label`] || 'DATA '+i}</span>
-                <b style="font-size: 12px; color: #fff; line-height: 1;">${d.val}<small style="font-size: 8px; margin-left: 1px; color: #00f9f9;">${d.unit}</small></b>
+              <div class="d-card" style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center; height: 50px; display: flex; flex-direction: column; justify-content: center;">
+                <span style="font-size: 8px; color: #777; display: block; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">${c[`d${i}_label`] || 'DATA '+i}</span>
+                <b style="font-size: 16px; color: #fff; line-height: 1;">${d.val}<small style="font-size: 10px; margin-left: 1px; color: #00f9f9;">${d.unit}</small></b>
               </div>`;
           })}
         </div>
