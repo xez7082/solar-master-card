@@ -188,8 +188,8 @@ _renderSolar() {
             <div style="font-size: 10px; color: #ffc107; text-transform: uppercase; font-weight: bold; margin-bottom: -2px;">${moisActuel}</div>
             <span style="font-size: 30px; font-weight: 900; color: #ffc107; line-height: 1;">${prod.val} <small style="font-size: 12px;">W</small></span>
             <div style="display: flex; justify-content: center; gap: 8px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 2px; padding-top: 2px;">
-              <span style="font-size: 11px; color: #aaa;">OBJ: <b style="color: #fff;">${target.val}</b></span>
-              <span style="font-size: 11px; color: #aaa;">RÉAL: <b style="color: #00f9f9;">${Math.round(progress)}%</b></span>
+              <span style="font-size: 11px; color: #aaa;">OBJECTIF: <b style="color: #fff;">${target.val} kWh </b></span>
+              <span style="font-size: 11px; color: #aaa;">RÉALISÉ: <b style="color: #00f9f9;">${Math.round(progress)} %</b></span>
             </div>
           </div>
 
@@ -242,7 +242,7 @@ _renderSolar() {
             const d = this._getVal(entityId);
             return html`
               <div class="d-card" style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center; height: 50px; display: flex; flex-direction: column; justify-content: center;">
-                <span style="font-size: 8px; color: #777; display: block; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">${c[`d${i}_label`] || 'DATA '+i}</span>
+                <span style="font-size: 8px; color: #2e27f5; display: block; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">${c[`d${i}_label`] || 'DATA '+i}</span>
                 <b style="font-size: 16px; color: #fff; line-height: 1;">${d.val}<small style="font-size: 10px; margin-left: 1px; color: #00f9f9;">${d.unit}</small></b>
               </div>`;
           })}
