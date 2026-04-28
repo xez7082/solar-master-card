@@ -131,14 +131,14 @@ _renderSolar() {
     const prod = this._getVal(c.total_now);
     const target = this._getVal(c.solar_target);
     
-    // On utilise ton sensor de pourcentage s'il est renseigné, sinon calcul auto
+    // Logique du pourcentage (Sensor dédié ou calcul auto)
     const pct_entity = this._getVal(c.solar_pct_sensor);
     const progress = c.solar_pct_sensor ? parseFloat(pct_entity.val) : Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
 
     return html`
-      ${c.bg_url ? html`<div class="bg-overlay" style="background-image: url('${c.bg_url}'); opacity: ${c.bg_opacity || 0.3};"></div>` : ''}
+      ${c.bg_url ? html`<div class="bg-overlay" style="background-image: url('${c.bg_url}'); opacity: ${c.bg_opacity || 0.3}; position: absolute; top:0; left:0; width:100%; height:100%; background-size:cover; background-position:center; z-index:0; pointer-events:none;"></div>` : ''}
 
-      <div class="page" style="position: relative; z-index: 2;">
+      <div class="page" style="position: relative; z-index: 1;">
         <div class="titan-header">
           <div class="big-val">${prod.val}<small>W</small></div>
           <div class="sub-txt">PUISSANCE PHOTOVOLTAÏQUE</div>
@@ -147,20 +147,47 @@ _renderSolar() {
         <div class="ruler-box">
           <div class="r-labels">
             <span>OBJECTIF: ${target.val}kWh</span> 
-            <b style="color: #ffc107; text-shadow: 0 0 5px #ffc107;">${progress.toFixed(1)}%</b>
+            <b style="color: #ffc107; text-shadow: 0 0 10px rgba(255,193,7,0.5);">${progress.toFixed(1)}%</b>
           </div>
           <div class="r-track">
-            ${Array(25).fill().map((_, i) => html`<div class="seg ${i < progress / 4 ? 'active' : ''}"></div>`)}
+            ${Array(25).fill().map((_, i) => html`
+              <div class="seg ${i < progress / 4 ? 'active' : ''}" 
+                   style="${i < progress / 4 ? 'background: #ffc107; box-shadow: 0 0 8px #ffc107;' : 'background: #1a1a1a;'}">
+              </div>`)}
           </div>
         </div>
 
-        <div class="neon-circles">
-           </div>
-        
-        <div class="data-grid">
-           </div>
+        <div class="neon-circles" style="display: flex; justify-content: space-around; margin-bottom: 30px;">
+          ${[1, 2, 3, 4].map(i => {
+            const entityId = c[`p${i}_w`] || c[`panel${i}_production`]; // Supporte les deux noms de config
+            if(!entityId) return '';
+            const v = this._getVal(entityId);
+            const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
+            return html`
+              <div class="n-item" style="text-align: center;">
+                <div class="n-circle" style="width: 75px; height: 75px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 12px ${clr}, 0 0 10px ${clr}; margin-bottom: 8px; --clr:${clr}">
+                   <span class="v" style="font-size: 18px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
+                   <span class="u" style="font-size: 8px; color: #888;">W</span>
+                </div>
+                <div class="n-label" style="font-size: 9px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || c[`panel${i}_name`] || 'PANEL '+i}</div>
+              </div>`;
+          })}
+        </div>
+
+        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          ${[4, 5, 6, 7, 8, 9].map(i => {
+            if(!c[`d${i}_entity`]) return '';
+            const d = this._getVal(c[`d${i}_entity`]);
+            return html`
+              <div class="d-card" style="background: rgba(10,10,10,0.8); padding: 12px; border-radius: 10px; border: 1px solid #1a1a1a;">
+                <span style="font-size: 8px; color: #555; display: block; text-transform: uppercase;">${c[`d${i}_label`]}</span>
+                <b style="font-size: 14px; color: #fff;">${d.val}<small style="font-size: 10px; margin-left: 2px; color: #666;">${d.unit}</small></b>
+              </div>`;
+          })}
+        </div>
       </div>`;
   }
+  
   _renderWeather() {
     const c = this.config;
     const sun = this.hass.states['sun.sun'];
