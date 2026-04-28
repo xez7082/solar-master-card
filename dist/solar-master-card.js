@@ -27,6 +27,7 @@ class SolarMasterCardEditor extends LitElement {
         // Dans schemas -> tab_solar, ajoute ces 3 lignes :
         { name: "bg_url", label: "URL de l'image de fond", selector: { text: {} } },
         { name: "bg_opacity", label: "Opacité du fond (0.1 à 1)", selector: { number: { min: 0.1, max: 1, step: 0.1 } } },
+        { name: "conso_entity", label: "Capteur Consommation/Import (W)", selector: { entity: {} } }, // <--- AJOUTE CETTE LIGNE
         { name: "solar_pct_sensor", label: "Sensor Pourcentage Objectif (%)", selector: { entity: {} } },
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200 } } },
         { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
