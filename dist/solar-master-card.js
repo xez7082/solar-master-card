@@ -265,7 +265,7 @@ _renderWeather() {
            <span style="font-size: 10px; color: white;">Lune: <b>${this.hass.states[c.moon_entity]?.state || 'N/A'}</b></span>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; flex: 1;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; flex: 1;">
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
 
@@ -279,13 +279,24 @@ _renderMiniSensor(i) {
 
     const stateObj = this.hass.states[entityId];
     return html`
-      <div style="background: rgba(255,255,255,0.05); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 55px; padding: 2px;">
-        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 16px;"></ha-icon>
-        <span style="font-size: 7px; color: #777; text-transform: uppercase; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center;">
+      <div style="
+        background: rgba(255,255,255,0.05); 
+        border-radius: 4px; 
+        border: 1px solid rgba(255,255,255,0.05); 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        height: 48px; /* Hauteur réduite */
+        padding: 0px; /* Suppression du padding interne */
+        margin: 0px;  /* Suppression de toute marge */
+      ">
+        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 14px; margin-bottom: 0px;"></ha-icon>
+        <span style="font-size: 7px; color: #777; text-transform: uppercase; line-height: 1; margin-bottom: 2px;">
           ${c[`w${i}_l`] || 'S'+i}
         </span>
-        <span style="font-size: 11px; font-weight: bold; color: white;">
-          ${stateObj.state}<small style="font-size: 8px; color: #00f9f9; margin-left: 1px;">${stateObj.attributes.unit_of_measurement || ''}</small>
+        <span style="font-size: 11px; font-weight: bold; color: white; line-height: 1;">
+          ${stateObj.state}<small style="font-size: 8px; color: #00f9f9;">${stateObj.attributes.unit_of_measurement || ''}</small>
         </span>
       </div>`;
 }
