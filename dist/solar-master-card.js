@@ -24,6 +24,10 @@ class SolarMasterCardEditor extends LitElement {
     if (!this.hass || !this._config) return html``;
     const schemas = {
       tab_solar: [
+        // Dans schemas -> tab_solar, ajoute ces 3 lignes :
+        { name: "bg_url", label: "URL de l'image de fond", selector: { text: {} } },
+        { name: "bg_opacity", label: "Opacité du fond (0.1 à 1)", selector: { number: { min: 0.1, max: 1, step: 0.1 } } },
+        { name: "solar_pct_sensor", label: "Sensor Pourcentage Objectif (%)", selector: { entity: {} } },
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200 } } },
         { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
         { name: "solar_target", label: "Objectif Jour (kWh)", selector: { entity: {} } },
@@ -98,20 +102,29 @@ class SolarMasterCard extends LitElement {
     return { val: s.state, unit: s.attributes.unit_of_measurement || '', attr: s.attributes };
   }
 
-  render() {
+render() {
     if (!this.config || !this.hass) return html``;
     const c = this.config;
     return html`
       <ha-card style="height:${c.card_height || 750}px;">
         <div class="card-wrapper">
           
-          <div class="view-port">
+          ${c.bg_url ? html`
+            <div class="bg-overlay" style="
+              background-image: url('${c.bg_url}'); 
+              opacity: ${c.bg_opacity || 0.3}; 
+              position: absolute; top:0; left:0; width:100%; height:100%; 
+              background-size:cover; background-position:center; 
+              z-index: 0; pointer-events: none;">
+            </div>` : ''}
+
+          <div class="view-port" style="position: relative; z-index: 1;">
             ${this._tab === 'SOLAIRE' ? this._renderSolar() : 
               this._tab === 'METEO' ? this._renderWeather() :
               this._tab === 'BATTERIE' ? this._renderBattery() : this._renderEco()}
           </div>
 
-          <div class="nav-bar">
+          <div class="nav-bar" style="position: relative; z-index: 2;">
             <div class="nav-btn ${this._tab === 'SOLAIRE' ? 'active' : ''}" @click=${() => this._tab = 'SOLAIRE'}><ha-icon icon="mdi:solar-power-variant"></ha-icon><span>SOLAIRE</span></div>
             <div class="nav-btn ${this._tab === 'METEO' ? 'active' : ''}" @click=${() => this._tab = 'METEO'}><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon><span>METEO</span></div>
             <div class="nav-btn ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'}><ha-icon icon="mdi:battery-charging"></ha-icon><span>ENERGIE</span></div>
