@@ -201,13 +201,28 @@ _renderBattery() {
         <div class="rack-container">
           ${[1, 2, 3, 4].map(i => {
             if (!c[`b${i}_s`]) return '';
-            const soc = this._getVal(c[`b${i}_s`]);
+            const soc = parseFloat(this._getVal(c[`b${i}_s`]).val);
             const p = this._getVal(c[`b${i}_out`]);
+            
+            // --- LOGIQUE DE COULEUR DYNAMIQUE ---
+            let color = "#f44336"; // Rouge par défaut (< 20%)
+            if (soc >= 20 && soc < 50) color = "#ff9800"; // Orange
+            if (soc >= 50 && soc < 80) color = "#ffc107"; // Jaune/Or
+            if (soc >= 80) color = "#00c853";             // Vert
+            
             return html`
-              <div class="rack-pro">
-                <div class="rp-head"><span>${c[`b${i}_n`] || 'BATT '+i}</span><b>${soc.val}%</b></div>
-                <div class="rp-bar"><div class="rp-fill" style="width:${soc.val}%"></div></div>
-                <div class="rp-foot">CAP: ${this._getVal(c[`b${i}_cap`]).val} | FLUX: ${p.val}W</div>
+              <div class="rack-pro" style="border-left: 4px solid ${color}">
+                <div class="rp-head">
+                  <span>${c[`b${i}_n`] || 'BATT '+i}</span>
+                  <b style="color: ${color}">${soc}%</b>
+                </div>
+                <div class="rp-bar">
+                  <div class="rp-fill" style="width:${soc}%; background: ${color}; box-shadow: 0 0 10px ${color}aa;"></div>
+                </div>
+                <div class="rp-foot">
+                  CAP: ${this._getVal(c[`b${i}_cap`]).val} | 
+                  FLUX: <span style="color: ${parseFloat(p.val) < 0 ? '#00c853' : '#ffc107'}">${p.val}W</span>
+                </div>
               </div>`;
           })}
         </div>
