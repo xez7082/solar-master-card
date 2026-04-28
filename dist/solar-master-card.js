@@ -6,7 +6,7 @@ import {
 
 /**
  * ==========================================
- * 🧠 EDITEUR DE LA CARTE (V5.1)
+ * 🧠 EDITEUR DE LA CARTE (V6.0 OMNI)
  * ==========================================
  */
 class SolarMasterCardEditor extends LitElement {
@@ -25,17 +25,15 @@ class SolarMasterCardEditor extends LitElement {
     const schemas = {
       tab_solar: [
         { name: "card_height", label: "Hauteur Carte (px)", selector: { number: { min: 400, max: 1200 } } },
-        { name: "bg_url", label: "URL Image de Fond", selector: { text: {} } },
         { name: "total_now", label: "Production Totale (W)", selector: { entity: {} } },
-        { name: "solar_target", label: "Objectif (kWh)", selector: { entity: {} } },
-        { name: "solar_pct_entity", label: "Sensor Pourcentage (Optionnel)", selector: { entity: {} } },
-        ...[4, 5, 6, 7, 8, 9].map(i => [
-          { name: `d${i}_label`, label: `Label D${i}`, selector: { text: {} } },
-          { name: `d${i}_entity`, label: `Entité D${i}`, selector: { entity: {} } }
-        ]).flat(),
+        { name: "solar_target", label: "Objectif Jour (kWh)", selector: { entity: {} } },
         ...[1, 2, 3, 4].map(i => [
-          { name: `p${i}_name`, label: `Nom P${i}`, selector: { text: {} } },
-          { name: `p${i}_w`, label: `Watts P${i}`, selector: { entity: {} } }
+          { name: `p${i}_name`, label: `Nom Panneau ${i}`, selector: { text: {} } },
+          { name: `p${i}_w`, label: `Watts Panneau ${i}`, selector: { entity: {} } }
+        ]).flat(),
+        ...[4, 5, 6, 7, 8, 9].map(i => [
+          { name: `d${i}_label`, label: `Label Info ${i}`, selector: { text: {} } },
+          { name: `d${i}_entity`, label: `Entité Info ${i}`, selector: { entity: {} } }
         ]).flat()
       ],
       tab_weather: [
@@ -48,14 +46,15 @@ class SolarMasterCardEditor extends LitElement {
         ]).flat()
       ],
       tab_batt: [
-        { name: "batt_total_power", label: "Puissance Totale Batteries (W)", selector: { entity: {} } },
-        { name: "batt_avg_soc", label: "SOC Moyen Global (%)", selector: { entity: {} } },
+        { name: "batt_total_power", label: "Puissance Totale (W)", selector: { entity: {} } },
+        { name: "batt_avg_soc", label: "SOC Moyen (%)", selector: { entity: {} } },
         ...[1, 2, 3, 4].map(i => [
           { name: `b${i}_n`, label: `Nom Batterie ${i}`, selector: { text: {} } },
           { name: `b${i}_s`, label: `SOC % ${i}`, selector: { entity: {} } },
           { name: `b${i}_cap`, label: `Capacité ${i}`, selector: { entity: {} } },
           { name: `b${i}_out`, label: `Sortie Watts ${i}`, selector: { entity: {} } }
-        ]).flat()],
+        ]).flat()
+      ],
       tab_eco: [
         { name: "eco_money", label: "Économies Totales (€)", selector: { entity: {} } },
         { name: "eco_day_euro", label: "Gain Jour (€)", selector: { entity: {} } },
@@ -70,18 +69,23 @@ class SolarMasterCardEditor extends LitElement {
 
     return html`
       <div class="edit-tabs">
-        <button class="${this._selectedTab === 'tab_solar' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_solar'}>SOLAIRE</button>
+        <button class="${this._selectedTab === 'tab_solar' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_solar'}>PRODUCTION</button>
         <button class="${this._selectedTab === 'tab_weather' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_weather'}>METEO</button>
-        <button class="${this._selectedTab === 'tab_batt' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_batt'}>BATT</button>
-        <button class="${this._selectedTab === 'tab_eco' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_eco'}>ECO</button>
+        <button class="${this._selectedTab === 'tab_batt' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_batt'}>BATTERIE</button>
+        <button class="${this._selectedTab === 'tab_eco' ? 'active' : ''}" @click=${() => this._selectedTab = 'tab_eco'}>FINANCE</button>
       </div>
       <ha-form .hass=${this.hass} .data=${this._config} .schema=${schemas[this._selectedTab]} @value-changed=${this._valueChanged}></ha-form>
     `;
   }
-  static styles = css`.edit-tabs { display: flex; gap: 4px; margin-bottom: 15px; } button { flex: 1; padding: 10px; font-size: 10px; cursor: pointer; background: #1a1a1a; color: #666; border: 1px solid #333; border-radius: 6px; font-weight: bold; } button.active { background: #ffc107; color: #000; border-color: #ffc107; }`;
+  static styles = css`.edit-tabs { display: flex; gap: 4px; margin-bottom: 15px; } button { flex: 1; padding: 12px; font-size: 11px; cursor: pointer; background: #111; color: #555; border: 1px solid #333; border-radius: 8px; font-weight: bold; } button.active { background: #ffc107; color: #000; border-color: #ffc107; }`;
 }
 customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
+/**
+ * ==========================================
+ * ⚡ CORPS DE LA CARTE (V6.0 OMNI)
+ * ==========================================
+ */
 class SolarMasterCard extends LitElement {
   static getConfigElement() { return document.createElement("solar-master-card-editor"); }
   static get properties() { return { hass: {}, config: {}, _tab: { type: String } }; }
@@ -94,32 +98,23 @@ class SolarMasterCard extends LitElement {
     return { val: s.state, unit: s.attributes.unit_of_measurement || '', attr: s.attributes };
   }
 
-  _translateWeather(state) {
-    const dict = {
-      'clear-night': 'Nuit Claire', 'cloudy': 'Nuageux', 'fog': 'Brouillard', 'hail': 'Grêle', 'lightning': 'Orages', 
-      'lightning-rainy': 'Orageux', 'partlycloudy': 'Éclaircies', 'pouring': 'Averses', 'rainy': 'Pluie', 
-      'snowy': 'Neige', 'sunny': 'Ensoleillé', 'windy': 'Vent'
-    };
-    return dict[state?.toLowerCase()] || state || 'Inconnu';
-  }
-
   render() {
     if (!this.config || !this.hass) return html``;
     const c = this.config;
     return html`
-      <ha-card style="height:${c.card_height || 650}px;">
-        ${c.bg_url ? html`<div class="bg-layer" style="background-image:url('${c.bg_url}');"></div>` : ''}
-        <div class="overlay">
-          <div class="main-content">
+      <ha-card style="height:${c.card_height || 700}px;">
+        <div class="glass-container">
+          <div class="content-area">
             ${this._tab === 'SOLAIRE' ? this._renderSolar() : 
               this._tab === 'METEO' ? this._renderWeather() :
               this._tab === 'BATTERIE' ? this._renderBattery() : this._renderEco()}
           </div>
-          <div class="footer">
-            <div class="f-btn ${this._tab === 'SOLAIRE' ? 'active' : ''}" @click=${() => this._tab = 'SOLAIRE'}><ha-icon icon="mdi:solar-power"></ha-icon></div>
-            <div class="f-btn ${this._tab === 'METEO' ? 'active' : ''}" @click=${() => this._tab = 'METEO'}><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon></div>
-            <div class="f-btn ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'}><ha-icon icon="mdi:battery-charging-100"></ha-icon></div>
-            <div class="f-btn ${this._tab === 'ECONOMIE' ? 'active' : ''}" @click=${() => this._tab = 'ECONOMIE'}><ha-icon icon="mdi:currency-eur"></ha-icon></div>
+          
+          <div class="navbar">
+            <div class="nav-item ${this._tab === 'SOLAIRE' ? 'active' : ''}" @click=${() => this._tab = 'SOLAIRE'}><ha-icon icon="mdi:solar-power-variant"></ha-icon><span>SYSTEM</span></div>
+            <div class="nav-item ${this._tab === 'METEO' ? 'active' : ''}" @click=${() => this._tab = 'METEO'}><ha-icon icon="mdi:weather-dust"></ha-icon><span>METEO</span></div>
+            <div class="nav-item ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'}><ha-icon icon="mdi:battery-high"></ha-icon><span>ENERGY</span></div>
+            <div class="nav-item ${this._tab === 'ECONOMIE' ? 'active' : ''}" @click=${() => this._tab = 'ECONOMIE'}><ha-icon icon="mdi:finance"></ha-icon><span>ECO</span></div>
           </div>
         </div>
       </ha-card>
@@ -133,46 +128,83 @@ class SolarMasterCard extends LitElement {
     const progress = Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
 
     return html`
-      <div class="page">
-        <div class="header-prod">
-            <div class="big-val-titan">${prod.val}<small>W</small></div>
-            <div class="target-container">
-                <div class="target-bar"><div class="target-fill" style="width:${progress}%"></div></div>
-                <div class="target-row"><span>OBJ: <b>${target.val}kWh</b></span><span>${progress.toFixed(1)}%</span></div>
+      <div class="view">
+        <div class="master-gauge">
+            <svg viewBox="0 0 100 60">
+                <path class="gauge-bg" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" />
+                <path class="gauge-fill" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" 
+                      stroke-dasharray="125.6" stroke-dashoffset="${125.6 - (progress * 1.256)}" />
+            </svg>
+            <div class="gauge-data">
+                <div class="g-val">${prod.val}</div>
+                <div class="g-unit">WATTS</div>
             </div>
         </div>
-        <div class="cockpit">
-          <div class="side">${[4, 5, 6].map(i => this._renderDiag(i, 'l'))}</div>
-          <div class="side">${[7, 8, 9].map(i => this._renderDiag(i, 'r'))}</div>
+
+        <div class="target-section">
+            <div class="target-label">OBJECTIF JOURNALIER : <b>${target.val} kWh</b></div>
+            <div class="ruler-container">
+                <div class="ruler-marks">${Array(11).fill().map(() => html`<span></span>`)}</div>
+                <div class="ruler-bar"><div class="ruler-fill" style="width:${progress}%"></div></div>
+            </div>
+            <div class="target-pct">${progress.toFixed(1)}% COMPLETÉ</div>
         </div>
-        <div class="hud-orbit-row">
-          ${[1, 2, 3, 4].map(i => {
-            const val = this._getVal(c[`p${i}_w`]);
-            if (!c[`p${i}_w`]) return '';
-            return html`<div class="hud-orbit"><div class="orbit-circle"><div class="orbit-value">${Math.round(val.val)}</div></div><div class="orbit-label">${c[`p${i}_name`] || 'P'+i}</div></div>`;
-          })}
+
+        <div class="orbits-row">
+            ${[1, 2, 3, 4].map(i => {
+                if(!c[`p${i}_w`]) return '';
+                const v = this._getVal(c[`p${i}_w`]);
+                const colors = ["#ffc107", "#00f9f9", "#4caf50", "#f44336"];
+                return html`
+                <div class="orbit-box">
+                    <div class="orbit-circle" style="border-color:${colors[i-1]}">
+                        <div class="o-val">${Math.round(v.val)}</div>
+                        <div class="o-u">W</div>
+                    </div>
+                    <div class="o-label">${c[`p${i}_name`] || 'P'+i}</div>
+                </div>`;
+            })}
+        </div>
+
+        <div class="info-grid">
+            ${[4, 5, 6, 7, 8, 9].map(i => {
+                if(!c[`d${i}_entity`]) return '';
+                const d = this._getVal(c[`d${i}_entity`]);
+                return html`<div class="info-tile"><span>${c[`d${i}_label`]}</span><b>${d.val}<small>${d.unit}</small></b></div>`;
+            })}
         </div>
       </div>`;
   }
 
   _renderWeather() {
     const c = this.config;
+    const temp = this._getVal(c.temp_ext);
+    const hum = this._getVal(c.hum_ext);
     const sun = this.hass.states['sun.sun'];
-    const weather = this._getVal(c.weather_entity);
     return html`
-      <div class="page scroll">
-        <div class="weather-station-v3">
-            <div class="ws-header"><div class="ws-temp">${this._getVal(c.temp_ext).val}<small>°C</small></div><ha-icon icon="mdi:weather-sunny"></ha-icon></div>
-            <div class="sun-dashboard">
-                <div class="sun-stat"><span>ÉLÉVATION</span><b>${sun?.attributes.elevation.toFixed(1)}°</b></div>
-                <div class="sun-stat"><span>AZIMUT</span><b>${sun?.attributes.azimuth.toFixed(1)}°</b></div>
+      <div class="view scroll">
+        <div class="weather-hero">
+            <div class="temp-big">${temp.val}°</div>
+            <div class="hum-ring">
+                <svg viewBox="0 0 36 36"><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#333" stroke-width="2"/><path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#00f9f9" stroke-width="2" stroke-dasharray="${hum.val}, 100"/></svg>
+                <span>${hum.val}%<br><small>HUMIDITÉ</small></span>
             </div>
         </div>
-        <div class="weather-grid-8">
+        <div class="sun-ruler">
+            <div class="ruler-line">
+                <div class="sun-pos" style="left:${((sun?.attributes.elevation + 90) / 180) * 100}%"><ha-icon icon="mdi:white-balance-sunny"></ha-icon></div>
+            </div>
+            <div class="sun-times">
+                <span>↑ ${new Date(sun?.attributes.next_rising).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                <span>AZIMUT: ${sun?.attributes.azimuth.toFixed(1)}°</span>
+                <span>↓ ${new Date(sun?.attributes.next_setting).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+            </div>
+        </div>
+        <div class="weather-grid">
             ${[1,2,3,4,5,6,7,8].map(i => {
                 if(!c[`w${i}_e`]) return '';
                 const e = this._getVal(c[`w${i}_e`]);
-                return html`<div class="w-card"><span class="w-l">${c[`w${i}_l`]}</span><span class="w-v">${e.val}<small>${e.unit}</small></span></div>`;
+                return html`<div class="w-item"><span>${c[`w${i}_l`]}</span><b>${e.val}${e.unit}</b></div>`;
             })}
         </div>
       </div>`;
@@ -180,141 +212,145 @@ class SolarMasterCard extends LitElement {
 
   _renderBattery() {
     const c = this.config;
-    const totalPower = this._getVal(c.batt_total_power);
     const avgSoc = this._getVal(c.batt_avg_soc);
-
+    const totalP = this._getVal(c.batt_total_power);
     return html`
-      <div class="page scroll">
-        <div class="batt-master-header">
-            <div class="batt-main-val">
-                <span class="bm-v">${avgSoc.val}<small>%</small></span>
-                <span class="bm-l">SOC MOYEN</span>
+      <div class="view scroll">
+        <div class="batt-dashboard">
+            <div class="soc-master">
+                <div class="soc-circle">
+                    <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#111" stroke-width="5" /><circle cx="50" cy="50" r="45" fill="none" stroke="#00c853" stroke-width="5" stroke-dasharray="282.7" stroke-dashoffset="${282.7 - (avgSoc.val * 2.82)}" /></svg>
+                    <div class="soc-text">${avgSoc.val}%</div>
+                </div>
+                <div class="soc-label">RESERVE D'ÉNERGIE</div>
             </div>
-            <div class="batt-main-power">
-                <ha-icon icon="${parseFloat(totalPower.val) >= 0 ? 'mdi:battery-arrow-up' : 'mdi:battery-arrow-down'}"></ha-icon>
-                <span class="bm-p">${Math.abs(totalPower.val)}<small>W</small></span>
+            <div class="power-flow">
+                <ha-icon icon="mdi:transmission-tower"></ha-icon>
+                <div class="flow-val ${parseFloat(totalP.val) >= 0 ? 'out' : 'in'}">${totalP.val}W</div>
             </div>
         </div>
-
-        <div class="section-title">ÉTAT DES RACKS</div>
-        
-        <div class="rack-container">
-          ${[1, 2, 3, 4].map(i => {
-            if (!c[`b${i}_s`]) return '';
-            const soc = this._getVal(c[`b${i}_s`]);
-            const out = this._getVal(c[`b${i}_out`]);
-            const cap = this._getVal(c[`b${i}_cap`]);
-            const isCharging = parseFloat(out.val) < 0;
-
-            return html`
-              <div class="rack-card">
-                <div class="r-info">
-                  <span class="r-name">${c[`b${i}_n`] || 'RACK '+i}</span>
-                  <span class="r-cap">${cap.val} ${cap.unit}</span>
-                </div>
-                <div class="r-mid">
-                  <div class="r-soc-val">${soc.val}%</div>
-                  <div class="r-power-val ${isCharging ? 'charge' : 'discharge'}">
-                    ${isCharging ? '↓' : '↑'} ${Math.abs(out.val)}W
-                  </div>
-                </div>
-                <div class="r-progress-bg">
-                  <div class="r-progress-fill" style="width:${soc.val}%; background:${soc.val < 20 ? '#f44336' : '#00c853'}"></div>
-                </div>
-              </div>`;
-          })}
+        <div class="rack-list">
+            ${[1,2,3,4].map(i => {
+                if(!c[`b${i}_s`]) return '';
+                const s = this._getVal(c[`b${i}_s`]);
+                const p = this._getVal(c[`b${i}_out`]);
+                return html`
+                <div class="rack-item">
+                    <div class="ri-head"><span>${c[`b${i}_n`] || 'RACK '+i}</span><b>${s.val}%</b></div>
+                    <div class="ri-bar"><div class="ri-fill" style="width:${s.val}%"></div></div>
+                    <div class="ri-foot">CAPACITÉ: ${this._getVal(c[`b${i}_cap`]).val} • FLUX: ${p.val}W</div>
+                </div>`;
+            })}
         </div>
       </div>`;
   }
 
   _renderEco() {
     const c = this.config;
-    return html`<div class="page scroll">
-      <div class="eco-header-slim">
-          <div class="eco-money-main">${this._getVal(c.eco_money).val}€</div>
-          <div class="eco-split">
-             <div class="split-box">JOUR: <b>${this._getVal(c.eco_day_euro).val}€</b></div>
-             <div class="split-box">AN: <b>${this._getVal(c.eco_year_euro).val}€</b></div>
-          </div>
-      </div>
-      <div class="cons-bar-slim">
-          <span class="c-label">CONSO MAISON</span>
-          <span class="c-val">${this._getVal(c.main_cons).val} W</span>
-      </div>
-      <div class="eco-list-compact">
-        ${[1,2,3,4,5,6].map(i => {
-            if(!c[`e${i}_e`]) return '';
-            const e = this._getVal(c[`e${i}_e`]);
-            return html`<div class="eco-row-item"><span>${c[`e${i}_l`]}</span><b>${e.val}${e.unit}</b></div>`;
-        })}
-      </div>
-    </div>`;
-  }
+    return html`
+      <div class="view scroll">
+        <div class="finance-header">
+            <div class="fh-main">
+                <span class="fh-l">ÉCONOMIES TOTALES</span>
+                <span class="fh-v">${this._getVal(c.eco_money).val}€</span>
+            </div>
+            <div class="fh-stats">
+                <div class="fh-s-box">JOUR: <b>${this._getVal(c.eco_day_euro).val}€</b></div>
+                <div class="fh-s-box">AN: <b>${this._getVal(c.eco_year_euro).val}€</b></div>
+            </div>
+        </div>
 
-  _renderDiag(i, side) {
-    const c = this.config;
-    if (!c[`d${i}_entity`]) return '';
-    const d = this._getVal(c[`d${i}_entity`]);
-    return html`<div class="mini-diag ${side}"><span class="m-l">${c[`d${i}_label`]}</span><span class="m-v">${d.val}<small>${d.unit}</small></span></div>`;
+        <div class="conso-monitor">
+            <div class="cm-head">CONSOMMATION MAISON</div>
+            <div class="cm-gauge">
+                <div class="cm-ruler">${Array(21).fill().map(() => html`<span></span>`)}</div>
+                <div class="cm-val">${this._getVal(c.main_cons).val} <small>W</small></div>
+            </div>
+        </div>
+
+        <div class="eco-grid">
+            ${[1,2,3,4,5,6].map(i => {
+                if(!c[`e${i}_e`]) return '';
+                const e = this._getVal(c[`e${i}_e`]);
+                return html`
+                <div class="eco-tile">
+                    <ha-icon icon="mdi:shield-check-outline"></ha-icon>
+                    <div class="et-data">
+                        <span class="et-l">${c[`e${i}_l`]}</span>
+                        <span class="et-v">${e.val}<small>${e.unit}</small></span>
+                    </div>
+                </div>`;
+            })}
+        </div>
+      </div>`;
   }
 
   static styles = css`
-    ha-card { background:#000; color:#fff; border-radius:28px; overflow:hidden; font-family: 'Inter', sans-serif; position:relative; }
-    .bg-layer { position:absolute; top:0; left:0; width:100%; height:100%; background-size:cover; opacity:0.1; z-index:0; }
-    .overlay { position:relative; z-index:1; height:100%; display:flex; flex-direction:column; padding:20px; background:rgba(0,0,0,0.9); box-sizing:border-box; }
-    
-    .page { display:flex; flex-direction:column; height:100%; overflow-y:auto; }
-    .scroll::-webkit-scrollbar { width:3px; }
-    .scroll::-webkit-scrollbar-thumb { background:#444; }
+    ha-card { background: #000; border-radius: 24px; color: #fff; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif; }
+    .glass-container { height: 100%; display: flex; flex-direction: column; background: radial-gradient(circle at top right, #111, #000); }
+    .content-area { flex: 1; padding: 20px; overflow: hidden; }
+    .view { height: 100%; display: flex; flex-direction: column; }
+    .scroll { overflow-y: auto; padding-right: 5px; }
+    .scroll::-webkit-scrollbar { width: 4px; }
+    .scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
-    /* Header & General */
-    .big-val-titan { font-size:30px; font-weight:900; color:#ffc107; text-align:center; }
-    .target-container { max-width:250px; margin:0 auto 15px; }
-    .target-bar { height:6px; background:#222; border-radius:3px; overflow:hidden; }
-    .target-fill { height:100%; background:#ffc107; }
-    .target-row { display:flex; justify-content:space-between; font-size:10px; color:#aaa; margin-top:4px; }
+    /* MASTER GAUGE */
+    .master-gauge { position: relative; width: 100%; height: 160px; margin-bottom: 20px; }
+    .gauge-bg { stroke: #1a1a1a; stroke-width: 6; stroke-linecap: round; }
+    .gauge-fill { stroke: #ffc107; stroke-width: 8; stroke-linecap: round; filter: drop-shadow(0 0 8px #ffc107); transition: 1s ease-out; }
+    .gauge-data { position: absolute; bottom: 30px; width: 100%; text-align: center; }
+    .g-val { font-size: 56px; font-weight: 900; color: #fff; line-height: 1; }
+    .g-unit { font-size: 12px; color: #ffc107; font-weight: bold; letter-spacing: 4px; }
 
-    /* Batterie Tab Style */
-    .batt-master-header { display:flex; justify-content:space-between; align-items:center; background:rgba(0,200,83,0.1); padding:20px; border-radius:20px; border:1px solid rgba(0,200,83,0.2); margin-bottom:20px; }
-    .batt-main-val { display:flex; flex-direction:column; }
-    .bm-v { font-size:42px; font-weight:900; color:#00c853; line-height:1; }
-    .bm-l { font-size:10px; color:#aaa; letter-spacing:1px; }
-    .batt-main-power { text-align:right; display:flex; flex-direction:column; }
-    .batt-main-power ha-icon { color:#ffc107; --mdc-icon-size:30px; }
-    .bm-p { font-size:24px; font-weight:bold; color:#fff; }
-    
-    .section-title { font-size:12px; font-weight:bold; color:#666; margin-bottom:10px; letter-spacing:1px; text-transform:uppercase; }
-    .rack-container { display:flex; flex-direction:column; gap:10px; }
-    .rack-card { background:rgba(255,255,255,0.03); border:1px solid #222; border-radius:15px; padding:12px; }
-    .r-info { display:flex; justify-content:space-between; margin-bottom:8px; }
-    .r-name { font-size:11px; font-weight:bold; color:#00c853; }
-    .r-cap { font-size:10px; color:#666; }
-    .r-mid { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
-    .r-soc-val { font-size:24px; font-weight:900; }
-    .r-power-val { font-size:14px; font-weight:bold; }
-    .r-power-val.charge { color:#00c853; }
-    .r-power-val.discharge { color:#ffc107; }
-    .r-progress-bg { height:6px; background:#111; border-radius:3px; overflow:hidden; }
-    .r-progress-fill { height:100%; transition: width 0.5s ease-in-out; }
+    /* RULER PROGRESS */
+    .target-section { margin-bottom: 25px; }
+    .target-label { font-size: 10px; color: #888; margin-bottom: 8px; letter-spacing: 1px; }
+    .ruler-container { position: relative; height: 30px; display: flex; align-items: center; }
+    .ruler-marks { position: absolute; width: 100%; display: flex; justify-content: space-between; height: 15px; }
+    .ruler-marks span { width: 1px; height: 100%; background: #333; }
+    .ruler-bar { width: 100%; height: 6px; background: #111; border-radius: 3px; border: 1px solid #222; }
+    .ruler-fill { height: 100%; background: linear-gradient(90deg, #ffc107, #ff9800); box-shadow: 0 0 10px #ffc107; border-radius: 3px; }
+    .target-pct { text-align: right; font-size: 10px; font-weight: bold; color: #00f9f9; margin-top: 5px; }
 
-    /* Rest of Styles */
-    .cockpit { display:flex; justify-content:space-between; margin-bottom:20px; }
-    .mini-diag { background:rgba(255,255,255,0.04); padding:10px; border-radius:10px; border-left:3px solid #00f9f9; width:45%; }
-    .mini-diag.r { border-left:none; border-right:3px solid #ffc107; text-align:right; }
-    .m-v { font-size:16px; font-weight:bold; }
-    
-    .hud-orbit-row { display:flex; justify-content:space-around; }
-    .orbit-circle { width:60px; height:60px; border-radius:50%; border:2px solid #ffc107; display:flex; align-items:center; justify-content:center; }
-    .orbit-value { font-size:16px; font-weight:bold; }
-    .orbit-label { font-size:9px; text-align:center; margin-top:5px; color:#aaa; }
+    /* ORBITS */
+    .orbits-row { display: flex; justify-content: space-between; margin-bottom: 25px; }
+    .orbit-box { text-align: center; }
+    .orbit-circle { width: 60px; height: 60px; border-radius: 50%; border: 3px solid; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); margin-bottom: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+    .o-val { font-size: 16px; font-weight: bold; }
+    .o-u { font-size: 8px; color: #888; }
+    .o-label { font-size: 9px; color: #aaa; font-weight: bold; text-transform: uppercase; }
 
-    .eco-header-slim { background:rgba(76,175,80,0.1); padding:15px; border-radius:15px; text-align:center; margin-bottom:15px; }
-    .eco-money-main { font-size:32px; font-weight:900; color:#4caf50; }
-    .eco-row-item { display:flex; justify-content:space-between; padding:10px; background:rgba(255,255,255,0.02); margin-bottom:5px; border-radius:8px; font-size:12px; }
+    /* INFO TILES */
+    .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .info-tile { background: #0a0a0a; padding: 10px; border-radius: 10px; border: 1px solid #1a1a1a; }
+    .info-tile span { font-size: 8px; color: #666; display: block; text-transform: uppercase; }
+    .info-tile b { font-size: 13px; color: #fff; }
 
-    .footer { display:flex; justify-content:space-around; padding-top:20px; border-top:1px solid #222; margin-top:auto; }
-    .f-btn { cursor:pointer; opacity:0.4; transition:0.3s; }
-    .f-btn.active { opacity:1; color:#ffc107; }
+    /* BATTERY & ECO */
+    .batt-dashboard { display: flex; justify-content: space-between; align-items: center; background: #0a0a0a; padding: 15px; border-radius: 20px; border: 1px solid #1a1a1a; margin-bottom: 20px; }
+    .soc-circle { width: 80px; height: 80px; position: relative; }
+    .soc-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; font-weight: bold; color: #00c853; }
+    .power-flow { text-align: right; }
+    .flow-val { font-size: 24px; font-weight: bold; }
+    .flow-val.in { color: #00c853; }
+    .flow-val.out { color: #ffc107; }
+
+    .finance-header { background: linear-gradient(135deg, #0d1a0d, #000); padding: 20px; border-radius: 20px; border: 1px solid #1a331a; margin-bottom: 20px; }
+    .fh-v { font-size: 42px; font-weight: 900; color: #4caf50; display: block; }
+    .fh-stats { display: flex; gap: 15px; margin-top: 10px; font-size: 11px; }
+
+    .conso-monitor { background: #0a0a0a; padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #1a1a1a; }
+    .cm-gauge { position: relative; height: 40px; display: flex; align-items: center; justify-content: center; }
+    .cm-ruler { position: absolute; width: 100%; display: flex; justify-content: space-between; }
+    .cm-ruler span { width: 1px; height: 10px; background: #333; }
+    .cm-val { font-size: 24px; font-weight: bold; color: #fff; z-index: 1; }
+
+    /* NAVBAR */
+    .navbar { height: 70px; background: #080808; border-top: 1px solid #1a1a1a; display: flex; justify-content: space-around; align-items: center; padding-bottom: 5px; }
+    .nav-item { cursor: pointer; display: flex; flex-direction: column; align-items: center; color: #444; transition: 0.3s; }
+    .nav-item.active { color: #ffc107; transform: translateY(-5px); }
+    .nav-item ha-icon { --mdc-icon-size: 26px; }
+    .nav-item span { font-size: 9px; font-weight: bold; margin-top: 4px; letter-spacing: 1px; }
   `;
 }
 customElements.define("solar-master-card", SolarMasterCard);
