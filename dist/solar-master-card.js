@@ -102,20 +102,29 @@ class SolarMasterCard extends LitElement {
     return { val: s.state, unit: s.attributes.unit_of_measurement || '', attr: s.attributes };
   }
 
-  render() {
+render() {
     if (!this.config || !this.hass) return html``;
     const c = this.config;
     return html`
       <ha-card style="height:${c.card_height || 750}px;">
         <div class="card-wrapper">
           
-          <div class="view-port">
+          ${c.bg_url ? html`
+            <div class="bg-overlay" style="
+              background-image: url('${c.bg_url}'); 
+              opacity: ${c.bg_opacity || 0.3}; 
+              position: absolute; top:0; left:0; width:100%; height:100%; 
+              background-size:cover; background-position:center; 
+              z-index: 0; pointer-events: none;">
+            </div>` : ''}
+
+          <div class="view-port" style="position: relative; z-index: 1;">
             ${this._tab === 'SOLAIRE' ? this._renderSolar() : 
               this._tab === 'METEO' ? this._renderWeather() :
               this._tab === 'BATTERIE' ? this._renderBattery() : this._renderEco()}
           </div>
 
-          <div class="nav-bar">
+          <div class="nav-bar" style="position: relative; z-index: 2;">
             <div class="nav-btn ${this._tab === 'SOLAIRE' ? 'active' : ''}" @click=${() => this._tab = 'SOLAIRE'}><ha-icon icon="mdi:solar-power-variant"></ha-icon><span>SOLAIRE</span></div>
             <div class="nav-btn ${this._tab === 'METEO' ? 'active' : ''}" @click=${() => this._tab = 'METEO'}><ha-icon icon="mdi:weather-partly-cloudy"></ha-icon><span>METEO</span></div>
             <div class="nav-btn ${this._tab === 'BATTERIE' ? 'active' : ''}" @click=${() => this._tab = 'BATTERIE'}><ha-icon icon="mdi:battery-charging"></ha-icon><span>ENERGIE</span></div>
@@ -136,8 +145,7 @@ _renderSolar() {
     const progress = c.solar_pct_sensor ? parseFloat(pct_entity.val) : Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
 
     return html`
-      ${c.bg_url ? html`<div class="bg-overlay" style="background-image: url('${c.bg_url}'); opacity: ${c.bg_opacity || 0.3}; position: absolute; top:0; left:0; width:100%; height:100%; background-size:cover; background-position:center; z-index:0; pointer-events:none;"></div>` : ''}
-
+    
       <div class="page" style="position: relative; z-index: 1;">
         <div class="titan-header">
           <div class="big-val">${prod.val}<small>W</small></div>
