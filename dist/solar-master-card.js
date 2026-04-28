@@ -232,7 +232,7 @@ _renderWeather() {
     const elevation = sun.attributes.elevation || 0;
     const azimuth = sun.attributes.azimuth || 0;
 
-    // Traduction française
+    // Traduction française des phases lunaires
     const moonState = this.hass.states[c.moon_entity]?.state;
     const moonPhases = {
       'new_moon': 'Nouvelle\nLune',
@@ -246,22 +246,22 @@ _renderWeather() {
     };
     const phaseFr = moonPhases[moonState] || moonState || 'Phase\nInconnue';
 
-    // Positionnement du soleil (X: 30-170, Y: 15-65)
+    // Positionnement du soleil sur l'arc (X: 30-170, Y: 15-65)
     const sunX = 30 + (140 * (azimuth / 360));
     const sunY = 65 - (Math.max(0, elevation) * 0.5); 
 
     return html`
-      <div class="page" style="height: 500px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; box-sizing: border-box; position: relative; z-index: 2;">
+      <div class="page" style="height: 500px; padding: 12px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; box-sizing: border-box; position: relative; z-index: 2; pointer-events: none;">
         
-        <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; flex-direction: column; gap: 6px; pointer-events: auto;">
           ${[1, 2, 3, 4].map(i => this._renderMiniSensor(i))}
         </div>
 
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; pointer-events: none;">
           <svg viewBox="0 0 200 85" style="width: 100%;">
             <text x="22" y="76" fill="#555" font-size="7" font-weight="bold">E</text>
             <text x="172" y="76" fill="#555" font-size="7" font-weight="bold">O</text>
-            <text x="97" y="12" fill="#00f9f9" font-size="7" font-weight="bold" opacity="0.5">N</text>
+            <text x="97" y="12" fill="#00f9f9" font-size="7" font-weight="bold" opacity="0.4">N</text>
 
             <line x1="30" y1="65" x2="170" y2="65" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
             
@@ -280,17 +280,17 @@ _renderWeather() {
           </svg>
           
           <div style="display: flex; justify-content: space-between; width: 75%; font-size: 9px; color: #666; margin-top: -8px; font-family: monospace;">
-            <span>${sun.attributes.next_rising.split('T')[1].substring(0, 5)}</span>
+            <span>${sun.attributes.next_rising ? sun.attributes.next_rising.split('T')[1].substring(0, 5) : '--:--'}</span>
             <span style="color: #ffc107;">${elevation.toFixed(1)}°</span>
-            <span>${sun.attributes.next_setting.split('T')[1].substring(0, 5)}</span>
+            <span>${sun.attributes.next_setting ? sun.attributes.next_setting.split('T')[1].substring(0, 5) : '--:--'}</span>
           </div>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; flex-direction: column; gap: 6px; pointer-events: auto;">
           ${[5, 6, 7, 8].map(i => this._renderMiniSensor(i))}
         </div>
 
-        <div style="background: rgba(15,15,15,0.8); padding: 8px 12px; border-radius: 10px; border: 1px solid #222; display: flex; align-items: center; gap: 12px; height: 46px; align-self: start;">
+        <div style="background: rgba(15,15,15,0.8); padding: 8px 12px; border-radius: 10px; border: 1px solid #222; display: flex; align-items: center; gap: 12px; height: 46px; align-self: start; pointer-events: auto;">
           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
           <div style="display: flex; flex-direction: column; line-height: 1.1;">
             <span style="font-size: 7px; color: #555; text-transform: uppercase; font-weight: bold;">PHASE LUNAIRE</span>
@@ -298,6 +298,23 @@ _renderWeather() {
           </div>
         </div>
 
+      </div>`;
+  }
+
+  // Fonction utilitaire pour générer les capteurs
+  _renderMiniSensor(i) {
+    const c = this.config;
+    const entityId = c[`w${i}_e`];
+    if (!entityId || !this.hass.states[entityId]) return html`<div style="height:46px;"></div>`;
+    const s = this._getVal(entityId);
+    
+    return html`
+      <div style="background: rgba(15,15,15,0.8); padding: 8px 12px; border-radius: 10px; border: 1px solid #222; display: flex; align-items: center; gap: 10px; height: 46px; box-sizing: border-box;">
+        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 18px;"></ha-icon>
+        <div style="display: flex; flex-direction: column; line-height: 1.1;">
+          <span style="font-size: 7px; color: #555; text-transform: uppercase; font-weight: bold;">${c[`w${i}_l`] || 'S'+i}</span>
+          <span style="font-size: 14px; font-weight: 900; color: #fff;">${s.val}<small style="font-size: 9px; color: #00f9f9; margin-left: 2px;">${s.unit}</small></span>
+        </div>
       </div>`;
   }
   
