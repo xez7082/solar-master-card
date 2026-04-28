@@ -194,16 +194,10 @@ class SolarMasterCard extends LitElement {
       </div>`;
   }
 
-  _renderBattery() {
+_renderBattery() {
     const c = this.config;
-    const avg = this._getVal(c.batt_avg_soc);
-    const flow = this._getVal(c.batt_total_power);
     return html`
       <div class="page scroll">
-        <div class="batt-master">
-            <div class="bm-soc">${avg.val}%</div>
-            <div class="bm-flow ${parseFloat(flow.val) < 0 ? 'charge' : ''}">${flow.val}W</div>
-        </div>
         <div class="rack-container">
           ${[1, 2, 3, 4].map(i => {
             if (!c[`b${i}_s`]) return '';
