@@ -311,18 +311,7 @@ _renderBattery() {
     return html`
       <div class="page" style="height: 490px; padding: 10px; overflow: hidden; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box;">
         
-        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,200,83,0.1); padding: 12px; border-radius: 12px; border: 1px solid rgba(0,200,83,0.2); margin-bottom: 5px;">
-            <div>
-              <span style="font-size: 9px; color: #aaa; display: block; text-transform: uppercase;">SOC Global</span>
-              <b style="font-size: 20px; color: #00c853;">${this._getVal(c.batt_avg_soc).val}%</b>
-            </div>
-            <div style="text-align: right;">
-              <span style="font-size: 9px; color: #aaa; display: block; text-transform: uppercase;">Flux Total</span>
-              <b style="font-size: 20px; color: #ffc107;">${this._getVal(c.batt_total_power).val} W</b>
-            </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+        <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; margin-top: 5px;">
           ${[1, 2, 3, 4].map(i => {
             // On vérifie si le SOC de la batterie est configuré
             if (!c[`b${i}_s`] || !this.hass.states[c[`b${i}_s`]]) return '';
@@ -339,33 +328,35 @@ _renderBattery() {
             if (soc >= 80) color = "#00c853"; // Vert
             
             return html`
-              <div style="background: rgba(20,20,20,0.8); padding: 10px; border-radius: 10px; border: 1px solid #333; border-left: 4px solid ${color};">
+              <div style="background: rgba(20,20,20,0.8); padding: 12px; border-radius: 12px; border: 1px solid #333; border-left: 5px solid ${color};">
                 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <span style="font-size: 11px; font-weight: bold; color: #eee;">${c[`b${i}_n`] || 'BATTERIE '+i}</span>
-                  <b style="font-size: 14px; color: ${color};">${soc}%</b>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span style="font-size: 12px; font-weight: bold; color: #eee; letter-spacing: 0.5px;">${c[`b${i}_n`] || 'BATTERIE '+i}</span>
+                  <b style="font-size: 16px; color: ${color};">${soc}%</b>
                 </div>
 
-                <div style="display: flex; gap: 2px; height: 5px; margin-bottom: 10px;">
+                <div style="display: flex; gap: 2px; height: 6px; margin-bottom: 12px;">
                   ${Array(20).fill().map((_, idx) => html`
-                    <div style="flex: 1; background: ${idx < soc / 5 ? color : '#111'}; border-radius: 1px; box-shadow: ${idx < soc / 5 ? '0 0 4px ' + color : 'none'};"></div>
+                    <div style="flex: 1; background: ${idx < soc / 5 ? color : '#111'}; border-radius: 1px; box-shadow: ${idx < soc / 5 ? '0 0 5px ' + color : 'none'};"></div>
                   `)}
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #222; padding-top: 6px;">
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <ha-icon icon="mdi:thermometer" style="--mdc-icon-size: 14px; color: #00f9f9;"></ha-icon>
-                    <span style="font-size: 11px;">${temp.val}<small>${temp.unit || '°C'}</small></span>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #222; padding-top: 8px;">
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <ha-icon icon="mdi:thermometer" style="--mdc-icon-size: 16px; color: #00f9f9;"></ha-icon>
+                    <span style="font-size: 12px; font-weight: 500;">${temp.val}<small style="color:#00f9f9; font-size: 9px;">${temp.unit || '°C'}</small></span>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 4px;">
-                    <ha-icon icon="mdi:lightning-bolt" style="--mdc-icon-size: 14px; color: #ffc107;"></ha-icon>
-                    <span style="font-size: 11px;">${powerSortie.val}W</span>
+                  
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <ha-icon icon="mdi:lightning-bolt" style="--mdc-icon-size: 16px; color: #ffc107;"></ha-icon>
+                    <span style="font-size: 12px; font-weight: 500;">${powerSortie.val}<small style="color:#ffc107; font-size: 9px;">W</small></span>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 4px;">
+
+                  <div style="display: flex; align-items: center; gap: 5px;">
                     <ha-icon icon="${fluxGlobal < 0 ? 'mdi:download' : 'mdi:upload'}" 
-                             style="--mdc-icon-size: 14px; color: ${fluxGlobal < 0 ? '#00c853' : '#ff9800'};">
+                             style="--mdc-icon-size: 16px; color: ${fluxGlobal < 0 ? '#00c853' : '#ff9800'};">
                     </ha-icon>
-                    <span style="font-size: 11px; font-weight: bold;">${Math.abs(fluxGlobal)}W</span>
+                    <span style="font-size: 12px; font-weight: 900; color: #fff;">${Math.abs(fluxGlobal)}<small style="font-size: 9px; margin-left: 1px;">W</small></span>
                   </div>
                 </div>
 
