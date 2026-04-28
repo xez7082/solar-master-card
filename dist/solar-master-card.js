@@ -122,43 +122,73 @@ class SolarMasterCard extends LitElement {
     `;
   }
 
-  _renderSolar() {
+_renderSolar() {
     const c = this.config;
     const prod = this._getVal(c.total_now);
-    const consoVal = parseFloat(this._getVal(c.conso_entity).val) || 0;
-    const progress = parseFloat(this._getVal(c.solar_pct_sensor).val) || 0;
+    const target = this._getVal(c.solar_target);
+    
+    const pct_entity = this._getVal(c.solar_pct_sensor);
+    const progress = c.solar_pct_sensor ? parseFloat(pct_entity.val) : Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
+    
+    const consoState = c.conso_entity ? this.hass.states[c.conso_entity] : null; 
+    const consoVal = consoState ? parseFloat(consoState.state) : 0;
+    const consoDisplay = Math.abs(consoVal).toFixed(0);
 
     return html`
-      <div style="height: 420px; display: flex; flex-direction: column; justify-content: space-between; padding: 5px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; height: 50px;">
-          <div style="flex:1; text-align:center;">${consoVal > 0 ? html`<span style="color:#ff4444; font-size:14px; font-weight:bold;"><ha-icon icon="mdi:transmission-tower"></ha-icon><br>${consoVal}W</span>` : ''}</div>
-          <div style="flex:1; text-align:center; background:rgba(255,193,7,0.1); border-radius:10px; border:1px solid #ffc107; padding:4px;">
-            <small style="font-size:8px; color:#aaa;">PRODUCTION</small><br><b style="font-size:18px; color:#ffc107;">${prod.val}W</b>
+      <div class="page" style="height: 490px; padding: 5px 10px; overflow: hidden; display: flex; flex-direction: column; gap: 5px; box-sizing: border-box;">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 2px;">
+          <div style="flex: 1; text-align: center;">
+            ${consoVal > 0 ? html`<div style="color: #ff4444; font-weight: 900;"><ha-icon icon="mdi:transmission-tower" style="--mdc-icon-size: 22px;"></ha-icon><br><span style="font-size: 16px;">${consoDisplay} W</span></div>` : ''}
           </div>
-          <div style="flex:1; text-align:center;">${consoVal < 0 ? html`<span style="color:#00ff00; font-size:14px; font-weight:bold;"><ha-icon icon="mdi:export"></ha-icon><br>${Math.abs(consoVal)}W</span>` : ''}</div>
+          <div style="flex: 1; text-align: center; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+            <span style="font-size: 8px; color: #aaa; text-transform: uppercase; font-weight: bold;">Production</span><br>
+            <span style="font-size: 22px; font-weight: 900; color: #ffc107;">${prod.val} W</span>
+          </div>
+          <div style="flex: 1; text-align: center;">
+            ${consoVal < 0 ? html`<div style="color: #00ff00; font-weight: 900;"><ha-icon icon="mdi:export" style="--mdc-icon-size: 22px;"></ha-icon><br><span style="font-size: 16px;">${consoDisplay} W</span></div>` : ''}
+          </div>
         </div>
 
-        <div style="height:4px; display:flex; gap:2px; margin: 10px 0;">
-          ${Array(20).fill().map((_, i) => html`<div style="flex:1; background:${i < progress/5 ? '#ffc107' : '#222'}; border-radius:1px;"></div>`)}
+        <div style="margin: 5px 0;">
+          <div style="display: flex; gap: 2px; height: 6px;">
+            ${Array(20).fill().map((_, i) => html`
+              <div style="flex:1; background: ${i < (progress/5) ? '#ffc107' : '#1a1a1a'}; border-radius: 1px;"></div>
+            `)}
+          </div>
         </div>
 
-        <div style="display: flex; justify-content: space-around;">
-          ${[1,2,3,4].map(i => {
-            if(!c[`p${i}_w`]) return '';
-            const v = this._getVal(c[`p${i}_w`]);
-            return html`<div style="text-align:center;"><div style="width:58px; height:58px; border-radius:50%; border:2px solid #ffc107; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.6); box-shadow: 0 0 10px rgba(255,193,7,0.2);"><b style="font-size:13px;">${Math.round(v.val)}</b><small style="font-size:8px;">W</small></div><div style="font-size:8px; margin-top:4px; color:#888;">${c[`p${i}_name`] || 'P'+i}</div></div>`;
+        <div class="neon-circles" style="display: flex; justify-content: space-around; margin: 5px 0 0 0; padding: 0;">
+          ${[1, 2, 3, 4].map(i => {
+            const entityId = c[`p${i}_w`] || c[`panel${i}_production`];
+            if(!entityId) return '';
+            const v = this._getVal(entityId);
+            const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
+            return html`
+              <div class="n-item" style="text-align: center;">
+                <div class="n-circle" style="width: 65px; height: 65px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 8px ${clr}, 0 0 5px ${clr}; margin-bottom: 2px;">
+                   <span style="font-size: 15px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
+                   <span style="font-size: 8px; color: #888;">W</span>
+                </div>
+                <div style="font-size: 8px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || 'P'+i}</div>
+              </div>`;
           })}
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; height: 130px;">
-          ${[4,5,6,7,8,9].map(i => {
+        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 5px;">
+          ${[4, 5, 6, 7, 8, 9].map(i => {
             if(!c[`d${i}_entity`]) return '';
             const d = this._getVal(c[`d${i}_entity`]);
-            return html`<div style="background:rgba(255,255,255,0.05); padding:6px; border-radius:8px; text-align:center; border:1px solid #222;"><small style="font-size:7px; color:#777; display:block; text-transform:uppercase;">${c[`d${i}_label`]}</small><b style="font-size:11px;">${d.val}${d.unit}</b></div>`;
+            return html`
+              <div class="d-card" style="background: rgba(30,30,30,0.4); padding: 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                <span style="font-size: 7px; color: #777; display: block; text-transform: uppercase;">${c[`d${i}_label`]}</span>
+                <b style="font-size: 13px; color: #fff;">${d.val}<small style="font-size: 8px; margin-left: 2px; color: #00f9f9;">${d.unit}</small></b>
+              </div>`;
           })}
         </div>
-      </div>`;
-  }
+      </div>
+    `;
+}
 
   _renderBattery() {
     const c = this.config;
