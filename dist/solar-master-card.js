@@ -231,14 +231,14 @@ _renderBattery() {
       <div class="page scroll" style="position: relative; z-index: 2;">
         <div class="rack-container" style="display: flex; flex-direction: column; gap: 12px;">
           ${[1, 2, 3, 4].map(i => {
-            // On vérifie si l'entité SOC est configurée pour afficher la batterie
-            if (!c[`b${i}_s`]) return '';
+            // Vérification si l'entité SOC existe
+            if (!c[`b${i}_s`] || !this.hass.states[c[`b${i}_s`]]) return '';
             
             const socVal = this._getVal(c[`b${i}_s`]).val;
-            const soc = parseFloat(socVal);
+            const soc = parseFloat(socVal) || 0;
             const p = this._getVal(c[`b${i}_out`]);
-            const temp = this._getVal(c[`b${i}_t`]); // Sensor Température
-            const sortie = this._getVal(c[`b${i}_s`]); // Sensor Voltage
+            const temp = this._getVal(c[`b${i}_t`]); 
+            const sortie = this._getVal(c[`b${i}_v`]); // On utilise bien 'sortie' ici
             
             // Logique de couleur dynamique
             let color = "#f44336";
@@ -246,8 +246,10 @@ _renderBattery() {
             if (soc >= 50) color = "#ffc107";
             if (soc >= 80) color = "#00c853";
             
+            const powerVal = parseFloat(p.val) || 0;
+
             return html`
-              <div class="rack-pro" style="background: rgba(0,0,0,0.7); padding: 12px; border-radius: 10px; border: 1px solid #1a1a1a; border-left: 3px solid ${color};">
+              <div class="rack-pro" style="background: rgba(0,0,0,0.7); padding: 12px; border-radius: 10px; border: 1px solid #1a1a1a; border-left: 3px solid ${color}; margin-bottom: 4px;">
                 
                 <div class="rp-head" style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
                   <span style="font-size: 11px; font-weight: bold; color: #888; letter-spacing: 1px;">${c[`b${i}_n`] || 'BATTERY '+i}</span>
@@ -274,14 +276,14 @@ _renderBattery() {
 
                   <div class="ex-item" style="display: flex; align-items: center; gap: 4px;">
                     <ha-icon icon="mdi:flash" style="--mdc-icon-size: 14px; color: #ffc107;"></ha-icon>
-                    <span style="font-size: 11px; color: #eee;">${volt.val}<small>${volt.unit || 'V'}</small></span>
+                    <span style="font-size: 11px; color: #eee;">${sortie.val}<small>${sortie.unit || 'V'}</small></span>
                   </div>
 
                   <div class="ex-item" style="display: flex; align-items: center; gap: 4px;">
-                    <ha-icon icon="${parseFloat(p.val) < 0 ? 'mdi:download' : 'mdi:upload'}" 
-                             style="--mdc-icon-size: 14px; color: ${parseFloat(p.val) < 0 ? '#00c853' : '#ff9800'};">
+                    <ha-icon icon="${powerVal < 0 ? 'mdi:download' : 'mdi:upload'}" 
+                             style="--mdc-icon-size: 14px; color: ${powerVal < 0 ? '#00c853' : '#ff9800'};">
                     </ha-icon>
-                    <span style="font-size: 11px; font-weight: bold; color: #fff;">${Math.abs(Math.round(p.val))}W</span>
+                    <span style="font-size: 11px; font-weight: bold; color: #fff;">${Math.abs(Math.round(powerVal))}W</span>
                   </div>
 
                 </div>
