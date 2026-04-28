@@ -6,7 +6,7 @@ import {
 
 /**
  * ==========================================
- * 🧠 EDITEUR DE LA CARTE (Interface FR Totale)
+ * 🧠 EDITEUR DE LA CARTE (Interface FR)
  * ==========================================
  */
 class SolarMasterCardEditor extends LitElement {
@@ -77,7 +77,7 @@ customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
 /**
  * ==========================================
- * ⚡ CORPS DE LA CARTE (ULTIMATE TITAN V3.8)
+ * ⚡ CORPS DE LA CARTE (ULTIMATE V3.9)
  * ==========================================
  */
 class SolarMasterCard extends LitElement {
@@ -122,9 +122,12 @@ class SolarMasterCard extends LitElement {
     const sun = this.hass.states['sun.sun'];
     const elev = sun ? sun.attributes.elevation : 0;
     const pos = ((elev + 20) / 110) * 100;
+    
+    // CALCUL AUTOMATIQUE DU MOIS ET DU POURCENTAGE
     const month = new Date().toLocaleString('fr-FR', { month: 'long' }).toUpperCase();
-
-    const progress = Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
+    const currentW = parseFloat(prod.val) || 0;
+    const targetKwh = parseFloat(target.val) || 1;
+    const progress = Math.min(100, (currentW / (targetKwh * 1000)) * 100);
 
     return html`
       <div class="page">
@@ -133,13 +136,13 @@ class SolarMasterCard extends LitElement {
             <div class="big-val-titan">${prod.val}<small>W</small></div>
             <div class="target-container">
                 <div class="target-bar"><div class="target-fill" style="width:${progress}%"></div></div>
-                <div class="target-text">Objectif: <b>${target.val} kWh</b> • <b>${progress.toFixed(1)}%</b></div>
+                <div class="target-text">Objectif: <b>${targetKwh} kWh</b> • <b>${progress.toFixed(1)}%</b></div>
             </div>
         </div>
 
         <div class="cockpit-container">
             <svg viewBox="0 0 400 100" preserveAspectRatio="none" class="sun-svg-bg"><path d="M0,90 Q200,-20 400,90" fill="none" stroke="rgba(255,193,7,0.3)" stroke-width="2" stroke-dasharray="5"/></svg>
-            <div class="sun-dot" style="left: ${Math.max(5, Math.min(95, pos))}%"><ha-icon icon="mdi:white-balance-sunny"></ha-icon><span>${elev.toFixed(1)}°</span></div>
+            <div class="sun-dot" style="left: ${Math.max(5, Math.min(95, pos))}%"><ha-icon icon="mdi:white-balance-sunny"></ha-icon></div>
             <div class="cockpit">
               <div class="side">
                 <div class="group-title">${c.title_left || 'GAUCHE'}</div>
@@ -261,7 +264,6 @@ class SolarMasterCard extends LitElement {
     .cockpit-container { position:relative; height:160px; }
     .sun-svg-bg { position:absolute; width:100%; height:100%; opacity:0.3; }
     .sun-dot { position:absolute; bottom:10px; transform:translateX(-50%); color:#ffc107; text-align:center; }
-    .sun-dot span { font-size:11px; font-weight:bold; display:block; }
     .cockpit { display:flex; justify-content:space-between; align-items:flex-end; height:100%; padding-bottom:5px; }
     .side { flex:1.3; }
     .center-spacer { flex:1; }
