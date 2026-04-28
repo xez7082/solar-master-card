@@ -176,13 +176,13 @@ _renderSolar() {
     const consoDisplay = Math.abs(consoVal).toFixed(0);
 
     return html`
-      <div class="page" style="height: 490px; padding: 5px 10px; overflow: hidden; display: flex; flex-direction: column; gap: 5px; box-sizing: border-box;">
+      <div class="page" style="display: flex; flex-direction: column; gap: 8px; padding: 5px 10px; box-sizing: border-box;">
         
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 2px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
           <div style="flex: 1; text-align: center;">
             ${consoVal > 0 ? html`<div style="color: #ff4444; font-weight: 900;"><ha-icon icon="mdi:transmission-tower" style="--mdc-icon-size: 22px;"></ha-icon><br><span style="font-size: 16px;">${consoDisplay} W</span></div>` : ''}
           </div>
-          <div style="flex: 1; text-align: center; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+          <div style="flex: 1.2; text-align: center; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
             <span style="font-size: 8px; color: #aaa; text-transform: uppercase; font-weight: bold;">Production</span><br>
             <span style="font-size: 22px; font-weight: 900; color: #ffc107;">${prod.val} W</span>
           </div>
@@ -191,7 +191,7 @@ _renderSolar() {
           </div>
         </div>
 
-        <div style="margin: 5px 0;">
+        <div style="margin: 2px 0;">
           <div style="display: flex; gap: 2px; height: 6px;">
             ${Array(20).fill().map((_, i) => html`
               <div style="flex:1; background: ${i < (progress/5) ? '#ffc107' : '#1a1a1a'}; border-radius: 1px;"></div>
@@ -199,7 +199,7 @@ _renderSolar() {
           </div>
         </div>
 
-        <div class="neon-circles" style="display: flex; justify-content: space-around; margin: 5px 0 0 0; padding: 0;">
+        <div class="neon-circles" style="display: flex; justify-content: space-around; margin: 5px 0;">
           ${[1, 2, 3, 4].map(i => {
             const entityId = c[`p${i}_w`] || c[`panel${i}_production`];
             if(!entityId) return '';
@@ -207,8 +207,8 @@ _renderSolar() {
             const clr = ["#ffc107", "#00f9f9", "#4caf50", "#e91e63"][i-1];
             return html`
               <div class="n-item" style="text-align: center;">
-                <div class="n-circle" style="width: 65px; height: 65px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 8px ${clr}, 0 0 5px ${clr}; margin-bottom: 2px;">
-                   <span style="font-size: 15px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
+                <div class="n-circle" style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid ${clr}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); box-shadow: inset 0 0 8px ${clr}; margin-bottom: 2px;">
+                   <span style="font-size: 14px; font-weight: bold; color: #fff;">${Math.round(v.val)}</span>
                    <span style="font-size: 8px; color: #888;">W</span>
                 </div>
                 <div style="font-size: 8px; font-weight: bold; color: #aaa; text-transform: uppercase;">${c[`p${i}_name`] || 'P'+i}</div>
@@ -216,17 +216,18 @@ _renderSolar() {
           })}
         </div>
 
-        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 5px;">
+        <div class="data-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; align-content: start;">
           ${[4, 5, 6, 7, 8, 9].map(i => {
             if(!c[`d${i}_entity`]) return '';
             const d = this._getVal(c[`d${i}_entity`]);
             return html`
-              <div class="d-card" style="background: rgba(30,30,30,0.4); padding: 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                <span style="font-size: 7px; color: #777; display: block; text-transform: uppercase;">${c[`d${i}_label`]}</span>
-                <b style="font-size: 13px; color: #fff;">${d.val}<small style="font-size: 8px; margin-left: 2px; color: #00f9f9;">${d.unit}</small></b>
+              <div class="d-card" style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center; height: 45px; display: flex; flex-direction: column; justify-content: center;">
+                <span style="font-size: 7px; color: #777; display: block; text-transform: uppercase; line-height: 1; margin-bottom: 2px;">${c[`d${i}_label`] || 'D'+i}</span>
+                <b style="font-size: 12px; color: #fff; line-height: 1;">${d.val}<small style="font-size: 8px; margin-left: 1px; color: #00f9f9;">${d.unit}</small></b>
               </div>`;
           })}
         </div>
+        
       </div>
     `;
 }
