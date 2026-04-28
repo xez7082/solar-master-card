@@ -227,80 +227,87 @@ _renderSolar() {
 _renderWeather() {
     const c = this.config;
     const sun = this.hass.states['sun.sun'];
-    if (!sun) return html`<div style="color:red;padding:20px;">Entité sun.sun non trouvée</div>`;
+    if (!sun) return html`<div style="color:red;padding:20px;">Soleil introuvable</div>`;
 
     const elevation = sun.attributes.elevation || 0;
     const azimuth = sun.attributes.azimuth || 0;
 
-    // Traduction des phases lunaires
+    // Traduction française
     const moonState = this.hass.states[c.moon_entity]?.state;
     const moonPhases = {
-      'new_moon': 'Nouvelle lune',
-      'waxing_crescent': 'Premier croissant',
-      'first_quarter': 'Premier quartier',
-      'waxing_gibbous': 'Gibbeuse croissante',
-      'full_moon': 'Pleine lune',
-      'waning_gibbous': 'Gibbeuse décroissante',
-      'last_quarter': 'Dernier quartier',
-      'waning_crescent': 'Dernier croissant'
+      'new_moon': 'Nouvelle\nLune',
+      'waxing_crescent': 'Premier\nCroissant',
+      'first_quarter': 'Premier\nQuartier',
+      'waxing_gibbous': 'Gibbeuse\nCroissante',
+      'full_moon': 'Pleine\nLune',
+      'waning_gibbous': 'Gibbeuse\nDécroissante',
+      'last_quarter': 'Dernier\nQuartier',
+      'waning_crescent': 'Dernier\nCroissant'
     };
-    const phaseFr = moonPhases[moonState] || moonState || 'Inconnu';
+    const phaseFr = moonPhases[moonState] || moonState || 'Phase\nInconnue';
 
-    // Position du soleil sur l'arc (X: 30-170, Y: Courbe)
+    // Positionnement précis
     const sunX = 30 + (140 * (azimuth / 360));
     const sunY = 55 - (Math.max(0, elevation) * 0.4); 
 
     return html`
-      <div class="page" style="height: 480px; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; z-index: 2; position: relative; box-sizing: border-box;">
+      <div class="page" style="height: 500px; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 15px; box-sizing: border-box; position: relative; z-index: 2;">
         
-        <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
           ${[1, 2, 3, 4].map(i => this._renderMiniSensor(i))}
         </div>
 
-        <div style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-          <svg viewBox="0 0 200 80" style="width: 100%; height: auto;">
-            <path d="M 30,65 A 70,45 0 0 1 170,65" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="4,4" />
-            <line x1="20" y1="65" x2="180" y2="65" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+          <svg viewBox="0 0 200 80" style="width: 100%; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));">
+            <defs>
+              <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#ff9800;stop-opacity:0.2" />
+                <stop offset="50%" style="stop-color:#ffc107;stop-opacity:0.6" />
+                <stop offset="100%" style="stop-color:#ff9800;stop-opacity:0.2" />
+              </linearGradient>
+            </defs>
+            <path d="M 30,65 A 70,45 0 0 1 170,65" fill="none" stroke="url(#arcGrad)" stroke-width="3" stroke-linecap="round" />
+            <line x1="20" y1="65" x2="180" y2="65" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
             
-            <foreignObject x="${sunX - 12}" y="${sunY - 12}" width="24" height="24">
-              <div style="color: ${elevation > 0 ? '#ffc107' : '#00f9f9'}; filter: drop-shadow(0 0 8px ${elevation > 0 ? '#ffc107' : '#00f9f9'});">
-                <ha-icon icon="${elevation > 0 ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'}" style="--mdc-icon-size: 24px;"></ha-icon>
+            <foreignObject x="${sunX - 15}" y="${sunY - 15}" width="30" height="30">
+              <div style="color: ${elevation > 0 ? '#ffc107' : '#00f9f9'}; filter: drop-shadow(0 0 12px ${elevation > 0 ? '#ffc107' : '#00f9f9'}); text-align:center;">
+                <ha-icon icon="${elevation > 0 ? 'mdi:white-balance-sunny' : 'mdi:moon-waning-crescent'}" style="--mdc-icon-size: 26px;"></ha-icon>
               </div>
             </foreignObject>
           </svg>
-          <div style="display: flex; justify-content: space-between; width: 100%; padding: 0 15px; font-size: 10px; color: #aaa; font-weight: bold; margin-top: -10px;">
+          <div style="display: flex; justify-content: space-between; width: 90%; font-size: 11px; color: #eee; font-weight: bold; margin-top: -5px; font-family: 'Roboto Condensed', sans-serif;">
             <span>${sun.attributes.next_rising.split('T')[1].substring(0, 5)}</span>
-            <span style="color: #ffc107;">${elevation.toFixed(1)}°</span>
+            <span style="color: #ffc107; background: rgba(0,0,0,0.4); padding: 0 6px; border-radius: 10px;">${elevation.toFixed(1)}°</span>
             <span>${sun.attributes.next_setting.split('T')[1].substring(0, 5)}</span>
           </div>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
           ${[5, 6, 7, 8].map(i => this._renderMiniSensor(i))}
         </div>
 
-        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 10px;">
-          <div style="font-size: 10px; color: #888; letter-spacing: 2px; margin-bottom: 10px;">LUNE</div>
-          <ha-icon icon="mdi:moon-waning-crescent" style="--mdc-icon-size: 40px; color: #00f9f9; margin-bottom: 5px;"></ha-icon>
-          <div style="font-size: 13px; color: #fff; font-weight: 900; text-transform: uppercase;">${phaseFr}</div>
+        <div style="background: linear-gradient(145deg, rgba(20,20,20,0.6), rgba(0,0,0,0.3)); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; box-shadow: inset 0 0 15px rgba(0,249,249,0.05);">
+          <ha-icon icon="mdi:moon-waning-crescent" style="--mdc-icon-size: 38px; color: #00f9f9; margin-bottom: 8px; filter: drop-shadow(0 0 8px rgba(0,249,249,0.3));"></ha-icon>
+          <div style="font-size: 14px; color: #fff; font-weight: 800; text-transform: uppercase; line-height: 1.2; text-align: center; white-space: pre-line;">
+            ${phaseFr}
+          </div>
         </div>
 
       </div>`;
   }
 
-  // Fonction d'aide pour générer les petits capteurs uniformes
   _renderMiniSensor(i) {
     const c = this.config;
     const entityId = c[`w${i}_e`];
-    if (!entityId || !this.hass.states[entityId]) return html`<div style="height:45px;"></div>`;
+    if (!entityId || !this.hass.states[entityId]) return html`<div style="height:48px;"></div>`;
     const s = this._getVal(entityId);
     
     return html`
-      <div style="background: rgba(15,15,15,0.8); padding: 8px 12px; border-radius: 10px; border: 1px solid #333; display: flex; align-items: center; gap: 10px; height: 45px; box-sizing: border-box;">
-        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
-        <div style="display: flex; flex-direction: column;">
-          <span style="font-size: 8px; color: #777; text-transform: uppercase; font-weight: bold;">${c[`w${i}_l`] || 'S'+i}</span>
-          <span style="font-size: 15px; font-weight: 900; color: #fff; line-height: 1;">${s.val}<small style="font-size: 10px; color: #00f9f9; margin-left: 2px;">${s.unit}</small></span>
+      <div style="background: rgba(15,15,15,0.85); padding: 8px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 12px; height: 48px; box-sizing: border-box; backdrop-filter: blur(5px);">
+        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
+        <div style="display: flex; flex-direction: column; overflow: hidden;">
+          <span style="font-size: 9px; color: #666; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;">${c[`w${i}_l`] || 'Sensor '+i}</span>
+          <span style="font-size: 16px; font-weight: 900; color: #fff; line-height: 1;">${s.val}<small style="font-size: 10px; color: #00f9f9; margin-left: 3px; font-weight: normal;">${s.unit}</small></span>
         </div>
       </div>`;
   }
