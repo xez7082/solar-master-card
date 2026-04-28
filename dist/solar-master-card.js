@@ -242,7 +242,7 @@ _renderSolar() {
             const d = this._getVal(entityId);
             return html`
               <div class="d-card" style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); text-align: center; height: 50px; display: flex; flex-direction: column; justify-content: center;">
-                <span style="font-size: 8px; color: #2e27f5; display: block; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">${c[`d${i}_label`] || 'DATA '+i}</span>
+                <span style="font-size: 8px; color: #d4d4be; display: block; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">${c[`d${i}_label`] || 'DATA '+i}</span>
                 <b style="font-size: 16px; color: #fff; line-height: 1;">${d.val}<small style="font-size: 10px; margin-left: 1px; color: #00f9f9;">${d.unit}</small></b>
               </div>`;
           })}
