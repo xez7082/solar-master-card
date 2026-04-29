@@ -19,23 +19,35 @@ Une carte personnalisée pour **Home Assistant** conçue pour offrir un suivi vi
 ### 🔋 Gestion Solaire (Onglet 1)
 - **Monitoring en temps réel** : Affichage massif de la production (W) avec indicateur de consommation réseau ou d'exportation.
 - **Suivi des Objectifs** : Calcul automatique du pourcentage de réalisation de l'objectif mensuel avec barre de progression segmentée.
-- **Cercles Néon XL** : Visualisation de jusqu'à 4 chaînes de panneaux avec des couleurs distinctes et effets de lueur.
+- **Cercles Néon XL** : Visualisation de jusqu'à 4 chaînes de panneaux avec des diamètres de 82px pour une lecture parfaite.
 - **Grille de Données** : 6 emplacements pour des capteurs de performance (Énergie totale, Intensité, Volts, etc.).
 
 ### ☁️ Station Météo (Onglet 2)
 - **Arc Solaire Dynamique** : Visualisation de la course du soleil, de l'élévation en degrés et des heures précises de lever/coucher.
 - **Phase Lunaire Intelligente** : Traduction automatique des phases de la lune en français (ex: "Gibbeuse croissante").
-- **Grille 3x3 de Capteurs** : 9 icônes et valeurs personnalisables pour la température, l'humidité, le vent, les UV, etc.
+- **Grille 3x3 de Capteurs** : 9 icônes et valeurs agrandies pour la température, l'humidité, le vent, les UV, etc.
 
 ---
 
-## 🛠️ Installation
+## 🚀 Installation
 
-1. **Téléchargement** : Récupérez le fichier `solar-master-card.js` présent sur ce dépôt.
-2. **Transfert** : Placez le fichier dans votre dossier Home Assistant (généralement `/config/www/solar-master-card.js`).
-3. **Ressource** : Ajoutez la ressource dans votre tableau de bord :
-   - Allez dans **Paramètres** > **Tableaux de bord** > **Ressources** (bouton trois points en haut à droite).
-   - Cliquez sur **Ajouter une ressource**.
+### Méthode 1 : Via HACS (Recommandé)
+
+1. Ouvrez **HACS** dans votre instance Home Assistant.
+2. Cliquez sur les **trois petits points** en haut à droite et choisissez **Dépôts personnalisés**.
+3. Copiez l'URL de ce dépôt GitHub : `https://github.com/xez7082/solar-master-card`
+4. Sélectionnez la catégorie **Lovelace** et cliquez sur **Ajouter**.
+5. Recherchez la carte `Solar Master Card` dans l'interface HACS et cliquez sur **Télécharger**.
+6. Une fois le téléchargement terminé, cliquez sur **Recharger** (ou videz le cache de votre navigateur).
+
+---
+
+### Méthode 2 : Installation Manuelle
+
+1. Téléchargez le fichier `solar-master-card.js` depuis ce dépôt.
+2. Copiez le fichier dans votre dossier `/config/www/`.
+3. Ajoutez la ressource dans votre tableau de bord Home Assistant :
+   - **Paramètres** > **Tableaux de bord** > **Ressources**.
    - URL : `/local/solar-master-card.js`
    - Type : `JavaScript Module`.
 
