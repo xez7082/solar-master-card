@@ -262,6 +262,19 @@ _renderWeather() {
     const sunX = 30 + ((azimuth / 360) * 140); 
     const sunY = 55 - (Math.max(0, elevation) * 0.4);
 
+    const moonState = this.hass.states[c.moon_entity]?.state;
+    const moonTranslations = {
+      'new_moon': 'Nouvelle lune',
+      'waxing_crescent': 'Premier croissant',
+      'first_quarter': 'Premier quartier',
+      'waxing_gibbous': 'Gibbeuse croissante',
+      'full_moon': 'Pleine lune',
+      'waning_gibbous': 'Gibbeuse décroissante',
+      'last_quarter': 'Dernier quartier',
+      'waning_crescent': 'Dernier croissant'
+    };
+    const phaseFr = moonTranslations[moonState] || moonState || 'N/A';
+  
     return html`
       <div class="page" style="display: flex; flex-direction: column; gap: 10px; padding: 5px; box-sizing: border-box;">
         
@@ -279,11 +292,14 @@ _renderWeather() {
         </div>
 
         <div style="background: rgba(255,255,255,0.03); padding: 10px 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05);">
-           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
-           <span style="font-size: 14px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
-             ${this.hass.states[c.moon_entity]?.state || 'N/A'}
-           </span>
-        </div>
+       <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
+       <span style="font-size: 14px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+         ${phaseFr} 
+       </span>
+    </div>
+
+    </div>
+`;
 
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
