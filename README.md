@@ -1,5 +1,10 @@
 # ☀️ Solar Master Card
 
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+![version](https://img.shields.io/badge/version-1.2.0-blue.svg?style=for-the-badge)
+![license](https://img.shields.io/badge/license-MIT-green.svg?style=for-the-badge)
+![hass_version](https://img.shields.io/badge/Home%20Assistant-2024.1+-blueviolet.svg?style=for-the-badge)
+
 Une carte personnalisée pour **Home Assistant** conçue pour offrir un suivi visuel complet et élégant de votre production solaire et des données météo. L'interface utilise un style "Glassmorphism" avec des accents néon pour une intégration parfaite dans n'importe quel tableau de bord moderne.
 
 ## 📸 Aperçu
