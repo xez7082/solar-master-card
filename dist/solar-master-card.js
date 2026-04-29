@@ -292,21 +292,20 @@ _renderWeather() {
         </div>
 
         <div style="background: rgba(255,255,255,0.03); padding: 10px 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05);">
-       <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
-       <span style="font-size: 14px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
-         ${phaseFr} 
-       </span>
-    </div>
-
-    </div>
-`;
+           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
+           <span style="font-size: 14px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+             ${phaseFr} 
+           </span>
+        </div>
 
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
-      </div>`;
+
+      </div>
+    `;
 }
-  
+
 _renderMiniSensor(i) {
     const c = this.config;
     const entityId = c[`w${i}_e`];
