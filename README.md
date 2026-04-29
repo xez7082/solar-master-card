@@ -1,69 +1,65 @@
-# ☀️ Solar Master Card (v1.4.4)
+# ☀️ Solar Master Card
 
-[![Version](https://img.shields.io/badge/version-1.4.4-gold.svg?style=for-the-badge)](https://github.com/xez7082/solar-master-card)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/Platform-Home%20Assistant-blue.svg?style=for-the-badge)](https://www.home-assistant.io/)
-[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://hacs.xyz/)
+Une carte personnalisée pour **Home Assistant** conçue pour offrir un suivi visuel complet et élégant de votre production solaire et des données météo. L'interface utilise un style "Glassmorphism" avec des accents néon pour une intégration parfaite dans n'importe quel tableau de bord moderne.
 
-Une interface de monitoring solaire futuriste pour **Home Assistant**. Cette carte transforme vos données photovoltaïques en un véritable tableau de bord haute performance (style Cockpit) avec gestion intelligente des unités, du stockage et des économies.
+## 📸 Aperçu
 
----
+| Production Solaire & Objectifs | Météo & Éléments |
+| :---: | :---: |
+| ![Solaire Principal](https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/asolar.png) | ![Météo et Lune](https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/asolar1.png) |
 
-## 📸 Aperçu du Dashboard
-
-| 🛰️ Vue Production (Solar) | 🔋 Stockage (Batteries) | 💰 Finances (Économie) |
-|:---:|:---:|:---:|
-| <img src="https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/asolar.png" width="300" alt="Solaire"> | <img src="https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/asolar1.png" width="300" alt="Batteries"> | <img src="https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/asolar2.png" width="300" alt="Économie"> |
+| Détails des Panneaux | Vue Globale Interface |
+| :---: | :---: |
+| ![Détails Panneaux](https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/asolar2.png) | ![Interface Complète](https://raw.githubusercontent.com/xez7082/solar-master-card/main/img/asolar3.png) |
 
 ---
 
-## ✨ Points Forts
+## ✨ Fonctionnalités clés
 
-* **🎨 Design "Glassmorphism"** : Interface élégante avec effets de transparence et de flou (Blur) paramétrables dynamiquement via l'éditeur.
-* **🖼️ Personnalisation Totale** : Support d'image de fond via URL (ou local) avec réglage de l'opacité et de la netteté en temps réel.
-* **🧠 Intelligence des Unités** : Moteur "Smart Unit" qui sépare automatiquement les valeurs numériques des unités (W, kWh, V, A, €) pour un affichage toujours propre.
-* **⚡ Temps Réel** : Animations de flux (Scan) et HUD circulaires pour une lecture instantanée de la puissance par panneau.
-* **📊 Gestion Financière** : Suivi complet des gains en Euros (€), calcul basé sur le prix du kWh et barre de progression d'objectif financier.
-* **🔋 Rack Batteries Pro** : Jauges à segments LED haute précision avec monitoring complet (SOC, Tension, Ampérage, Température, Capacité).
-* **🌍 100% Localisé** : Interface et états météo intégralement traduits en français.
+### 🔋 Gestion Solaire (Onglet 1)
+- **Monitoring en temps réel** : Affichage massif de la production (W) avec indicateur de consommation réseau ou d'exportation.
+- **Suivi des Objectifs** : Calcul automatique du pourcentage de réalisation de l'objectif mensuel avec barre de progression segmentée.
+- **Cercles Néon XL** : Visualisation de jusqu'à 4 chaînes de panneaux avec des couleurs distinctes et effets de lueur.
+- **Grille de Données** : 6 emplacements pour des capteurs de performance (Énergie totale, Intensité, Volts, etc.).
+
+### ☁️ Station Météo (Onglet 2)
+- **Arc Solaire Dynamique** : Visualisation de la course du soleil, de l'élévation en degrés et des heures précises de lever/coucher.
+- **Phase Lunaire Intelligente** : Traduction automatique des phases de la lune en français (ex: "Gibbeuse croissante").
+- **Grille 3x3 de Capteurs** : 9 icônes et valeurs personnalisables pour la température, l'humidité, le vent, les UV, etc.
 
 ---
 
 ## 🛠️ Installation
 
-### Option 1 : Via HACS (Recommandée)
-1. Ouvrez **HACS** dans votre instance Home Assistant.
-2. Allez dans la section **Interface**.
-3. Cliquez sur les **trois points** en haut à droite et sélectionnez **Dépôts personnalisés**.
-4. Collez l'URL de ce dépôt : `https://github.com/xez7082/solar-master-card`
-5. Sélectionnez la catégorie **Lovelace**.
-6. Cliquez sur **Ajouter**, puis installez la carte **Solar Master Card**.
-7. Rechargez votre navigateur (F5).
-
-### Option 2 : Installation Manuelle
-1. Téléchargez le fichier `solar-master-card.js`.
-2. Placez-le dans votre dossier `/config/www/`.
-3. Dans Home Assistant, allez dans `Paramètres` -> `Tableaux de bord` -> `Ressources`.
-4. Ajoutez `/local/solar-master-card.js?v=1.4.4` en tant que **Module JavaScript**.
+1. **Téléchargement** : Récupérez le fichier `solar-master-card.js` présent sur ce dépôt.
+2. **Transfert** : Placez le fichier dans votre dossier Home Assistant (généralement `/config/www/solar-master-card.js`).
+3. **Ressource** : Ajoutez la ressource dans votre tableau de bord :
+   - Allez dans **Paramètres** > **Tableaux de bord** > **Ressources** (bouton trois points en haut à droite).
+   - Cliquez sur **Ajouter une ressource**.
+   - URL : `/local/solar-master-card.js`
+   - Type : `JavaScript Module`.
 
 ---
 
-## ⚙️ Configuration de l'Éditeur
+## ⚙️ Configuration YAML (Exemple)
 
-La carte inclut un éditeur visuel divisé en 3 onglets pour une configuration sans YAML :
-
-1. **SOLAIRE** : Hauteur de carte, Image de fond (URL/Blur/Opacity), Entités de production, Météo et 6 blocs de diagnostics personnalisables (UV, Température onduleur, etc.).
-2. **BATTERIES** : Gestion de 4 racks indépendants avec suivi complet (Voltage, Ampérage, Température et Capacité Ah).
-3. **ÉCONOMIE** : Configuration du prix du kWh, des gains journaliers/annuels et suivi de la consommation maison.
-
----
-
-## 📝 Changelog (v1.4.4)
-
-* **Smart Units Engine** : Séparation automatique valeur/unité pour éviter les cassures de design.
-* **Background Controller** : Intégration des réglages de flou et d'opacité directement dans l'interface d'édition.
-* **Correction Économie** : Restauration de la grille complète des statistiques financières.
-* **Optimisation UI** : Affinement des jauges de batterie et amélioration de la réactivité mobile.
-
----
-*Développé avec ❤️ pour la communauté Home Assistant par [xez7082](https://github.com/xez7082).*
+```yaml
+type: custom:solar-master-card
+title: "Mon Énergie"
+# --- Solaire ---
+total_now: sensor.production_actuelle_w
+solar_target: sensor.objectif_mensuel_kwh
+conso_entity: sensor.compteur_linky_power # + pour import, - pour export
+# Panneaux (Cercles)
+p1_w: sensor.panneaux_sud_watts
+p1_name: "SUD"
+p2_w: sensor.panneaux_ouest_watts
+p2_name: "OUEST"
+# --- Météo ---
+moon_entity: sensor.moon_phase
+w1_e: sensor.ext_temp
+w1_l: "Temp"
+w1_i: "mdi:thermometer"
+w2_e: sensor.ext_hum
+w2_l: "Humidité"
+w2_i: "mdi:water-percent"
