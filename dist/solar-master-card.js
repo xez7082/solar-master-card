@@ -181,15 +181,17 @@ class SolarMasterCard extends LitElement {
     `;
   }
 
-  _renderWeather() {
+_renderWeather() {
     const c = this.config;
     const sun = this.hass.states['sun.sun'];
     if (!sun) return html`<div style="color:red;padding:20px;">ENTITÉ SUN INTROUVABLE</div>`;
 
     const elevation = sun.attributes.elevation ?? 0;
     const azimuth = sun.attributes.azimuth ?? 0;
-    const sunX = 30 + ((azimuth / 360) * 140); 
-    const sunY = 55 - (Math.max(0, elevation) * 0.4);
+    
+    // Ajustement de l'arc pour qu'il soit moins haut (plus plat)
+    const sunX = 40 + ((azimuth / 360) * 120); 
+    const sunY = 45 - (Math.max(0, elevation) * 0.3); // Facteur réduit de 0.4 à 0.3
 
     const moonState = this.hass.states[c.moon_entity]?.state;
     const moonTranslations = {
@@ -207,22 +209,23 @@ class SolarMasterCard extends LitElement {
     return html`
       <div class="page" style="display: flex; flex-direction: column; gap: 10px;">
         
-        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1);">
-          <svg viewBox="0 0 200 70" style="width: 100%; height: 80px; overflow: visible;">
-            <line x1="20" y1="60" x2="180" y2="60" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
-            <path d="M 30,60 A 70,40 0 0 1 170,60" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="4,4" />
-            <circle cx="${sunX}" cy="${sunY}" r="6" fill="#ffc107" style="filter: drop-shadow(0 0 8px #ffc107);" />
+        <!-- Arc Solaire réduit -->
+        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); height: 80px; overflow: hidden;">
+          <svg viewBox="0 0 200 50" style="width: 100%; height: 60px; overflow: visible;">
+            <line x1="20" y1="45" x2="180" y2="45" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+            <path d="M 30,45 A 80,25 0 0 1 170,45" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="4,4" />
+            <circle cx="${sunX}" cy="${sunY}" r="5" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />
           </svg>
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #eee; margin-top: -5px; padding: 0 15px; font-weight: bold;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #eee; margin-top: -15px; padding: 0 15px; font-weight: bold;">
               <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
-              <span style="color:#ffc107; font-size: 14px;">${elevation.toFixed(1)}°</span>
+              <span style="color:#ffc107;">${elevation.toFixed(1)}°</span>
               <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
           </div>
         </div>
 
-        <div style="background: rgba(255,255,255,0.03); padding: 10px 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05);">
-           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
-           <span style="font-size: 14px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+        <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.05);">
+           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
+           <span style="font-size: 13px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
              ${phaseFr}
            </span>
         </div>
@@ -230,21 +233,6 @@ class SolarMasterCard extends LitElement {
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
-      </div>`;
-  }
-
-  _renderMiniSensor(i) {
-    const c = this.config;
-    const entityId = c[`w${i}_e`];
-    if (!entityId || !this.hass.states[entityId]) return html``;
-    const stateObj = this.hass.states[entityId];
-    return html`
-      <div style="background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 55px; padding: 4px;">
-        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 18px; margin-bottom: 2px;"></ha-icon>
-        <span style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold; margin-bottom: 1px;">${c[`w${i}_l`] || 'S'+i}</span>
-        <span style="font-size: 18px; font-weight: 900; color: white; line-height: 1;">
-          ${stateObj.state}<small style="font-size: 11px; color: #00f9f9; margin-left: 1px; font-weight: normal;">${stateObj.attributes.unit_of_measurement || ''}</small>
-        </span>
       </div>`;
   }
 
@@ -258,7 +246,6 @@ class SolarMasterCard extends LitElement {
           const soc = parseFloat(this._getVal(c[`b${i}_s`]).val) || 0;
           const power = parseFloat(this._getVal(c[`b${i}_out`]).val) || 0;
           const temp = this._getVal(c[`b${i}_t`]).val;
-          const volt = this._getVal(c[`b${i}_v`]).val;
           
           let color = "#00f9f9"; 
           if (soc < 20) color = "#ff4444";
@@ -283,7 +270,6 @@ class SolarMasterCard extends LitElement {
                   <span style="color: ${power >= 0 ? '#00ff00' : '#ff4444'}">
                     ${power >= 0 ? 'CHAR' : 'DISCH'}: ${Math.abs(power)}W
                   </span>
-                  ${volt !== '0' ? html`<span>${volt}V</span>` : ''}
                 </div>
               </div>
             </div>`;
@@ -291,7 +277,6 @@ class SolarMasterCard extends LitElement {
         </div>
       </div>`;
   }
-
   _renderEco() {
     const c = this.config;
     return html`
