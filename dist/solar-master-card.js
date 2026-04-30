@@ -189,7 +189,7 @@ _renderWeather() {
     const elevation = sun.attributes.elevation ?? 0;
     const azimuth = sun.attributes.azimuth ?? 0;
     
-    // Calcul de la position du soleil sur un arc aplati
+    // Arc solaire aplati et bien centré
     const sunX = 40 + ((azimuth / 360) * 120); 
     const sunY = 40 - (Math.max(0, elevation) * 0.25); 
 
@@ -207,16 +207,16 @@ _renderWeather() {
     const phaseFr = moonTranslations[moonState] || moonState || 'N/A';
 
     return html`
-      <div class="page-weather" style="display: flex; flex-direction: column; gap: 10px;">
+      <div class="page-weather" style="display: flex; flex-direction: column; gap: 12px;">
         
-        <!-- Arc Solaire Compact -->
-        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1); height: 70px; position: relative;">
+        <!-- Arc Solaire -->
+        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px 10px; border: 1px solid rgba(255,255,255,0.1); height: 75px; position: relative; overflow: hidden;">
           <svg viewBox="0 0 200 50" style="width: 100%; height: 50px; overflow: visible;">
             <line x1="20" y1="45" x2="180" y2="45" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
-            <path d="M 30,45 A 80,20 0 0 1 170,45" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="4,4" />
+            <path d="M 30,45 A 80,20 0 0 1 170,45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2" stroke-dasharray="4,4" />
             <circle cx="${sunX}" cy="${sunY}" r="5" fill="#ffc107" style="filter: drop-shadow(0 0 5px #ffc107);" />
           </svg>
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #eee; margin-top: -12px; padding: 0 15px; font-weight: bold;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #eee; margin-top: -12px; padding: 0 15px; font-weight: bold; font-family: sans-serif;">
               <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
               <span style="color:#ffc107;">${elevation.toFixed(1)}°</span>
               <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
@@ -224,18 +224,19 @@ _renderWeather() {
         </div>
 
         <!-- Phase de Lune -->
-        <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; display: flex; align-items: center; gap: 10px; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05);">
            <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 20px;"></ha-icon>
-           <span style="font-size: 13px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+           <span style="font-size: 13px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
              ${phaseFr}
            </span>
         </div>
 
-        <!-- Capteurs Météo -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+        <!-- Grille de capteurs -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
-      </div>`;
+      </div>
+    `;
   }
 
   _renderBattery() {
