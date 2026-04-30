@@ -158,14 +158,16 @@ class SolarMasterCard extends LitElement {
     const consoVal = parseFloat(this._getVal(c.conso_entity).val) || 0;
 
     const targetKwh = parseFloat(target.val) || 0;
-    const prodW     = parseFloat(prod.val)   || 0;
+    const prodKwh   = parseFloat(prod.val)   || 0;
+    // total_now et solar_target sont tous les deux en kWh journalier
     const progress  = c.solar_pct_sensor
-      ? Math.min(100, parseFloat(this._getVal(c.solar_pct_sensor).val) || 0)
-      : (targetKwh > 0 ? Math.min(100, (prodW / (targetKwh * 1000)) * 100) : 0);
+      ? parseFloat(this._getVal(c.solar_pct_sensor).val) || 0
+      : (targetKwh > 0 ? (prodKwh / targetKwh) * 100 : 0);
+    const progressCapped = Math.min(100, progress); // pour la barre visuelle seulement
 
     const isImport = consoVal > 0;
     const monthName = new Date().toLocaleDateString('fr-FR', { month: 'long' }).toUpperCase();
-    const filledSegs = Math.floor(progress / 5);
+    const filledSegs = Math.floor(progressCapped / 5);
 
     return html`
       <div class="page page-solar">
@@ -180,7 +182,7 @@ class SolarMasterCard extends LitElement {
 
           <div class="center-prod">
             <div class="month-label">${monthName}</div>
-            <div class="big-w">${prodW.toFixed(0)}<em class="unit-w"> W</em></div>
+            <div class="big-w">${prodKwh.toFixed(1)}<em class="unit-w"> kWh</em></div>
             <div class="target-info">
               OBJECTIF <b class="unit-kwh">${targetKwh} kWh</b>
             </div>
@@ -196,10 +198,10 @@ class SolarMasterCard extends LitElement {
         <div class="progress-row">
           <div class="progress-bar">
             ${Array(20).fill(0).map((_, i) => html`
-              <div class="seg ${i < filledSegs ? 'on' : i === filledSegs && (progress % 5 > 0) ? 'half' : ''}"></div>
+              <div class="seg ${i < filledSegs ? 'on' : i === filledSegs && (progressCapped % 5 > 0) ? 'half' : ''}"></div>
             `)}
           </div>
-          <span class="progress-pct">${Math.round(progress)}<em>%</em></span>
+          <span class="progress-pct ${progress > 100 ? 'over' : ''}">${Math.round(progress)}<em>%</em></span>
         </div>
 
         <!-- ── PANNEAUX ── -->
@@ -273,15 +275,15 @@ class SolarMasterCard extends LitElement {
 
         <!-- ── Sun arc ── -->
         <div class="sun-arc-box">
-          <svg viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible;">
-            <line x1="8" y1="34" x2="192" y2="34" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-            <path d="M 10,34 A 90,26 0 0 1 190,34" fill="none"
+          <svg viewBox="0 0 200 30" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible;">
+            <line x1="8" y1="26" x2="192" y2="26" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+            <path d="M 10,26 A 90,20 0 0 1 190,26" fill="none"
               stroke="${isAboveHorizon ? 'rgba(255,193,7,0.18)' : 'rgba(255,255,255,0.05)'}"
               stroke-width="1.5" stroke-dasharray="5,3"/>
-            <circle cx="${sx}" cy="${sy}" r="5"
+            <circle cx="${sx}" cy="${Math.max(3, sy - 8)}" r="5"
               fill="${isAboveHorizon ? '#ffc107' : '#334'}"
               style="filter:${isAboveHorizon ? 'drop-shadow(0 0 5px #ffc107)' : 'none'}"/>
-            ${isAboveHorizon ? html`<circle cx="${sx}" cy="${sy}" r="10" fill="rgba(255,193,7,0.12)"/>` : ''}
+            ${isAboveHorizon ? html`<circle cx="${sx}" cy="${Math.max(3, sy - 8)}" r="10" fill="rgba(255,193,7,0.12)"/>` : ''}
           </svg>
           <div class="sun-times">
             <span>🌅 ${this._fmtTime(sun.attributes.next_rising)}</span>
@@ -524,9 +526,10 @@ class SolarMasterCard extends LitElement {
     .progress-bar { flex: 1; display: flex; gap: 3px; height: 6px; }
     .progress-pct {
       font-size: 14px; font-weight: 900; color: var(--clr-amber);
-      white-space: nowrap; min-width: 36px; text-align: right;
+      white-space: nowrap; min-width: 42px; text-align: right;
     }
     .progress-pct em { font-size: 10px; font-style: normal; color: #888; }
+    .progress-pct.over { color: var(--clr-green); text-shadow: 0 0 8px var(--clr-green); }
     .seg {
       flex: 1; border-radius: 3px;
       background: rgba(255,255,255,0.07);
@@ -582,37 +585,43 @@ class SolarMasterCard extends LitElement {
     .ic-unit { font-size: 9px; font-weight: 400; color: var(--clr-cyan); font-style: normal; }
 
     /* ── WEATHER ── */
+    .page-weather { height: 100%; }
     .sun-arc-box {
       background: var(--clr-panel);
       border: 1px solid var(--clr-border);
       border-radius: 14px;
-      padding: 8px 12px 6px;
+      padding: 6px 12px 5px;
+      flex-shrink: 0;
     }
     .sun-times {
       display: flex; justify-content: space-between;
       font-size: 11px; color: #bbb; font-weight: 600;
-      margin-top: 4px;
+      margin-top: 3px;
     }
     .sun-elev { color: var(--clr-amber); font-weight: 800; }
     .moon-row {
       display: flex; align-items: center; gap: 10px;
       background: var(--clr-panel);
       border: 1px solid var(--clr-border);
-      border-radius: 10px; padding: 7px 14px;
+      border-radius: 10px; padding: 6px 14px;
+      flex-shrink: 0;
     }
-    .moon-icon { font-size: 16px; }
+    .moon-icon { font-size: 15px; }
     .moon-text { font-size: 12px; color: #ddd; }
-    .w-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .w-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 5px; flex: 1; min-height: 0;
+    }
     .w-card {
       background: var(--clr-panel);
       border: 1px solid var(--clr-border);
       border-radius: 10px;
-      padding: 7px 4px;
       display: flex; flex-direction: column;
-      align-items: center; gap: 2px;
+      align-items: center; justify-content: center; gap: 2px;
     }
-    .w-icon { color: var(--clr-cyan); --mdc-icon-size: 16px; }
-    .w-label { font-size: 8px; color: #aaa; font-weight: 600; letter-spacing: .4px; text-align: center; }
+    .w-icon { color: var(--clr-cyan); --mdc-icon-size: 15px; }
+    .w-label { font-size: 8px; color: #aaa; font-weight: 600; letter-spacing: .4px; text-align: center; line-height: 1.1; }
     .w-val { font-size: 15px; font-weight: 900; color: white; }
     .w-unit { font-size: 9px; font-weight: 400; color: var(--clr-cyan); font-style: normal; }
 
