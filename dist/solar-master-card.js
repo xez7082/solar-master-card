@@ -165,6 +165,7 @@ class SolarMasterCard extends LitElement {
 
     const isImport = consoVal > 0;
     const monthName = new Date().toLocaleDateString('fr-FR', { month: 'long' }).toUpperCase();
+    const filledSegs = Math.floor(progress / 5);
 
     return html`
       <div class="page page-solar">
@@ -173,27 +174,32 @@ class SolarMasterCard extends LitElement {
         <div class="top-row">
           <div class="net-box ${isImport ? 'import' : 'export'}">
             <ha-icon icon="${isImport ? 'mdi:transmission-tower' : 'mdi:transmission-tower-export'}"></ha-icon>
-            <span>${Math.abs(consoVal).toFixed(0)} W</span>
+            <span>${Math.abs(consoVal).toFixed(0)} <em>W</em></span>
             <small>${isImport ? 'IMPORT' : 'EXPORT'}</small>
           </div>
 
           <div class="center-prod">
             <div class="month-label">${monthName}</div>
-            <div class="big-w">${prodW.toFixed(0)}<small> W</small></div>
-            <div class="target-info">OBJ ${targetKwh} kWh · <b>${Math.round(progress)}%</b></div>
+            <div class="big-w">${prodW.toFixed(0)}<em class="unit-w"> W</em></div>
+            <div class="target-info">
+              OBJECTIF <b class="unit-kwh">${targetKwh} kWh</b>
+            </div>
           </div>
 
           <div class="net-box transparent">
             <ha-icon icon="mdi:sun-compass" style="color:#ffc107;"></ha-icon>
-            <span style="font-size:10px;color:#888;">PROD</span>
+            <span style="font-size:10px;color:#999;">PROD</span>
           </div>
         </div>
 
-        <!-- ── PROGRESS BAR ── -->
-        <div class="progress-bar">
-          ${Array(20).fill(0).map((_, i) => html`
-            <div class="seg ${i < Math.floor(progress / 5) ? 'on' : i === Math.floor(progress / 5) && (progress % 5 > 0) ? 'half' : ''}"></div>
-          `)}
+        <!-- ── PROGRESS + % inline ── -->
+        <div class="progress-row">
+          <div class="progress-bar">
+            ${Array(20).fill(0).map((_, i) => html`
+              <div class="seg ${i < filledSegs ? 'on' : i === filledSegs && (progress % 5 > 0) ? 'half' : ''}"></div>
+            `)}
+          </div>
+          <span class="progress-pct">${Math.round(progress)}<em>%</em></span>
         </div>
 
         <!-- ── PANNEAUX ── -->
@@ -203,20 +209,21 @@ class SolarMasterCard extends LitElement {
             const w = parseFloat(this._getVal(c[`p${i}_w`]).val) || 0;
             const maxW = 500;
             const pct = Math.min(100, (w / maxW) * 100);
+            const circ = 2 * Math.PI * 26;
             return html`
               <div class="neon-item">
-                <div class="neon-ring color-${i}" style="--pct:${pct}">
+                <div class="neon-ring">
                   <svg class="ring-svg" viewBox="0 0 60 60">
                     <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="4"/>
                     <circle cx="30" cy="30" r="26" fill="none" stroke-width="4"
                       class="ring-arc arc-${i}"
-                      stroke-dasharray="${2 * Math.PI * 26 * pct / 100} ${2 * Math.PI * 26}"
-                      stroke-dashoffset="${2 * Math.PI * 26 * 0.25}"
+                      stroke-dasharray="${circ * pct / 100} ${circ}"
+                      stroke-dashoffset="${circ * 0.25}"
                       stroke-linecap="round"/>
                   </svg>
                   <div class="ring-inner">
                     <span class="nv">${Math.round(w)}</span>
-                    <span class="nu">W</span>
+                    <span class="nu arc-color-${i}">W</span>
                   </div>
                 </div>
                 <div class="nlabel">${c[`p${i}_name`] || 'P' + i}</div>
@@ -232,7 +239,7 @@ class SolarMasterCard extends LitElement {
             return html`
               <div class="info-card">
                 <span class="ic-label">${c[`d${i}_label`] || '—'}</span>
-                <b class="ic-val">${d.val}<small>${d.unit}</small></b>
+                <b class="ic-val">${d.val}<em class="ic-unit">${d.unit}</em></b>
               </div>`;
           })}
         </div>
@@ -247,56 +254,49 @@ class SolarMasterCard extends LitElement {
 
     const elevation = sun.attributes.elevation ?? 0;
     const azimuth   = sun.attributes.azimuth   ?? 180;
-
-    /* Map azimuth 0-360 → x 15-185 in SVG viewBox 0 0 200 55 */
-    const sunX = 15 + ((azimuth % 360) / 360) * 170;
-    /* Map elevation: 0° → y=45, 90° → y=8 (clamped) */
-    const sunY = Math.max(5, 45 - Math.max(0, elevation) * 0.42);
     const isAboveHorizon = elevation > 0;
+
+    /* SVG viewBox 0 0 200 40 — horizon at y=34 */
+    const sx = Math.round(10 + ((azimuth % 360) / 360) * 180);
+    const sy = Math.round(Math.max(4, 34 - Math.max(0, elevation) * 0.32));
 
     const moonState = this.hass.states[c.moon_entity]?.state;
     const moonMap = {
-      new_moon: '🌑 Nouvelle lune',      waxing_crescent: '🌒 Croissant croissant',
+      new_moon: '🌑 Nouvelle lune',        waxing_crescent: '🌒 Croissant croissant',
       first_quarter: '🌓 Premier quartier', waxing_gibbous: '🌔 Gibbeuse croissante',
-      full_moon: '🌕 Pleine lune',       waning_gibbous: '🌖 Gibbeuse décroissante',
+      full_moon: '🌕 Pleine lune',          waning_gibbous: '🌖 Gibbeuse décroissante',
       last_quarter: '🌗 Dernier quartier',  waning_crescent: '🌘 Dernier croissant'
     };
 
     return html`
       <div class="page page-weather">
 
-        <!-- Sun arc -->
+        <!-- ── Sun arc ── -->
         <div class="sun-arc-box">
-          <svg viewBox="0 0 200 32" class="sun-svg">
-            <!-- Horizon -->
-            <line x1="8" y1="28" x2="192" y2="28" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-            <!-- Dashed reference arc -->
-            <path d="M 12,28 A 94,22 0 0 1 188,28" fill="none"
-              stroke="rgba(255,193,7,0.12)" stroke-width="1.5" stroke-dasharray="4,3"/>
-            <!-- Sun dot — remapped to smaller viewBox -->
-            ${isAboveHorizon ? html`
-              <circle cx="${12 + ((azimuth % 360) / 360) * 176}" cy="${Math.max(3, 28 - Math.max(0, elevation) * 0.26)}" r="4" fill="#ffc107" style="filter:drop-shadow(0 0 4px #ffc107)">
-                <animate attributeName="r" values="3.5;5;3.5" dur="3s" repeatCount="indefinite"/>
-              </circle>
-              <circle cx="${12 + ((azimuth % 360) / 360) * 176}" cy="${Math.max(3, 28 - Math.max(0, elevation) * 0.26)}" r="8" fill="rgba(255,193,7,0.12)"/>
-            ` : html`
-              <circle cx="${12 + ((azimuth % 360) / 360) * 176}" cy="${Math.max(3, 28 - Math.max(0, elevation) * 0.26)}" r="4" fill="#444"/>
-            `}
+          <svg viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible;">
+            <line x1="8" y1="34" x2="192" y2="34" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+            <path d="M 10,34 A 90,26 0 0 1 190,34" fill="none"
+              stroke="${isAboveHorizon ? 'rgba(255,193,7,0.18)' : 'rgba(255,255,255,0.05)'}"
+              stroke-width="1.5" stroke-dasharray="5,3"/>
+            <circle cx="${sx}" cy="${sy}" r="5"
+              fill="${isAboveHorizon ? '#ffc107' : '#334'}"
+              style="filter:${isAboveHorizon ? 'drop-shadow(0 0 5px #ffc107)' : 'none'}"/>
+            ${isAboveHorizon ? html`<circle cx="${sx}" cy="${sy}" r="10" fill="rgba(255,193,7,0.12)"/>` : ''}
           </svg>
           <div class="sun-times">
             <span>🌅 ${this._fmtTime(sun.attributes.next_rising)}</span>
-            <span style="color:#ffc107;font-weight:bold;">${elevation.toFixed(1)}°</span>
+            <span class="sun-elev">${elevation.toFixed(1)}°</span>
             <span>🌇 ${this._fmtTime(sun.attributes.next_setting)}</span>
           </div>
         </div>
 
-        <!-- Moon -->
+        <!-- ── Moon ── -->
         <div class="moon-row">
           <span class="moon-icon">🌙</span>
           <span class="moon-text">${moonMap[moonState] || moonState || 'Phase inconnue'}</span>
         </div>
 
-        <!-- Weather entities grid -->
+        <!-- ── Weather entities grid ── -->
         <div class="w-grid">
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => {
             const eId = c[`w${i}_e`];
@@ -306,7 +306,7 @@ class SolarMasterCard extends LitElement {
               <div class="w-card">
                 <ha-icon icon="${c[`w${i}_i`] || 'mdi:information-outline'}" class="w-icon"></ha-icon>
                 <span class="w-label">${c[`w${i}_l`] || ''}</span>
-                <span class="w-val">${s.state}<small>${s.attributes.unit_of_measurement || ''}</small></span>
+                <span class="w-val">${s.state}<em class="w-unit">${s.attributes.unit_of_measurement || ''}</em></span>
               </div>`;
           })}
         </div>
@@ -513,14 +513,20 @@ class SolarMasterCard extends LitElement {
       line-height: 1;
       text-shadow: 0 0 20px rgba(255,193,7,.5);
     }
-    .big-w small { font-size: 16px; font-weight: 400; color: #888; }
+    .big-w .unit-w { font-size: 16px; font-weight: 400; color: var(--clr-amber); opacity: .7; }
     .target-info {
-      font-size: 11px; color: #777; margin-top: 3px;
+      font-size: 11px; color: #999; margin-top: 3px;
     }
-    .target-info b { color: var(--clr-amber); }
+    .unit-kwh { color: var(--clr-cyan); font-style: normal; }
 
-    /* Progress bar */
-    .progress-bar { display: flex; gap: 3px; height: 6px; }
+    /* Progress row — bar + % side by side */
+    .progress-row { display: flex; align-items: center; gap: 8px; }
+    .progress-bar { flex: 1; display: flex; gap: 3px; height: 6px; }
+    .progress-pct {
+      font-size: 14px; font-weight: 900; color: var(--clr-amber);
+      white-space: nowrap; min-width: 36px; text-align: right;
+    }
+    .progress-pct em { font-size: 10px; font-style: normal; color: #888; }
     .seg {
       flex: 1; border-radius: 3px;
       background: rgba(255,255,255,0.07);
@@ -554,8 +560,12 @@ class SolarMasterCard extends LitElement {
       align-items: center; justify-content: center;
     }
     .nv { font-size: 20px; font-weight: 900; line-height: 1; }
-    .nu { font-size: 10px; color: var(--clr-muted); font-weight: 600; }
-    .nlabel { font-size: 10px; color: #777; font-weight: 600; letter-spacing: .5px; }
+    .nu { font-size: 10px; font-weight: 700; }
+    .arc-color-1 { color: var(--clr-amber); }
+    .arc-color-2 { color: var(--clr-cyan);  }
+    .arc-color-3 { color: var(--clr-green); }
+    .arc-color-4 { color: var(--clr-pink);  }
+    .nlabel { font-size: 10px; color: #aaa; font-weight: 600; letter-spacing: .5px; }
 
     /* Info cards */
     .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
@@ -567,44 +577,44 @@ class SolarMasterCard extends LitElement {
       display: flex; flex-direction: column;
       align-items: center; gap: 3px;
     }
-    .ic-label { font-size: 8px; color: var(--clr-muted); font-weight: 600; letter-spacing: .4px; text-align: center; }
-    .ic-val { font-size: 15px; font-weight: 800; color: var(--clr-text); text-align: center; }
-    .ic-val small { font-size: 9px; font-weight: 400; color: #777; }
+    .ic-label { font-size: 8px; color: #aaa; font-weight: 600; letter-spacing: .4px; text-align: center; }
+    .ic-val { font-size: 15px; font-weight: 800; color: var(--clr-text); text-align: center; font-style: normal; }
+    .ic-unit { font-size: 9px; font-weight: 400; color: var(--clr-cyan); font-style: normal; }
 
     /* ── WEATHER ── */
     .sun-arc-box {
       background: var(--clr-panel);
       border: 1px solid var(--clr-border);
       border-radius: 14px;
-      padding: 10px 12px 8px;
+      padding: 8px 12px 6px;
     }
-    .sun-svg { width: 100%; display: block; }
     .sun-times {
       display: flex; justify-content: space-between;
-      font-size: 11px; color: #aaa; font-weight: 600;
-      margin-top: 6px;
+      font-size: 11px; color: #bbb; font-weight: 600;
+      margin-top: 4px;
     }
+    .sun-elev { color: var(--clr-amber); font-weight: 800; }
     .moon-row {
       display: flex; align-items: center; gap: 10px;
       background: var(--clr-panel);
       border: 1px solid var(--clr-border);
-      border-radius: 10px; padding: 10px 14px;
+      border-radius: 10px; padding: 7px 14px;
     }
-    .moon-icon { font-size: 18px; }
-    .moon-text { font-size: 13px; color: #ddd; }
-    .w-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .moon-icon { font-size: 16px; }
+    .moon-text { font-size: 12px; color: #ddd; }
+    .w-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
     .w-card {
       background: var(--clr-panel);
       border: 1px solid var(--clr-border);
       border-radius: 10px;
-      padding: 10px 6px;
+      padding: 7px 4px;
       display: flex; flex-direction: column;
-      align-items: center; gap: 3px;
+      align-items: center; gap: 2px;
     }
-    .w-icon { color: var(--clr-cyan); --mdc-icon-size: 18px; }
-    .w-label { font-size: 8px; color: var(--clr-muted); font-weight: 600; letter-spacing: .4px; }
-    .w-val { font-size: 17px; font-weight: 900; color: white; }
-    .w-val small { font-size: 9px; font-weight: 400; color: #777; }
+    .w-icon { color: var(--clr-cyan); --mdc-icon-size: 16px; }
+    .w-label { font-size: 8px; color: #aaa; font-weight: 600; letter-spacing: .4px; text-align: center; }
+    .w-val { font-size: 15px; font-weight: 900; color: white; }
+    .w-unit { font-size: 9px; font-weight: 400; color: var(--clr-cyan); font-style: normal; }
 
     /* ── BATTERY ── */
     .rack-list { display: flex; flex-direction: column; gap: 10px; }
@@ -623,6 +633,7 @@ class SolarMasterCard extends LitElement {
       padding: 3px 8px; border-radius: 20px;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.1);
+      color: #bbb;
     }
     .badge ha-icon { --mdc-icon-size: 12px; }
     .badge.charge   { color: var(--clr-green); border-color: rgba(0,230,118,.25); }
@@ -683,7 +694,7 @@ class SolarMasterCard extends LitElement {
     }
     .e-card.highlight { border-color: rgba(0,230,118,.2); background: rgba(0,230,118,.04); }
     .e-icon { color: var(--clr-green); --mdc-icon-size: 20px; margin-bottom: 2px; }
-    .e-card span { font-size: 8px; color: var(--clr-muted); font-weight: 600; letter-spacing: .5px; }
+    .e-card span { font-size: 8px; color: #aaa; font-weight: 600; letter-spacing: .5px; }
     .e-card b { font-size: 18px; font-weight: 900; color: white; }
     .e-card b small { font-size: 10px; font-weight: 400; color: #777; }
 
