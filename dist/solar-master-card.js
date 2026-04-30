@@ -169,8 +169,8 @@ _renderSolar() {
     const target = this._getVal(c.solar_target);
     
     const pct_entity = this._getVal(c.solar_pct_sensor);
-    const progress = c.solar_pct_sensor ? parseFloat(pct_entity.val) : Math.min(100, (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100);
-    const moisActuel = new Date().toLocaleDateString('fr-FR', { month: 'long' }).toUpperCase();
+    // NOUVELLE LIGNE (qui permet de dépasser 100)
+    const progress = c.solar_pct_sensor ? parseFloat(pct_entity.val) : (parseFloat(prod.val) / (parseFloat(target.val) * 1000)) * 100;    const moisActuel = new Date().toLocaleDateString('fr-FR', { month: 'long' }).toUpperCase();
 
     const consoState = c.conso_entity ? this.hass.states[c.conso_entity] : null; 
     const consoVal = consoState ? parseFloat(consoState.state) : 0;
