@@ -99,6 +99,7 @@ customElements.define("solar-master-card-editor", SolarMasterCardEditor);
  */
 class SolarMasterCard extends LitElement {
   static getConfigElement() { return document.createElement("solar-master-card-editor"); }
+  static getStubConfig()    { return { card_height: 550, bg_opacity: 0.25 }; }
   static get properties() { return { hass: {}, config: {}, _tab: { type: String } }; }
 
   constructor() { super(); this._tab = 'SOLAIRE'; }
@@ -716,3 +717,13 @@ class SolarMasterCard extends LitElement {
   `;
 }
 customElements.define("solar-master-card", SolarMasterCard);
+
+// ── Enregistrement dans le picker Home Assistant ──
+window.customCards = window.customCards || [];
+window.customCards.push({
+  type:        "solar-master-card",
+  name:        "Solar Master Card",
+  description: "Tableau de bord solaire : production, météo, batterie, économies",
+  preview:     false,
+  documentationURL: "https://github.com/"
+});
