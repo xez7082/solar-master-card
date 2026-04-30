@@ -6,92 +6,300 @@ import {
 
 /**
  * ==========================================
- * 🧠 ÉDITEUR DE CONFIGURATION
+ * 🧠 ÉDITEUR VISUEL — SOLAR MASTER CARD
  * ==========================================
  */
 class SolarMasterCardEditor extends LitElement {
   static get properties() {
-    return { hass: {}, _config: {}, _selectedTab: { type: String } };
+    return { hass: {}, _config: {}, _tab: { type: String }, _open: { type: Object } };
   }
-  constructor() { super(); this._selectedTab = 'tab_solar'; }
-  setConfig(config) { this._config = config; }
+  constructor() {
+    super();
+    this._tab  = 'solar';
+    this._open = { apparence: true, reseau: true, production: true };
+  }
+  setConfig(config) { this._config = { ...config }; }
 
-  _valueChanged(ev) {
-    if (!this._config || !this.hass) return;
-    const config = { ...this._config, ...ev.detail.value };
-    this.dispatchEvent(new CustomEvent("config-changed", { detail: { config }, bubbles: true, composed: true }));
+  /* ── dispatch config change ── */
+  _set(key, value) {
+    if (!this._config) return;
+    this._config = { ...this._config, [key]: value };
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this._config }, bubbles: true, composed: true }));
+  }
+  _formChanged(ev) {
+    if (!this._config) return;
+    this._config = { ...this._config, ...ev.detail.value };
+    this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: this._config }, bubbles: true, composed: true }));
+  }
+  _toggle(section) {
+    this._open = { ...this._open, [section]: !this._open[section] };
+    this.requestUpdate();
+  }
+
+  /* ── helpers ── */
+  _form(schema) {
+    return html`<ha-form .hass=${this.hass} .data=${this._config} .schema=${schema} @value-changed=${this._formChanged}></ha-form>`;
+  }
+
+  _section(key, icon, title, desc, color, content) {
+    const open = this._open[key] !== false;
+    return html`
+      <div class="section" style="--sc:${color}">
+        <div class="section-head" @click=${() => this._toggle(key)}>
+          <div class="section-icon">${icon}</div>
+          <div class="section-info">
+            <div class="section-title">${title}</div>
+            <div class="section-desc">${desc}</div>
+          </div>
+          <div class="section-chevron">${open ? '▲' : '▼'}</div>
+        </div>
+        ${open ? html`<div class="section-body">${content}</div>` : ''}
+      </div>`;
+  }
+
+  _panelSection(i, color, icon) {
+    const colors = ['', '#ffc107', '#00e5ff', '#00e676', '#f048a8'];
+    return this._section(
+      `panel${i}`, icon,
+      `Panneau ${i} — ${this._config[`p${i}_name`] || 'non configuré'}`,
+      `Entité watts + puissance crête installée`,
+      colors[i],
+      html`
+        ${this._form([{ name: `p${i}_name`, label: 'Nom affiché',         selector: { text: {} } }])}
+        ${this._form([{ name: `p${i}_w`,    label: 'Entité — Watts actuels (W)',  selector: { entity: {} } }])}
+        ${this._form([{ name: `p${i}_max`,  label: 'Puissance max installée (Wc)', selector: { number: { min: 100, max: 5000, step: 10 } } }])}
+        <div class="hint">💡 L'arc du cercle sera plein à ${this._config[`p${i}_max`] || 500} Wc</div>
+      `
+    );
+  }
+
+  _battSection(i) {
+    const colors = ['', '#00e5ff', '#ffc107', '#00e676', '#f048a8'];
+    return this._section(
+      `batt${i}`, '🔋',
+      `Batterie ${i} — ${this._config[`b${i}_n`] || 'non configurée'}`,
+      'SOC, puissance et température',
+      colors[i],
+      html`
+        ${this._form([{ name: `b${i}_n`, label: 'Nom affiché', selector: { text: {} } }])}
+        ${this._form([{ name: `b${i}_s`, label: 'Entité — État de charge SOC (%)', selector: { entity: {} } }])}
+        ${this._form([{ name: `b${i}_out`, label: 'Entité — Puissance (W, négatif = charge)', selector: { entity: {} } }])}
+        ${this._form([{ name: `b${i}_t`, label: 'Entité — Température (°C)', selector: { entity: {} } }])}
+      `
+    );
+  }
+
+  /* ── TABS ── */
+  _renderSolar() {
+    return html`
+      ${this._section('apparence', '🖼', 'Apparence', 'Image de fond, opacité, hauteur de la carte', '#888', html`
+        ${this._form([{ name: 'bg_url',     label: 'URL de l\'image de fond (laisser vide = aucune)', selector: { text: {} } }])}
+        ${this._form([{ name: 'bg_opacity', label: 'Opacité de l\'image (0.1 = transparent → 1 = opaque)', selector: { number: { min: 0.1, max: 1, step: 0.05 } } }])}
+        ${this._form([{ name: 'card_height', label: 'Hauteur de la carte (px)', selector: { number: { min: 400, max: 1000, step: 10 } } }])}
+      `)}
+
+      ${this._section('reseau', '🔌', 'Réseau électrique', 'Valeur positive = import, négative = export vers le réseau', '#ff5252', html`
+        ${this._form([{ name: 'conso_entity', label: 'Entité Import / Export réseau (W)', selector: { entity: {} } }])}
+        <div class="hint">💡 Valeur positive = vous achetez du réseau · Négative = vous revendez</div>
+      `)}
+
+      ${this._section('production', '☀️', 'Production solaire', 'Production totale du mois et objectif pour calculer la progression', '#ffc107', html`
+        ${this._form([{ name: 'total_now',    label: 'Entité — Production totale du mois (kWh)', selector: { entity: {} } }])}
+        ${this._form([{ name: 'solar_target', label: 'Entité — Objectif mensuel (kWh)', selector: { entity: {} } }])}
+        ${this._form([{ name: 'solar_pct_sensor', label: 'Entité — Capteur % optionnel (ignoré si objectif configuré)', selector: { entity: {} } }])}
+        <div class="hint">💡 Configurez les deux entités ci-dessus · Le % est calculé automatiquement et peut dépasser 100%</div>
+      `)}
+
+      <div class="group-title">⚡ Panneaux solaires</div>
+      ${[1, 2, 3, 4].map(i => this._panelSection(i))}
+
+      ${this._section('infos', '📊', 'Informations supplémentaires', '6 cases libres affichées en bas de la page solaire', '#00e5ff', html`
+        <div class="grid-2">
+          ${[4, 5, 6, 7, 8, 9].map(i => html`
+            <div class="info-group">
+              <div class="info-num">#${i - 3}</div>
+              ${this._form([{ name: `d${i}_label`,  label: 'Label affiché',   selector: { text: {} } }])}
+              ${this._form([{ name: `d${i}_entity`, label: 'Entité associée', selector: { entity: {} } }])}
+            </div>
+          `)}
+        </div>
+      `)}
+    `;
+  }
+
+  _renderWeather() {
+    return html`
+      ${this._section('meteo_main', '🌍', 'Sources météo', 'Entité météo principale et phase de lune', '#00e5ff', html`
+        ${this._form([{ name: 'weather_entity', label: 'Entité météo principale (domaine weather)', selector: { entity: { domain: 'weather' } } }])}
+        ${this._form([{ name: 'moon_entity',    label: 'Entité phase de lune', selector: { entity: {} } }])}
+      `)}
+
+      ${this._section('meteo_data', '📡', 'Données météo — 9 cases', 'Remplissez les cases que vous voulez afficher (label + entité + icône mdi:)', '#ffc107', html`
+        <div class="grid-2">
+          ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => html`
+            <div class="info-group">
+              <div class="info-num">#${i}</div>
+              ${this._form([{ name: `w${i}_l`, label: 'Label',         selector: { text: {} } }])}
+              ${this._form([{ name: `w${i}_e`, label: 'Entité',        selector: { entity: {} } }])}
+              ${this._form([{ name: `w${i}_i`, label: 'Icône mdi:...', selector: { text: {} } }])}
+            </div>
+          `)}
+        </div>
+      `)}
+    `;
+  }
+
+  _renderBattery() {
+    return html`
+      <div class="hint top">💡 Configurez uniquement les batteries que vous possédez · Les cases vides sont ignorées</div>
+      ${[1, 2, 3, 4].map(i => this._battSection(i))}
+    `;
+  }
+
+  _renderEco() {
+    return html`
+      ${this._section('eco_main', '💰', 'Économies', 'Capteurs principaux affichés en héros et dans les cartes mises en avant', '#00e676', html`
+        ${this._form([{ name: 'eco_money',    label: 'Entité — Économies totales cumulées (€)', selector: { entity: {} } }])}
+        ${this._form([{ name: 'eco_day_euro', label: 'Entité — Gain du jour (€)',               selector: { entity: {} } }])}
+        ${this._form([{ name: 'main_cons',    label: 'Entité — Consommation maison (W)',         selector: { entity: {} } }])}
+      `)}
+
+      ${this._section('eco_data', '📋', 'Données libres — 6 cases', 'Cases supplémentaires affichées dans la grille économies', '#ffc107', html`
+        <div class="grid-2">
+          ${[1, 2, 3, 4, 5, 6].map(i => html`
+            <div class="info-group">
+              <div class="info-num">#${i}</div>
+              ${this._form([{ name: `e${i}_l`, label: 'Label',  selector: { text: {} } }])}
+              ${this._form([{ name: `e${i}_e`, label: 'Entité', selector: { entity: {} } }])}
+            </div>
+          `)}
+        </div>
+      `)}
+    `;
   }
 
   render() {
     if (!this.hass || !this._config) return html``;
-    const schemas = {
-      tab_solar: [
-        { name: "bg_url",         label: "Image de fond (URL)",         selector: { text: {} } },
-        { name: "bg_opacity",     label: "Opacité (0.1 à 1)",           selector: { number: { min: 0.1, max: 1, step: 0.1 } } },
-        { name: "conso_entity",   label: "Import/Export Réseau (W)",    selector: { entity: {} } },
-        { name: "total_now",      label: "Production Totale (W)",        selector: { entity: {} } },
-        { name: "solar_target",   label: "Objectif Jour (kWh)",          selector: { entity: {} } },
-        { name: "solar_pct_sensor", label: "Capteur % (Optionnel)",     selector: { entity: {} } },
-        { name: "card_height",    label: "Hauteur (px)",                 selector: { number: { min: 400, max: 1000 } } },
-        ...[1, 2, 3, 4].flatMap(i => [
-          { name: `p${i}_name`, label: `Nom Panneau ${i}`,      selector: { text: {} } },
-          { name: `p${i}_w`,   label: `Watts actuels ${i}`,     selector: { entity: {} } },
-          { name: `p${i}_max`, label: `Puissance max Wc ${i}`,  selector: { number: { min: 100, max: 5000, step: 10 } } }
-        ]),
-        ...[4, 5, 6, 7, 8, 9].flatMap(i => [
-          { name: `d${i}_label`,  label: `Label Info ${i}`,  selector: { text: {} } },
-          { name: `d${i}_entity`, label: `Entité Info ${i}`, selector: { entity: {} } }
-        ])
-      ],
-      tab_weather: [
-        { name: "weather_entity", label: "Météo Principale",  selector: { entity: { domain: "weather" } } },
-        { name: "moon_entity",    label: "Phase de Lune",     selector: { entity: {} } },
-        ...[1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap(i => [
-          { name: `w${i}_l`, label: `Label ${i}`,        selector: { text: {} } },
-          { name: `w${i}_e`, label: `Entité ${i}`,       selector: { entity: {} } },
-          { name: `w${i}_i`, label: `Icône (mdi:...) ${i}`, selector: { text: {} } }
-        ])
-      ],
-      tab_batt: [
-        ...[1, 2, 3, 4].flatMap(i => [
-          { name: `b${i}_n`,   label: `Nom Bat ${i}`,       selector: { text: {} } },
-          { name: `b${i}_s`,   label: `SOC % ${i}`,         selector: { entity: {} } },
-          { name: `b${i}_out`, label: `Puissance W ${i}`,   selector: { entity: {} } },
-          { name: `b${i}_t`,   label: `Température ${i}`,   selector: { entity: {} } }
-        ])
-      ],
-      tab_eco: [
-        { name: "eco_money",    label: "Total Économies (€)", selector: { entity: {} } },
-        { name: "eco_day_euro", label: "Gain Jour (€)",       selector: { entity: {} } },
-        { name: "main_cons",    label: "Conso Maison (W)",    selector: { entity: {} } },
-        ...[1, 2, 3, 4, 5, 6].flatMap(i => [
-          { name: `e${i}_l`, label: `Label ${i}`,  selector: { text: {} } },
-          { name: `e${i}_e`, label: `Entité ${i}`, selector: { entity: {} } }
-        ])
-      ]
-    };
-
-    const tabLabels = { tab_solar: '☀️ Solar', tab_weather: '🌤 Météo', tab_batt: '🔋 Batt', tab_eco: '💰 Éco' };
-
+    const tabs = [
+      { key: 'solar',   icon: '☀️', label: 'Solaire'  },
+      { key: 'weather', icon: '🌤', label: 'Météo'    },
+      { key: 'battery', icon: '🔋', label: 'Batterie' },
+      { key: 'eco',     icon: '💰', label: 'Économie' },
+    ];
     return html`
-      <div class="edit-tabs">
-        ${Object.keys(tabLabels).map(t => html`
-          <button class="${this._selectedTab === t ? 'active' : ''}" @click=${() => { this._selectedTab = t; this.requestUpdate(); }}>
-            ${tabLabels[t]}
-          </button>
-        `)}
+      <div class="editor-root">
+        <div class="editor-header">
+          <div class="editor-logo">🌞</div>
+          <div>
+            <div class="editor-title">Solar Master Card</div>
+            <div class="editor-subtitle">Configuration de la carte</div>
+          </div>
+        </div>
+
+        <div class="tab-bar">
+          ${tabs.map(t => html`
+            <button class="tab ${this._tab === t.key ? 'active' : ''}"
+              @click=${() => { this._tab = t.key; this.requestUpdate(); }}>
+              <span class="tab-icon">${t.icon}</span>
+              <span class="tab-label">${t.label}</span>
+            </button>
+          `)}
+        </div>
+
+        <div class="tab-content">
+          ${this._tab === 'solar'   ? this._renderSolar()   : ''}
+          ${this._tab === 'weather' ? this._renderWeather() : ''}
+          ${this._tab === 'battery' ? this._renderBattery() : ''}
+          ${this._tab === 'eco'     ? this._renderEco()     : ''}
+        </div>
       </div>
-      <ha-form .hass=${this.hass} .data=${this._config} .schema=${schemas[this._selectedTab]} @value-changed=${this._valueChanged}></ha-form>
     `;
   }
 
   static styles = css`
-    .edit-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
-    button { flex: 1; padding: 9px 4px; font-size: 11px; cursor: pointer; background: #111; color: #666; border: 1px solid #333; border-radius: 8px; transition: all .2s; }
-    button.active { background: linear-gradient(135deg, #ffc107, #ff8f00); color: #000; font-weight: bold; border-color: transparent; }
+    .editor-root { font-family: 'Segoe UI', system-ui, sans-serif; }
+
+    /* ── Header ── */
+    .editor-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; margin-bottom: 12px;
+      background: linear-gradient(135deg, #0d1f0d, #0a1a2e);
+      border-radius: 14px; border: 1px solid rgba(255,193,7,.2);
+    }
+    .editor-logo { font-size: 28px; }
+    .editor-title { font-size: 15px; font-weight: 800; color: #ffc107; letter-spacing: .5px; }
+    .editor-subtitle { font-size: 11px; color: #666; margin-top: 1px; }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex; gap: 6px; margin-bottom: 14px;
+      background: rgba(0,0,0,0.04); padding: 5px;
+      border-radius: 12px; border: 1px solid rgba(0,0,0,0.08);
+    }
+    .tab {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 8px 4px; cursor: pointer;
+      background: transparent; border: none; border-radius: 9px;
+      transition: all .18s; color: #888;
+    }
+    .tab:hover { background: rgba(255,193,7,.08); color: #bbb; }
+    .tab.active { background: linear-gradient(135deg, #ffc107, #ff8f00); color: #000; box-shadow: 0 2px 8px rgba(255,193,7,.35); }
+    .tab-icon { font-size: 16px; }
+    .tab-label { font-size: 9px; font-weight: 700; letter-spacing: .5px; }
+
+    /* ── Sections ── */
+    .section {
+      margin-bottom: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.1);
+      overflow: hidden;
+      border-left: 3px solid var(--sc, #444);
+    }
+    .section-head {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 14px; cursor: pointer;
+      background: rgba(0,0,0,0.03);
+      user-select: none;
+      transition: background .15s;
+    }
+    .section-head:hover { background: rgba(0,0,0,0.06); }
+    .section-icon { font-size: 18px; flex-shrink: 0; }
+    .section-info { flex: 1; }
+    .section-title { font-size: 13px; font-weight: 700; color: var(--primary-text-color, #212121); }
+    .section-desc  { font-size: 10px; color: #888; margin-top: 1px; }
+    .section-chevron { font-size: 9px; color: #aaa; }
+    .section-body { padding: 10px 14px 14px; border-top: 1px solid rgba(0,0,0,0.07); }
+
+    /* ── Group title (outside section) ── */
+    .group-title {
+      font-size: 11px; font-weight: 700; color: #888;
+      letter-spacing: 1px; text-transform: uppercase;
+      padding: 10px 4px 6px; margin-top: 4px;
+    }
+
+    /* ── 2-col grid for info cases ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .info-group {
+      background: rgba(0,0,0,0.03); border-radius: 10px;
+      padding: 10px; border: 1px solid rgba(0,0,0,0.07);
+    }
+    .info-num {
+      font-size: 10px; font-weight: 800; color: #ffc107;
+      margin-bottom: 6px; letter-spacing: .5px;
+    }
+
+    /* ── Hint boxes ── */
+    .hint {
+      margin-top: 8px; padding: 8px 10px;
+      background: rgba(255,193,7,.07);
+      border: 1px solid rgba(255,193,7,.2);
+      border-radius: 8px; font-size: 10px; color: #888; line-height: 1.5;
+    }
+    .hint.top { margin-bottom: 10px; margin-top: 0; }
   `;
 }
 customElements.define("solar-master-card-editor", SolarMasterCardEditor);
+
 
 /**
  * ==========================================
