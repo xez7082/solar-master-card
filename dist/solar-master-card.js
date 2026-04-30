@@ -267,20 +267,20 @@ class SolarMasterCard extends LitElement {
 
         <!-- Sun arc -->
         <div class="sun-arc-box">
-          <svg viewBox="0 0 200 55" class="sun-svg">
+          <svg viewBox="0 0 200 32" class="sun-svg">
             <!-- Horizon -->
-            <line x1="10" y1="48" x2="190" y2="48" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-            <!-- Dashed arc path (fixed reference arc) -->
-            <path d="M 15,48 A 88,35 0 0 1 185,48" fill="none"
-              stroke="rgba(255,193,7,0.12)" stroke-width="2" stroke-dasharray="5,4"/>
-            <!-- Sun dot -->
+            <line x1="8" y1="28" x2="192" y2="28" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+            <!-- Dashed reference arc -->
+            <path d="M 12,28 A 94,22 0 0 1 188,28" fill="none"
+              stroke="rgba(255,193,7,0.12)" stroke-width="1.5" stroke-dasharray="4,3"/>
+            <!-- Sun dot — remapped to smaller viewBox -->
             ${isAboveHorizon ? html`
-              <circle cx="${sunX}" cy="${sunY}" r="6" fill="#ffc107">
-                <animate attributeName="r" values="5;7;5" dur="3s" repeatCount="indefinite"/>
+              <circle cx="${12 + ((azimuth % 360) / 360) * 176}" cy="${Math.max(3, 28 - Math.max(0, elevation) * 0.26)}" r="4" fill="#ffc107" style="filter:drop-shadow(0 0 4px #ffc107)">
+                <animate attributeName="r" values="3.5;5;3.5" dur="3s" repeatCount="indefinite"/>
               </circle>
-              <circle cx="${sunX}" cy="${sunY}" r="12" fill="rgba(255,193,7,0.15)"/>
+              <circle cx="${12 + ((azimuth % 360) / 360) * 176}" cy="${Math.max(3, 28 - Math.max(0, elevation) * 0.26)}" r="8" fill="rgba(255,193,7,0.12)"/>
             ` : html`
-              <circle cx="${sunX}" cy="${sunY}" r="5" fill="#555"/>
+              <circle cx="${12 + ((azimuth % 360) / 360) * 176}" cy="${Math.max(3, 28 - Math.max(0, elevation) * 0.26)}" r="4" fill="#444"/>
             `}
           </svg>
           <div class="sun-times">
@@ -542,7 +542,7 @@ class SolarMasterCard extends LitElement {
       gap: 6px;
     }
     .neon-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .neon-ring { position: relative; width: 70px; height: 70px; }
+    .neon-ring { position: relative; width: 90px; height: 90px; }
     .ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
     .arc-1 { stroke: var(--clr-amber); filter: drop-shadow(0 0 4px var(--clr-amber)); }
     .arc-2 { stroke: var(--clr-cyan);  filter: drop-shadow(0 0 4px var(--clr-cyan)); }
@@ -553,9 +553,9 @@ class SolarMasterCard extends LitElement {
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
     }
-    .nv { font-size: 16px; font-weight: 900; line-height: 1; }
-    .nu { font-size: 9px; color: var(--clr-muted); font-weight: 600; }
-    .nlabel { font-size: 9px; color: #777; font-weight: 600; letter-spacing: .5px; }
+    .nv { font-size: 20px; font-weight: 900; line-height: 1; }
+    .nu { font-size: 10px; color: var(--clr-muted); font-weight: 600; }
+    .nlabel { font-size: 10px; color: #777; font-weight: 600; letter-spacing: .5px; }
 
     /* Info cards */
     .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
