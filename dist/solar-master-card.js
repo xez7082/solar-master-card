@@ -181,29 +181,99 @@ class SolarMasterCard extends LitElement {
     `;
   }
 
-  _renderWeather() {
+_renderWeather() {
+    const c = this.config;
     const sun = this.hass.states['sun.sun'];
+    if (!sun) return html`<div style="color:red;padding:20px;">ENTITÉ SUN INTROUVABLE</div>`;
+
+    const elevation = sun.attributes.elevation ?? 0;
+    const azimuth = sun.attributes.azimuth ?? 0;
+    const sunX = 30 + ((azimuth / 360) * 140); 
+    const sunY = 55 - (Math.max(0, elevation) * 0.4);
+
+  const moonState = this.hass.states[c.moon_entity]?.state;
+
+// Voici la liste de traduction
+const moonTranslations = {
+  'new_moon': 'Nouvelle lune',
+  'waxing_crescent': 'Premier croissant',
+  'first_quarter': 'Premier quartier',
+  'waxing_gibbous': 'Gibbeuse croissante',
+  'full_moon': 'Pleine lune',
+  'waning_gibbous': 'Gibbeuse décroissante',
+  'last_quarter': 'Dernier quartier',
+  'waning_crescent': 'Dernier croissant'
+};
+
+// On récupère la traduction, ou le texte d'origine si inconnu
+const phaseFr = moonTranslations[moonState] || moonState || 'N/A';
+
+return html`
+  <div style="background: rgba(255,255,255,0.03); padding: 10px 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05);">
+     <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
+     <span style="font-size: 14px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+       ${phaseFr} </span>
+  </div>
+  
+  `;
     return html`
-      <div class="page-weather">
-        <div class="sun-arc-container">
-            <svg viewBox="0 0 200 80"><path d="M 20,70 A 80,50 0 0 1 180,70" fill="none" stroke="#333" stroke-dasharray="4" /><circle cx="100" cy="30" r="5" fill="#ffc107" /></svg>
-            <div class="sun-labels"><span>${sun?.attributes.next_rising.split('T')[1].substr(0,5)}</span><span>${sun?.attributes.next_setting.split('T')[1].substr(0,5)}</span></div>
+      <div class="page" style="display: flex; flex-direction: column; gap: 10px; padding: 5px; box-sizing: border-box;">
+        
+        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1);">
+          <svg viewBox="0 0 200 70" style="width: 100%; height: 80px; overflow: visible;">
+            <line x1="20" y1="60" x2="180" y2="60" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+            <path d="M 30,60 A 70,40 0 0 1 170,60" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="4,4" />
+            <circle cx="${sunX}" cy="${sunY}" r="6" fill="#ffc107" style="filter: drop-shadow(0 0 8px #ffc107);" />
+          </svg>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #eee; margin-top: -5px; padding: 0 15px; font-weight: bold;">
+              <span>${sun.attributes.next_rising?.split('T')[1].substring(0, 5)}</span>
+              <span style="color:#ffc107; font-size: 14px;">${elevation.toFixed(1)}°</span>
+              <span>${sun.attributes.next_setting?.split('T')[1].substring(0, 5)}</span>
+          </div>
         </div>
-        <div class="weather-grid">
-          ${[1,2,3,4,5,6,7,8,9].map(i => {
-             const w = this._getVal(this.config[`w${i}_e`]);
-             if(!this.config[`w${i}_e`]) return '';
-             return html`
-              <div class="w-item">
-                <ha-icon icon="${this.config[`w${i}_i`] || 'mdi:eye'}"></ha-icon>
-                <div class="l">${this.config[`w${i}_l`]}</div>
-                <div class="v">${w.val}${w.unit}</div>
-              </div>`;
-          })}
+
+        <div style="background: rgba(255,255,255,0.03); padding: 10px 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05);">
+           <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
+           <span style="font-size: 14px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+             ${this.hass.states[c.moon_entity]?.state || 'N/A'}
+           </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+          ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
       </div>`;
-  }
+}
+  _renderMiniSensor(i) {
+    const c = this.config;
+    const entityId = c[`w${i}_e`];
+    if (!entityId || !this.hass.states[entityId]) return html``;
 
+    const stateObj = this.hass.states[entityId];
+    return html`
+      <div style="
+        background: rgba(255,255,255,0.05); 
+        border-radius: 8px; 
+        border: 1px solid rgba(255,255,255,0.08); 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        height: 55px; 
+        padding: 4px;
+      ">
+        <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 18px; margin-bottom: 2px;"></ha-icon>
+        
+        <span style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold; margin-bottom: 1px;">
+          ${c[`w${i}_l`] || 'S'+i}
+        </span>
+        
+        <span style="font-size: 18px; font-weight: 900; color: white; line-height: 1;">
+          ${stateObj.state}<small style="font-size: 11px; color: #00f9f9; margin-left: 1px; font-weight: normal;">${stateObj.attributes.unit_of_measurement || ''}</small>
+        </span>
+      </div>`;
+}
+  
 _renderBattery() {
     const c = this.config;
     return html`
