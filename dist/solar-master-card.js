@@ -50,12 +50,12 @@ class SolarMasterCardEditor extends LitElement {
         ]).flat()
       ],
       tab_batt: [
-        { name: "batt_avg_soc", label: "SOC Global (%)", selector: { entity: {} } },
         ...[1, 2, 3, 4].map(i => [
           { name: `b${i}_n`, label: `Nom Bat ${i}`, selector: { text: {} } },
           { name: `b${i}_s`, label: `SOC % ${i}`, selector: { entity: {} } },
           { name: `b${i}_out`, label: `Puissance W ${i}`, selector: { entity: {} } },
-          { name: `b${i}_t`, label: `Température ${i}`, selector: { entity: {} } }
+          { name: `b${i}_t`, label: `Température ${i}`, selector: { entity: {} } },
+          { name: `b${i}_v`, label: `Voltage ${i}`, selector: { entity: {} } }
         ]).flat()
       ],
       tab_eco: [
@@ -86,7 +86,7 @@ customElements.define("solar-master-card-editor", SolarMasterCardEditor);
 
 /**
  * ==========================================
- * ⚡ CARTE PRINCIPALE V8 FULL
+ * ⚡ CARTE PRINCIPALE V8 FULL CORRIGÉE
  * ==========================================
  */
 class SolarMasterCard extends LitElement {
@@ -181,7 +181,7 @@ class SolarMasterCard extends LitElement {
     `;
   }
 
-_renderWeather() {
+  _renderWeather() {
     const c = this.config;
     const sun = this.hass.states['sun.sun'];
     if (!sun) return html`<div style="color:red;padding:20px;">ENTITÉ SUN INTROUVABLE</div>`;
@@ -191,33 +191,21 @@ _renderWeather() {
     const sunX = 30 + ((azimuth / 360) * 140); 
     const sunY = 55 - (Math.max(0, elevation) * 0.4);
 
-  const moonState = this.hass.states[c.moon_entity]?.state;
+    const moonState = this.hass.states[c.moon_entity]?.state;
+    const moonTranslations = {
+      'new_moon': 'Nouvelle lune',
+      'waxing_crescent': 'Premier croissant',
+      'first_quarter': 'Premier quartier',
+      'waxing_gibbous': 'Gibbeuse croissante',
+      'full_moon': 'Pleine lune',
+      'waning_gibbous': 'Gibbeuse décroissante',
+      'last_quarter': 'Dernier quartier',
+      'waning_crescent': 'Dernier croissant'
+    };
+    const phaseFr = moonTranslations[moonState] || moonState || 'N/A';
 
-// Voici la liste de traduction
-const moonTranslations = {
-  'new_moon': 'Nouvelle lune',
-  'waxing_crescent': 'Premier croissant',
-  'first_quarter': 'Premier quartier',
-  'waxing_gibbous': 'Gibbeuse croissante',
-  'full_moon': 'Pleine lune',
-  'waning_gibbous': 'Gibbeuse décroissante',
-  'last_quarter': 'Dernier quartier',
-  'waning_crescent': 'Dernier croissant'
-};
-
-// On récupère la traduction, ou le texte d'origine si inconnu
-const phaseFr = moonTranslations[moonState] || moonState || 'N/A';
-
-return html`
-  <div style="background: rgba(255,255,255,0.03); padding: 10px 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05);">
-     <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
-     <span style="font-size: 14px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
-       ${phaseFr} </span>
-  </div>
-  
-  `;
     return html`
-      <div class="page" style="display: flex; flex-direction: column; gap: 10px; padding: 5px; box-sizing: border-box;">
+      <div class="page" style="display: flex; flex-direction: column; gap: 10px;">
         
         <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1);">
           <svg viewBox="0 0 200 70" style="width: 100%; height: 80px; overflow: visible;">
@@ -235,7 +223,7 @@ return html`
         <div style="background: rgba(255,255,255,0.03); padding: 10px 15px; border-radius: 8px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05);">
            <ha-icon icon="mdi:moon-waning-crescent" style="color: #00f9f9; --mdc-icon-size: 22px;"></ha-icon>
            <span style="font-size: 14px; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
-             ${this.hass.states[c.moon_entity]?.state || 'N/A'}
+             ${phaseFr}
            </span>
         </div>
 
@@ -243,48 +231,34 @@ return html`
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => this._renderMiniSensor(i))}
         </div>
       </div>`;
-}
+  }
+
   _renderMiniSensor(i) {
     const c = this.config;
     const entityId = c[`w${i}_e`];
     if (!entityId || !this.hass.states[entityId]) return html``;
-
     const stateObj = this.hass.states[entityId];
     return html`
-      <div style="
-        background: rgba(255,255,255,0.05); 
-        border-radius: 8px; 
-        border: 1px solid rgba(255,255,255,0.08); 
-        display: flex; 
-        flex-direction: column; 
-        align-items: center; 
-        justify-content: center; 
-        height: 55px; 
-        padding: 4px;
-      ">
+      <div style="background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 55px; padding: 4px;">
         <ha-icon icon="${c[`w${i}_i`] || 'mdi:circle-small'}" style="color: #00f9f9; --mdc-icon-size: 18px; margin-bottom: 2px;"></ha-icon>
-        
-        <span style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold; margin-bottom: 1px;">
-          ${c[`w${i}_l`] || 'S'+i}
-        </span>
-        
+        <span style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: bold; margin-bottom: 1px;">${c[`w${i}_l`] || 'S'+i}</span>
         <span style="font-size: 18px; font-weight: 900; color: white; line-height: 1;">
           ${stateObj.state}<small style="font-size: 11px; color: #00f9f9; margin-left: 1px; font-weight: normal;">${stateObj.attributes.unit_of_measurement || ''}</small>
         </span>
       </div>`;
-}
-  
-_renderBattery() {
+  }
+
+  _renderBattery() {
     const c = this.config;
     return html`
-      <div class="page-batt" style="margin-top: 10px;">
+      <div class="page-batt" style="margin-top: 5px;">
         <div class="rack-list">
         ${[1,2,3,4].map(i => {
           if(!c[`b${i}_s`]) return '';
           const soc = parseFloat(this._getVal(c[`b${i}_s`]).val) || 0;
           const power = parseFloat(this._getVal(c[`b${i}_out`]).val) || 0;
           const temp = this._getVal(c[`b${i}_t`]).val;
-          const volt = this._getVal(c[`b${i}_v`] || '').val; // Sensor additionnel si configuré
+          const volt = this._getVal(c[`b${i}_v`]).val;
           
           let color = "#00f9f9"; 
           if (soc < 20) color = "#ff4444";
@@ -297,7 +271,6 @@ _renderBattery() {
                 <span class="t"><ha-icon icon="mdi:thermometer"></ha-icon> ${temp}°C</span>
               </div>
               
-              <!-- Barre à segments (petits traits) -->
               <div class="segment-bar">
                 ${Array(15).fill().map((_, idx) => html`
                   <div class="trait ${idx < (soc / 6.6) ? 'on' : ''}" style="--clr: ${color}"></div>
@@ -318,7 +291,7 @@ _renderBattery() {
         </div>
       </div>`;
   }
-  
+
   _renderEco() {
     const c = this.config;
     return html`
@@ -351,7 +324,6 @@ _renderBattery() {
     .nav-item ha-icon { --mdc-icon-size: 22px; }
     .nav-item span { display: block; font-size: 9px; font-weight: bold; }
 
-    /* SOLAR */
     .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .net-box { padding: 8px; border-radius: 10px; font-weight: bold; display: flex; flex-direction: column; align-items: center; }
     .import { color: #ff4444; background: rgba(255,0,0,0.1); }
@@ -379,30 +351,23 @@ _renderBattery() {
     .info-card span { font-size: 8px; color: #888; display: block; }
     .info-card b { font-size: 12px; }
 
-    /* WEATHER / BATT / ECO */
-    .weather-grid, .eco-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 15px; }
-    .w-item, .e-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; text-align: center; }
-    .w-item ha-icon { color: #00f9f9; }
-   /* BATTERY RACK STYLE */
-    .batt-header { text-align: center; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 15px; margin-bottom: 20px; border: 1px solid #222; }
-    .global-soc { font-size: 42px; font-weight: 900; color: #00ff00; text-shadow: 0 0 15px rgba(0,255,0,0.3); }
-    .global-label { font-size: 10px; color: #888; letter-spacing: 1px; }
-    
-   .rack-list { display: flex; flex-direction: column; gap: 15px; }
+    .rack-list { display: flex; flex-direction: column; gap: 15px; }
     .rack-unit { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border: 1px solid #222; }
     .rack-meta { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-    
-    /* Style des petits traits */
     .segment-bar { display: flex; gap: 4px; height: 12px; margin-bottom: 10px; }
     .trait { flex: 1; background: #1a1a1a; border-radius: 1px; transition: 0.3s; }
     .trait.on { background: var(--clr); box-shadow: 0 0 5px var(--clr); }
-
     .rack-values { display: flex; justify-content: space-between; align-items: flex-end; }
     .v-main { font-size: 24px; font-weight: 900; color: #fff; line-height: 1; }
     .v-details { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; font-family: monospace; font-weight: bold; }
-    
-    .eco-hero { text-align: center; padding: 20px; background: rgba(0,255,0,0.05); border-radius: 15px; }
+
+    .eco-hero { text-align: center; padding: 20px; background: rgba(0,255,0,0.05); border-radius: 15px; margin-bottom: 15px; }
     .eco-hero .val { font-size: 36px; font-weight: 900; color: #4caf50; }
+    .eco-hero .sub { font-size: 10px; color: #888; }
+    .eco-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .e-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #222; }
+    .e-card span { font-size: 9px; color: #888; display: block; }
+    .e-card b { font-size: 14px; }
   `;
 }
 customElements.define("solar-master-card", SolarMasterCard);
