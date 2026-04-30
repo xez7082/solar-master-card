@@ -34,8 +34,9 @@ class SolarMasterCardEditor extends LitElement {
         { name: "solar_pct_sensor", label: "Capteur % (Optionnel)",     selector: { entity: {} } },
         { name: "card_height",    label: "Hauteur (px)",                 selector: { number: { min: 400, max: 1000 } } },
         ...[1, 2, 3, 4].flatMap(i => [
-          { name: `p${i}_name`, label: `Nom Panneau ${i}`,   selector: { text: {} } },
-          { name: `p${i}_w`,   label: `Watts Panneau ${i}`, selector: { entity: {} } }
+          { name: `p${i}_name`, label: `Nom Panneau ${i}`,      selector: { text: {} } },
+          { name: `p${i}_w`,   label: `Watts actuels ${i}`,     selector: { entity: {} } },
+          { name: `p${i}_max`, label: `Puissance max Wc ${i}`,  selector: { number: { min: 100, max: 5000, step: 10 } } }
         ]),
         ...[4, 5, 6, 7, 8, 9].flatMap(i => [
           { name: `d${i}_label`,  label: `Label Info ${i}`,  selector: { text: {} } },
@@ -160,11 +161,17 @@ class SolarMasterCard extends LitElement {
 
     const targetKwh = parseFloat(target.val) || 0;
     const prodKwh   = parseFloat(prod.val)   || 0;
-    // total_now et solar_target sont tous les deux en kWh journalier
-    const progress  = c.solar_pct_sensor
-      ? parseFloat(this._getVal(c.solar_pct_sensor).val) || 0
-      : (targetKwh > 0 ? (prodKwh / targetKwh) * 100 : 0);
-    const progressCapped = Math.min(100, progress); // pour la barre visuelle seulement
+
+    // Toujours calculer depuis les entités brutes → peut dépasser 100%
+    // Le solar_pct_sensor n'est utilisé qu'en dernier recours (entité cible absente)
+    let progress = 0;
+    if (targetKwh > 0) {
+      progress = (prodKwh / targetKwh) * 100;          // ex: 1.06 kWh / 1.00 kWh = 106%
+    } else if (c.solar_pct_sensor) {
+      progress = parseFloat(this._getVal(c.solar_pct_sensor).val) || 0;
+    }
+
+    const progressCapped = Math.min(100, progress);    // uniquement pour la barre visuelle
 
     const isImport = consoVal > 0;
     const monthName = new Date().toLocaleDateString('fr-FR', { month: 'long' }).toUpperCase();
@@ -209,9 +216,9 @@ class SolarMasterCard extends LitElement {
         <div class="neon-grid">
           ${[1, 2, 3, 4].map(i => {
             if (!c[`p${i}_w`]) return '';
-            const w = parseFloat(this._getVal(c[`p${i}_w`]).val) || 0;
-            const maxW = 500;
-            const pct = Math.min(100, (w / maxW) * 100);
+            const w    = parseFloat(this._getVal(c[`p${i}_w`]).val) || 0;
+            const maxW = parseFloat(c[`p${i}_max`]) || 500;
+            const pct  = Math.min(100, (w / maxW) * 100);
             const circ = 2 * Math.PI * 26;
             return html`
               <div class="neon-item">
