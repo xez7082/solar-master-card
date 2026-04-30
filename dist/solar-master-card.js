@@ -206,41 +206,41 @@ class SolarMasterCard extends LitElement {
 
 _renderBattery() {
     const c = this.config;
-    const socGlobal = this._getVal(c.batt_avg_soc).val;
-    
     return html`
-      <div class="page-batt">
-        <div class="batt-header">
-            <div class="global-soc">${socGlobal}%</div>
-            <div class="global-label">CAPACITÉ RACK TOTAL</div>
-        </div>
-        
+      <div class="page-batt" style="margin-top: 10px;">
         <div class="rack-list">
         ${[1,2,3,4].map(i => {
           if(!c[`b${i}_s`]) return '';
           const soc = parseFloat(this._getVal(c[`b${i}_s`]).val) || 0;
           const power = parseFloat(this._getVal(c[`b${i}_out`]).val) || 0;
           const temp = this._getVal(c[`b${i}_t`]).val;
+          const volt = this._getVal(c[`b${i}_v`] || '').val; // Sensor additionnel si configuré
           
-          let color = "#00ff00"; // Vert
-          if (soc < 20) color = "#ff4444"; // Rouge
-          else if (soc < 50) color = "#ffc107"; // Orange
+          let color = "#00f9f9"; 
+          if (soc < 20) color = "#ff4444";
+          else if (soc < 50) color = "#ffc107";
 
           return html`
             <div class="rack-unit">
               <div class="rack-meta">
-                <span class="n">${c[`b${i}_n`] || 'Unité '+i}</span>
+                <span class="n">${c[`b${i}_n`] || 'BATTERIE '+i}</span>
                 <span class="t"><ha-icon icon="mdi:thermometer"></ha-icon> ${temp}°C</span>
               </div>
-              <div class="rack-main">
-                <div class="rack-soc-bar">
-                  <div class="fill" style="width:${soc}%; background: ${color}; box-shadow: 0 0 10px ${color}"></div>
-                </div>
-                <div class="rack-values">
-                  <span class="p">${Math.round(soc)}%</span>
-                  <span class="w" style="color: ${power > 0 ? '#4caf50' : (power < 0 ? '#ff4444' : '#888')}">
-                    ${power > 0 ? '↑' : (power < 0 ? '↓' : '')} ${Math.abs(power)} W
+              
+              <!-- Barre à segments (petits traits) -->
+              <div class="segment-bar">
+                ${Array(15).fill().map((_, idx) => html`
+                  <div class="trait ${idx < (soc / 6.6) ? 'on' : ''}" style="--clr: ${color}"></div>
+                `)}
+              </div>
+
+              <div class="rack-values">
+                <div class="v-main">${soc}%</div>
+                <div class="v-details">
+                  <span style="color: ${power >= 0 ? '#00ff00' : '#ff4444'}">
+                    ${power >= 0 ? 'CHAR' : 'DISCH'}: ${Math.abs(power)}W
                   </span>
+                  ${volt !== '0' ? html`<span>${volt}V</span>` : ''}
                 </div>
               </div>
             </div>`;
@@ -248,6 +248,7 @@ _renderBattery() {
         </div>
       </div>`;
   }
+  
   _renderEco() {
     const c = this.config;
     return html`
@@ -317,13 +318,19 @@ _renderBattery() {
     .global-soc { font-size: 42px; font-weight: 900; color: #00ff00; text-shadow: 0 0 15px rgba(0,255,0,0.3); }
     .global-label { font-size: 10px; color: #888; letter-spacing: 1px; }
     
-    .rack-unit { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #333; }
-    .rack-meta { display: flex; justify-content: space-between; font-size: 10px; font-weight: bold; margin-bottom: 8px; color: #aaa; }
-    .rack-soc-bar { height: 10px; background: #111; border-radius: 5px; overflow: hidden; margin-bottom: 8px; border: 1px solid #222; }
-    .fill { height: 100%; transition: width 1s ease-in-out; }
-    .rack-values { display: flex; justify-content: space-between; align-items: center; }
-    .rack-values .p { font-size: 18px; font-weight: 900; }
-    .rack-values .w { font-size: 14px; font-weight: bold; font-family: monospace; }
+   .rack-list { display: flex; flex-direction: column; gap: 15px; }
+    .rack-unit { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border: 1px solid #222; }
+    .rack-meta { display: flex; justify-content: space-between; font-size: 11px; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    
+    /* Style des petits traits */
+    .segment-bar { display: flex; gap: 4px; height: 12px; margin-bottom: 10px; }
+    .trait { flex: 1; background: #1a1a1a; border-radius: 1px; transition: 0.3s; }
+    .trait.on { background: var(--clr); box-shadow: 0 0 5px var(--clr); }
+
+    .rack-values { display: flex; justify-content: space-between; align-items: flex-end; }
+    .v-main { font-size: 24px; font-weight: 900; color: #fff; line-height: 1; }
+    .v-details { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; font-family: monospace; font-weight: bold; }
+    
     .eco-hero { text-align: center; padding: 20px; background: rgba(0,255,0,0.05); border-radius: 15px; }
     .eco-hero .val { font-size: 36px; font-weight: 900; color: #4caf50; }
   `;
