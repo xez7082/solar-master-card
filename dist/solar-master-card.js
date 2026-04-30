@@ -20,7 +20,6 @@ class SolarMasterCardEditor extends LitElement {
   }
   setConfig(config) { this._config = { ...config }; }
 
-  /* ── dispatch config change ── */
   _set(key, value) {
     if (!this._config) return;
     this._config = { ...this._config, [key]: value };
@@ -36,7 +35,6 @@ class SolarMasterCardEditor extends LitElement {
     this.requestUpdate();
   }
 
-  /* ── helpers ── */
   _form(schema) {
     return html`<ha-form .hass=${this.hass} .data=${this._config} .schema=${schema} @value-changed=${this._formChanged}></ha-form>`;
   }
@@ -57,16 +55,16 @@ class SolarMasterCardEditor extends LitElement {
       </div>`;
   }
 
-  _panelSection(i, color, icon) {
+  _panelSection(i) {
     const colors = ['', '#ffc107', '#00e5ff', '#00e676', '#f048a8'];
     return this._section(
-      `panel${i}`, icon,
+      `panel${i}`, '⚡',
       `Panneau ${i} — ${this._config[`p${i}_name`] || 'non configuré'}`,
       `Entité watts + puissance crête installée`,
       colors[i],
       html`
-        ${this._form([{ name: `p${i}_name`, label: 'Nom affiché',         selector: { text: {} } }])}
-        ${this._form([{ name: `p${i}_w`,    label: 'Entité — Watts actuels (W)',  selector: { entity: {} } }])}
+        ${this._form([{ name: `p${i}_name`, label: 'Nom affiché', selector: { text: {} } }])}
+        ${this._form([{ name: `p${i}_w`,    label: 'Entité — Watts actuels (W)', selector: { entity: {} } }])}
         ${this._form([{ name: `p${i}_max`,  label: 'Puissance max installée (Wc)', selector: { number: { min: 100, max: 5000, step: 10 } } }])}
         <div class="hint">💡 L'arc du cercle sera plein à ${this._config[`p${i}_max`] || 500} Wc</div>
       `
@@ -81,20 +79,19 @@ class SolarMasterCardEditor extends LitElement {
       'SOC, puissance et température',
       colors[i],
       html`
-        ${this._form([{ name: `b${i}_n`, label: 'Nom affiché', selector: { text: {} } }])}
-        ${this._form([{ name: `b${i}_s`, label: 'Entité — État de charge SOC (%)', selector: { entity: {} } }])}
+        ${this._form([{ name: `b${i}_n`,   label: 'Nom affiché', selector: { text: {} } }])}
+        ${this._form([{ name: `b${i}_s`,   label: 'Entité — État de charge SOC (%)', selector: { entity: {} } }])}
         ${this._form([{ name: `b${i}_out`, label: 'Entité — Puissance (W, négatif = charge)', selector: { entity: {} } }])}
-        ${this._form([{ name: `b${i}_t`, label: 'Entité — Température (°C)', selector: { entity: {} } }])}
+        ${this._form([{ name: `b${i}_t`,   label: 'Entité — Température (°C)', selector: { entity: {} } }])}
       `
     );
   }
 
-  /* ── TABS ── */
   _renderSolar() {
     return html`
       ${this._section('apparence', '🖼', 'Apparence', 'Image de fond, opacité, hauteur de la carte', '#888', html`
-        ${this._form([{ name: 'bg_url',     label: 'URL de l\'image de fond (laisser vide = aucune)', selector: { text: {} } }])}
-        ${this._form([{ name: 'bg_opacity', label: 'Opacité de l\'image (0.1 = transparent → 1 = opaque)', selector: { number: { min: 0.1, max: 1, step: 0.05 } } }])}
+        ${this._form([{ name: 'bg_url',      label: "URL de l'image de fond (laisser vide = aucune)", selector: { text: {} } }])}
+        ${this._form([{ name: 'bg_opacity',  label: 'Opacité de l\'image (0.1 = transparent → 1 = opaque)', selector: { number: { min: 0.1, max: 1, step: 0.05 } } }])}
         ${this._form([{ name: 'card_height', label: 'Hauteur de la carte (px)', selector: { number: { min: 400, max: 1000, step: 10 } } }])}
       `)}
 
@@ -103,11 +100,14 @@ class SolarMasterCardEditor extends LitElement {
         <div class="hint">💡 Valeur positive = vous achetez du réseau · Négative = vous revendez</div>
       `)}
 
-      ${this._section('production', '☀️', 'Production solaire', 'Production totale du mois et objectif pour calculer la progression', '#ffc107', html`
-        ${this._form([{ name: 'total_now',    label: 'Entité — Production totale du mois (kWh)', selector: { entity: {} } }])}
-        ${this._form([{ name: 'solar_target', label: 'Entité — Objectif mensuel (kWh)', selector: { entity: {} } }])}
-        ${this._form([{ name: 'solar_pct_sensor', label: 'Entité — Capteur % optionnel (ignoré si objectif configuré)', selector: { entity: {} } }])}
-        <div class="hint">💡 Configurez les deux entités ci-dessus · Le % est calculé automatiquement et peut dépasser 100%</div>
+      ${this._section('production', '☀️', 'Production & Objectif mensuel', 'Ces 2 entités suffisent — le % est calculé automatiquement', '#ffc107', html`
+        ${this._form([{ name: 'total_now',    label: '① Production totale du mois (kWh)  →  sensor.production_solaire_totale_mensuelle', selector: { entity: {} } }])}
+        ${this._form([{ name: 'solar_target', label: '② Objectif mensuel (kWh)  →  sensor.objectif_production_solaire_mensuel', selector: { entity: {} } }])}
+        <div class="hint">
+          ✅ Le pourcentage affiché = ① ÷ ② × 100 · Il peut dépasser 100%<br>
+          🚫 Le champ ci-dessous est inutile si vous avez rempli ① et ②
+        </div>
+        ${this._form([{ name: 'solar_pct_sensor', label: '⚠️ Capteur % externe (laisser VIDE — non recommandé)', selector: { entity: {} } }])}
       `)}
 
       <div class="group-title">⚡ Panneaux solaires</div>
@@ -195,7 +195,6 @@ class SolarMasterCardEditor extends LitElement {
             <div class="editor-subtitle">Configuration de la carte</div>
           </div>
         </div>
-
         <div class="tab-bar">
           ${tabs.map(t => html`
             <button class="tab ${this._tab === t.key ? 'active' : ''}"
@@ -205,7 +204,6 @@ class SolarMasterCardEditor extends LitElement {
             </button>
           `)}
         </div>
-
         <div class="tab-content">
           ${this._tab === 'solar'   ? this._renderSolar()   : ''}
           ${this._tab === 'weather' ? this._renderWeather() : ''}
@@ -218,50 +216,18 @@ class SolarMasterCardEditor extends LitElement {
 
   static styles = css`
     .editor-root { font-family: 'Segoe UI', system-ui, sans-serif; }
-
-    /* ── Header ── */
-    .editor-header {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 16px; margin-bottom: 12px;
-      background: linear-gradient(135deg, #0d1f0d, #0a1a2e);
-      border-radius: 14px; border: 1px solid rgba(255,193,7,.2);
-    }
+    .editor-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 12px; background: linear-gradient(135deg, #0d1f0d, #0a1a2e); border-radius: 14px; border: 1px solid rgba(255,193,7,.2); }
     .editor-logo { font-size: 28px; }
     .editor-title { font-size: 15px; font-weight: 800; color: #ffc107; letter-spacing: .5px; }
     .editor-subtitle { font-size: 11px; color: #666; margin-top: 1px; }
-
-    /* ── Tab bar ── */
-    .tab-bar {
-      display: flex; gap: 6px; margin-bottom: 14px;
-      background: rgba(0,0,0,0.04); padding: 5px;
-      border-radius: 12px; border: 1px solid rgba(0,0,0,0.08);
-    }
-    .tab {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      gap: 3px; padding: 8px 4px; cursor: pointer;
-      background: transparent; border: none; border-radius: 9px;
-      transition: all .18s; color: #888;
-    }
+    .tab-bar { display: flex; gap: 6px; margin-bottom: 14px; background: rgba(0,0,0,0.04); padding: 5px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); }
+    .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; cursor: pointer; background: transparent; border: none; border-radius: 9px; transition: all .18s; color: #888; }
     .tab:hover { background: rgba(255,193,7,.08); color: #bbb; }
     .tab.active { background: linear-gradient(135deg, #ffc107, #ff8f00); color: #000; box-shadow: 0 2px 8px rgba(255,193,7,.35); }
     .tab-icon { font-size: 16px; }
     .tab-label { font-size: 9px; font-weight: 700; letter-spacing: .5px; }
-
-    /* ── Sections ── */
-    .section {
-      margin-bottom: 10px;
-      border-radius: 12px;
-      border: 1px solid rgba(0,0,0,0.1);
-      overflow: hidden;
-      border-left: 3px solid var(--sc, #444);
-    }
-    .section-head {
-      display: flex; align-items: center; gap: 10px;
-      padding: 11px 14px; cursor: pointer;
-      background: rgba(0,0,0,0.03);
-      user-select: none;
-      transition: background .15s;
-    }
+    .section { margin-bottom: 10px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); overflow: hidden; border-left: 3px solid var(--sc, #444); }
+    .section-head { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; background: rgba(0,0,0,0.03); user-select: none; transition: background .15s; }
     .section-head:hover { background: rgba(0,0,0,0.06); }
     .section-icon { font-size: 18px; flex-shrink: 0; }
     .section-info { flex: 1; }
@@ -269,32 +235,11 @@ class SolarMasterCardEditor extends LitElement {
     .section-desc  { font-size: 10px; color: #888; margin-top: 1px; }
     .section-chevron { font-size: 9px; color: #aaa; }
     .section-body { padding: 10px 14px 14px; border-top: 1px solid rgba(0,0,0,0.07); }
-
-    /* ── Group title (outside section) ── */
-    .group-title {
-      font-size: 11px; font-weight: 700; color: #888;
-      letter-spacing: 1px; text-transform: uppercase;
-      padding: 10px 4px 6px; margin-top: 4px;
-    }
-
-    /* ── 2-col grid for info cases ── */
+    .group-title { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 1px; text-transform: uppercase; padding: 10px 4px 6px; margin-top: 4px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .info-group {
-      background: rgba(0,0,0,0.03); border-radius: 10px;
-      padding: 10px; border: 1px solid rgba(0,0,0,0.07);
-    }
-    .info-num {
-      font-size: 10px; font-weight: 800; color: #ffc107;
-      margin-bottom: 6px; letter-spacing: .5px;
-    }
-
-    /* ── Hint boxes ── */
-    .hint {
-      margin-top: 8px; padding: 8px 10px;
-      background: rgba(255,193,7,.07);
-      border: 1px solid rgba(255,193,7,.2);
-      border-radius: 8px; font-size: 10px; color: #888; line-height: 1.5;
-    }
+    .info-group { background: rgba(0,0,0,0.03); border-radius: 10px; padding: 10px; border: 1px solid rgba(0,0,0,0.07); }
+    .info-num { font-size: 10px; font-weight: 800; color: #ffc107; margin-bottom: 6px; letter-spacing: .5px; }
+    .hint { margin-top: 8px; padding: 8px 10px; background: rgba(255,193,7,.07); border: 1px solid rgba(255,193,7,.2); border-radius: 8px; font-size: 10px; color: #888; line-height: 1.5; }
     .hint.top { margin-bottom: 10px; margin-top: 0; }
   `;
 }
@@ -314,21 +259,18 @@ class SolarMasterCard extends LitElement {
   constructor() { super(); this._tab = 'SOLAIRE'; }
   setConfig(config) { this.config = config; }
 
-  /* ── Helpers ─────────────────────────────────── */
   _getVal(id) {
     if (!this.hass || !id || !this.hass.states[id]) return { val: '0', unit: '', attr: {} };
     const s = this.hass.states[id];
     return { val: s.state, unit: s.attributes.unit_of_measurement || '', attr: s.attributes };
   }
 
-  /** Parse ISO datetime string → "HH:MM" safely */
   _fmtTime(iso) {
     if (!iso) return '--:--';
     try { return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }); }
     catch { return '--:--'; }
   }
 
-  /* ── Root render ─────────────────────────────── */
   render() {
     if (!this.config || !this.hass) return html``;
     const c = this.config;
@@ -360,7 +302,6 @@ class SolarMasterCard extends LitElement {
       </ha-card>`;
   }
 
-  /* ── Tab: SOLAIRE ────────────────────────────── */
   _renderSolar() {
     const c = this.config;
     const prod     = this._getVal(c.total_now);
@@ -370,47 +311,37 @@ class SolarMasterCard extends LitElement {
     const targetKwh = parseFloat(target.val) || 0;
     const prodKwh   = parseFloat(prod.val)   || 0;
 
-    // Toujours calculer depuis les entités brutes → peut dépasser 100%
-    // Le solar_pct_sensor n'est utilisé qu'en dernier recours (entité cible absente)
     let progress = 0;
-    if (targetKwh > 0) {
-      progress = (prodKwh / targetKwh) * 100;          // ex: 1.06 kWh / 1.00 kWh = 106%
-    } else if (c.solar_pct_sensor) {
+    if (c.solar_pct_sensor) {
       progress = parseFloat(this._getVal(c.solar_pct_sensor).val) || 0;
+    } else if (targetKwh > 0) {
+      progress = (prodKwh / targetKwh) * 100;
     }
 
-    const progressCapped = Math.min(100, progress);    // uniquement pour la barre visuelle
-
-    const isImport = consoVal > 0;
+    const progressCapped = Math.min(100, progress);
+    const isImport  = consoVal > 0;
     const monthName = new Date().toLocaleDateString('fr-FR', { month: 'long' }).toUpperCase();
     const filledSegs = Math.floor(progressCapped / 5);
 
     return html`
       <div class="page page-solar">
-
-        <!-- ── TOP ROW ── -->
         <div class="top-row">
           <div class="net-box ${isImport ? 'import' : 'export'}">
             <ha-icon icon="${isImport ? 'mdi:transmission-tower' : 'mdi:transmission-tower-export'}"></ha-icon>
             <span>${Math.abs(consoVal).toFixed(0)} <em>W</em></span>
             <small>${isImport ? 'IMPORT' : 'EXPORT'}</small>
           </div>
-
           <div class="center-prod">
             <div class="month-label">${monthName}</div>
             <div class="big-w">${prodKwh.toFixed(1)}<em class="unit-w"> kWh</em></div>
-            <div class="target-info">
-              OBJECTIF <b class="unit-kwh">${targetKwh} kWh</b>
-            </div>
+            <div class="target-info">OBJECTIF <b class="unit-kwh">${targetKwh} kWh</b></div>
           </div>
-
           <div class="net-box transparent">
             <ha-icon icon="mdi:sun-compass" style="color:#ffc107;"></ha-icon>
             <span style="font-size:10px;color:#999;">PROD</span>
           </div>
         </div>
 
-        <!-- ── PROGRESS + % inline ── -->
         <div class="progress-row">
           <div class="progress-bar">
             ${Array(20).fill(0).map((_, i) => html`
@@ -420,7 +351,6 @@ class SolarMasterCard extends LitElement {
           <span class="progress-pct ${progress > 100 ? 'over' : ''}">${Math.round(progress)}<em>%</em></span>
         </div>
 
-        <!-- ── PANNEAUX ── -->
         <div class="neon-grid">
           ${[1, 2, 3, 4].map(i => {
             if (!c[`p${i}_w`]) return '';
@@ -449,7 +379,6 @@ class SolarMasterCard extends LitElement {
           })}
         </div>
 
-        <!-- ── INFO CARDS ── -->
         <div class="info-grid">
           ${[4, 5, 6, 7, 8, 9].map(i => {
             if (!c[`d${i}_entity`]) return '';
@@ -464,17 +393,14 @@ class SolarMasterCard extends LitElement {
       </div>`;
   }
 
-  /* ── Tab: MÉTÉO ──────────────────────────────── */
   _renderWeather() {
     const c   = this.config;
     const sun = this.hass.states['sun.sun'];
     if (!sun) return html`<div class="err">☀️ Entité <code>sun.sun</code> introuvable.</div>`;
 
-    const elevation = sun.attributes.elevation ?? 0;
-    const azimuth   = sun.attributes.azimuth   ?? 180;
+    const elevation      = sun.attributes.elevation ?? 0;
+    const azimuth        = sun.attributes.azimuth   ?? 180;
     const isAboveHorizon = elevation > 0;
-
-    /* SVG viewBox 0 0 200 40 — horizon at y=34 */
     const sx = Math.round(10 + ((azimuth % 360) / 360) * 180);
     const sy = Math.round(Math.max(4, 34 - Math.max(0, elevation) * 0.32));
 
@@ -488,8 +414,6 @@ class SolarMasterCard extends LitElement {
 
     return html`
       <div class="page page-weather">
-
-        <!-- ── Sun arc ── -->
         <div class="sun-arc-box">
           <svg viewBox="0 0 200 30" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;overflow:visible;">
             <line x1="8" y1="26" x2="192" y2="26" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
@@ -508,13 +432,11 @@ class SolarMasterCard extends LitElement {
           </div>
         </div>
 
-        <!-- ── Moon ── -->
         <div class="moon-row">
           <span class="moon-icon">🌙</span>
           <span class="moon-text">${moonMap[moonState] || moonState || 'Phase inconnue'}</span>
         </div>
 
-        <!-- ── Weather entities grid ── -->
         <div class="w-grid">
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => {
             const eId = c[`w${i}_e`];
@@ -531,7 +453,6 @@ class SolarMasterCard extends LitElement {
       </div>`;
   }
 
-  /* ── Tab: BATTERIE ───────────────────────────── */
   _renderBattery() {
     const c = this.config;
     return html`
@@ -544,8 +465,7 @@ class SolarMasterCard extends LitElement {
             const temp  = this._getVal(c[`b${i}_t`]).val;
             const color = soc < 20 ? 'var(--clr-red)' : soc < 50 ? 'var(--clr-amber)' : 'var(--clr-cyan)';
             const isCharging = power < 0;
-            const segments = 18;
-
+            const segments   = 18;
             return html`
               <div class="rack-unit">
                 <div class="rack-head">
@@ -560,8 +480,7 @@ class SolarMasterCard extends LitElement {
                 </div>
                 <div class="seg-bar">
                   ${Array(segments).fill(0).map((_, idx) => html`
-                    <div class="seg-slot ${idx < Math.round(soc / (100 / segments)) ? 'on' : ''}"
-                         style="--clr:${color}"></div>
+                    <div class="seg-slot ${idx < Math.round(soc / (100 / segments)) ? 'on' : ''}" style="--clr:${color}"></div>
                   `)}
                 </div>
                 <div class="soc-row">
@@ -576,13 +495,11 @@ class SolarMasterCard extends LitElement {
       </div>`;
   }
 
-  /* ── Tab: ÉCONOMIE ───────────────────────────── */
   _renderEco() {
     const c       = this.config;
     const savings = this._getVal(c.eco_money);
     const dayEuro = this._getVal(c.eco_day_euro);
     const conso   = this._getVal(c.main_cons);
-
     return html`
       <div class="page page-eco">
         <div class="eco-hero">
@@ -590,7 +507,6 @@ class SolarMasterCard extends LitElement {
           <div class="eco-amount">${parseFloat(savings.val).toFixed(2)}<span>€</span></div>
           <div class="eco-shine"></div>
         </div>
-
         <div class="eco-grid">
           <div class="e-card highlight">
             <ha-icon icon="mdi:calendar-today" class="e-icon"></ha-icon>
@@ -602,7 +518,6 @@ class SolarMasterCard extends LitElement {
             <span>CONSO MAISON</span>
             <b>${parseFloat(conso.val).toFixed(0)} W</b>
           </div>
-
           ${[1, 2, 3, 4, 5, 6].map(i => {
             if (!c[`e${i}_e`]) return '';
             const e = this._getVal(c[`e${i}_e`]);
@@ -616,156 +531,48 @@ class SolarMasterCard extends LitElement {
       </div>`;
   }
 
-  /* ── Styles ──────────────────────────────────── */
   static styles = css`
-    /* ── CSS Variables ── */
     :host {
-      --clr-bg:      #050a0e;
-      --clr-panel:   rgba(255,255,255,0.04);
-      --clr-border:  rgba(255,255,255,0.08);
-      --clr-amber:   #ffc107;
-      --clr-cyan:    #00e5ff;
-      --clr-green:   #00e676;
-      --clr-red:     #ff5252;
-      --clr-pink:    #f048a8;
-      --clr-text:    #e0e0e0;
-      --clr-muted:   #555;
-      --nav-h:       62px;
+      --clr-bg:     #050a0e; --clr-panel:  rgba(255,255,255,0.04);
+      --clr-border: rgba(255,255,255,0.08); --clr-amber: #ffc107;
+      --clr-cyan:   #00e5ff; --clr-green:  #00e676; --clr-red: #ff5252;
+      --clr-pink:   #f048a8; --clr-text:   #e0e0e0; --clr-muted: #555;
+      --nav-h: 62px;
     }
-
-    /* ── ha-card shell ── */
-    ha-card {
-      background: var(--clr-bg);
-      color: var(--clr-text);
-      border-radius: 22px;
-      overflow: hidden;
-      border: 1px solid var(--clr-border);
-      box-shadow: 0 8px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-    }
-
-    .main-container {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
-
-    .bg-img {
-      position: absolute; inset: 0;
-      background-size: cover; background-position: center;
-      z-index: 0;
-      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.6) 60%, transparent 100%);
-    }
-
-    .content-area {
-      flex: 1;
-      padding: 14px 14px 6px;
-      z-index: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      scrollbar-width: none;
-    }
+    ha-card { background: var(--clr-bg); color: var(--clr-text); border-radius: 22px; overflow: hidden; border: 1px solid var(--clr-border); box-shadow: 0 8px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06); font-family: 'Segoe UI', system-ui, sans-serif; }
+    .main-container { height: 100%; display: flex; flex-direction: column; position: relative; }
+    .bg-img { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 0; mask-image: linear-gradient(to bottom, rgba(0,0,0,0.6) 60%, transparent 100%); }
+    .content-area { flex: 1; padding: 14px 14px 6px; z-index: 1; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
     .content-area::-webkit-scrollbar { display: none; }
-
-    /* ── Bottom nav ── */
-    .bottom-nav {
-      display: flex;
-      height: var(--nav-h);
-      background: rgba(0,0,0,0.85);
-      border-top: 1px solid var(--clr-border);
-      backdrop-filter: blur(12px);
-      z-index: 2;
-    }
-    .nav-item {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 3px; cursor: pointer;
-      color: var(--clr-muted);
-      transition: color .2s, transform .15s;
-      border-top: 2px solid transparent;
-    }
+    .bottom-nav { display: flex; height: var(--nav-h); background: rgba(0,0,0,0.85); border-top: 1px solid var(--clr-border); backdrop-filter: blur(12px); z-index: 2; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; color: var(--clr-muted); transition: color .2s, transform .15s; border-top: 2px solid transparent; }
     .nav-item:hover { color: #888; transform: translateY(-1px); }
-    .nav-item.active {
-      color: var(--clr-amber);
-      border-top-color: var(--clr-amber);
-    }
+    .nav-item.active { color: var(--clr-amber); border-top-color: var(--clr-amber); }
     .nav-item ha-icon { --mdc-icon-size: 22px; }
     .nav-item span { font-size: 8px; font-weight: 700; letter-spacing: .8px; }
-
-    /* ── Generic page ── */
     .page { display: flex; flex-direction: column; gap: 10px; height: 100%; }
-
-    /* ── SOLAR ── */
-    .top-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-    .net-box {
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 10px 8px; border-radius: 14px;
-      min-width: 62px; gap: 3px;
-      border: 1px solid var(--clr-border);
-      background: var(--clr-panel);
-      font-weight: 700; font-size: 14px;
-    }
+    .top-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .net-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 8px; border-radius: 14px; min-width: 62px; gap: 3px; border: 1px solid var(--clr-border); background: var(--clr-panel); font-weight: 700; font-size: 14px; }
     .net-box ha-icon { --mdc-icon-size: 20px; }
     .net-box small { font-size: 8px; font-weight: 600; letter-spacing: .6px; opacity: .7; }
     .net-box.transparent { background: transparent; border-color: transparent; }
     .import { color: var(--clr-red);   background: rgba(255,82,82,.08)!important;  border-color: rgba(255,82,82,.2)!important; }
     .export { color: var(--clr-green); background: rgba(0,230,118,.08)!important; border-color: rgba(0,230,118,.2)!important; }
-
-    .center-prod {
-      flex: 1; text-align: center;
-    }
-    .month-label {
-      font-size: 9px; letter-spacing: 2px; color: var(--clr-muted);
-      font-weight: 600; margin-bottom: 2px;
-    }
-    .big-w {
-      font-size: 38px; font-weight: 900;
-      color: var(--clr-amber);
-      line-height: 1;
-      text-shadow: 0 0 20px rgba(255,193,7,.5);
-    }
+    .center-prod { flex: 1; text-align: center; }
+    .month-label { font-size: 9px; letter-spacing: 2px; color: var(--clr-muted); font-weight: 600; margin-bottom: 2px; }
+    .big-w { font-size: 38px; font-weight: 900; color: var(--clr-amber); line-height: 1; text-shadow: 0 0 20px rgba(255,193,7,.5); }
     .big-w .unit-w { font-size: 16px; font-weight: 400; color: var(--clr-amber); opacity: .7; }
-    .target-info {
-      font-size: 11px; color: #999; margin-top: 3px;
-    }
+    .target-info { font-size: 11px; color: #999; margin-top: 3px; }
     .unit-kwh { color: var(--clr-cyan); font-style: normal; }
-
-    /* Progress row — bar + % side by side */
     .progress-row { display: flex; align-items: center; gap: 8px; }
     .progress-bar { flex: 1; display: flex; gap: 3px; height: 6px; }
-    .progress-pct {
-      font-size: 14px; font-weight: 900; color: var(--clr-amber);
-      white-space: nowrap; min-width: 42px; text-align: right;
-    }
+    .progress-pct { font-size: 14px; font-weight: 900; color: var(--clr-amber); white-space: nowrap; min-width: 42px; text-align: right; }
     .progress-pct em { font-size: 10px; font-style: normal; color: #888; }
     .progress-pct.over { color: var(--clr-green); text-shadow: 0 0 8px var(--clr-green); }
-    .seg {
-      flex: 1; border-radius: 3px;
-      background: rgba(255,255,255,0.07);
-      transition: background .3s;
-    }
-    .seg.on {
-      background: var(--clr-amber);
-      box-shadow: 0 0 6px var(--clr-amber);
-    }
-    .seg.half {
-      background: linear-gradient(90deg, var(--clr-amber) 50%, rgba(255,255,255,0.07) 50%);
-    }
-
-    /* Neon rings */
-    .neon-grid {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      gap: 6px;
-    }
+    .seg { flex: 1; border-radius: 3px; background: rgba(255,255,255,0.07); transition: background .3s; }
+    .seg.on { background: var(--clr-amber); box-shadow: 0 0 6px var(--clr-amber); }
+    .seg.half { background: linear-gradient(90deg, var(--clr-amber) 50%, rgba(255,255,255,0.07) 50%); }
+    .neon-grid { display: flex; justify-content: space-around; align-items: center; gap: 6px; }
     .neon-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
     .neon-ring { position: relative; width: 90px; height: 90px; }
     .ring-svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -773,172 +580,68 @@ class SolarMasterCard extends LitElement {
     .arc-2 { stroke: var(--clr-cyan);  filter: drop-shadow(0 0 4px var(--clr-cyan)); }
     .arc-3 { stroke: var(--clr-green); filter: drop-shadow(0 0 4px var(--clr-green)); }
     .arc-4 { stroke: var(--clr-pink);  filter: drop-shadow(0 0 4px var(--clr-pink)); }
-    .ring-inner {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-    }
+    .ring-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .nv { font-size: 20px; font-weight: 900; line-height: 1; }
     .nu { font-size: 10px; font-weight: 700; }
-    .arc-color-1 { color: var(--clr-amber); }
-    .arc-color-2 { color: var(--clr-cyan);  }
-    .arc-color-3 { color: var(--clr-green); }
-    .arc-color-4 { color: var(--clr-pink);  }
+    .arc-color-1 { color: var(--clr-amber); } .arc-color-2 { color: var(--clr-cyan); }
+    .arc-color-3 { color: var(--clr-green); } .arc-color-4 { color: var(--clr-pink); }
     .nlabel { font-size: 10px; color: #aaa; font-weight: 600; letter-spacing: .5px; }
-
-    /* Info cards */
     .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-    .info-card {
-      background: var(--clr-panel);
-      border: 1px solid var(--clr-border);
-      border-radius: 10px;
-      padding: 8px 6px;
-      display: flex; flex-direction: column;
-      align-items: center; gap: 3px;
-    }
+    .info-card { background: var(--clr-panel); border: 1px solid var(--clr-border); border-radius: 10px; padding: 8px 6px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
     .ic-label { font-size: 8px; color: #aaa; font-weight: 600; letter-spacing: .4px; text-align: center; }
     .ic-val { font-size: 15px; font-weight: 800; color: var(--clr-text); text-align: center; font-style: normal; }
     .ic-unit { font-size: 9px; font-weight: 400; color: var(--clr-cyan); font-style: normal; }
-
-    /* ── WEATHER ── */
     .page-weather { height: 100%; }
-    .sun-arc-box {
-      background: var(--clr-panel);
-      border: 1px solid var(--clr-border);
-      border-radius: 14px;
-      padding: 6px 12px 5px;
-      flex-shrink: 0;
-    }
-    .sun-times {
-      display: flex; justify-content: space-between;
-      font-size: 11px; color: #bbb; font-weight: 600;
-      margin-top: 3px;
-    }
+    .sun-arc-box { background: var(--clr-panel); border: 1px solid var(--clr-border); border-radius: 14px; padding: 6px 12px 5px; flex-shrink: 0; }
+    .sun-times { display: flex; justify-content: space-between; font-size: 11px; color: #bbb; font-weight: 600; margin-top: 3px; }
     .sun-elev { color: var(--clr-amber); font-weight: 800; }
-    .moon-row {
-      display: flex; align-items: center; gap: 10px;
-      background: var(--clr-panel);
-      border: 1px solid var(--clr-border);
-      border-radius: 10px; padding: 6px 14px;
-      flex-shrink: 0;
-    }
-    .moon-icon { font-size: 15px; }
-    .moon-text { font-size: 12px; color: #ddd; }
-    .w-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      gap: 5px; flex: 1; min-height: 0;
-    }
-    .w-card {
-      background: var(--clr-panel);
-      border: 1px solid var(--clr-border);
-      border-radius: 10px;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 2px;
-    }
+    .moon-row { display: flex; align-items: center; gap: 10px; background: var(--clr-panel); border: 1px solid var(--clr-border); border-radius: 10px; padding: 6px 14px; flex-shrink: 0; }
+    .moon-icon { font-size: 15px; } .moon-text { font-size: 12px; color: #ddd; }
+    .w-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 5px; flex: 1; min-height: 0; }
+    .w-card { background: var(--clr-panel); border: 1px solid var(--clr-border); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
     .w-icon { color: var(--clr-cyan); --mdc-icon-size: 15px; }
     .w-label { font-size: 8px; color: #aaa; font-weight: 600; letter-spacing: .4px; text-align: center; line-height: 1.1; }
     .w-val { font-size: 15px; font-weight: 900; color: white; }
     .w-unit { font-size: 9px; font-weight: 400; color: var(--clr-cyan); font-style: normal; }
-
-    /* ── BATTERY ── */
     .rack-list { display: flex; flex-direction: column; gap: 10px; }
-    .rack-unit {
-      background: var(--clr-panel);
-      border: 1px solid var(--clr-border);
-      border-radius: 14px; padding: 12px 14px;
-      display: flex; flex-direction: column; gap: 8px;
-    }
+    .rack-unit { background: var(--clr-panel); border: 1px solid var(--clr-border); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
     .rack-head { display: flex; justify-content: space-between; align-items: center; }
     .rack-name { font-size: 12px; font-weight: 700; color: var(--clr-text); letter-spacing: .5px; }
     .rack-badges { display: flex; gap: 6px; align-items: center; }
-    .badge {
-      display: flex; align-items: center; gap: 3px;
-      font-size: 10px; font-weight: 700;
-      padding: 3px 8px; border-radius: 20px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #bbb;
-    }
+    .badge { display: flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #bbb; }
     .badge ha-icon { --mdc-icon-size: 12px; }
     .badge.charge   { color: var(--clr-green); border-color: rgba(0,230,118,.25); }
     .badge.discharge { color: var(--clr-red);  border-color: rgba(255,82,82,.25); }
-
     .seg-bar { display: flex; gap: 3px; height: 8px; }
-    .seg-slot {
-      flex: 1; border-radius: 3px;
-      background: rgba(255,255,255,0.07);
-      transition: background .3s, box-shadow .3s;
-    }
-    .seg-slot.on {
-      background: var(--clr);
-      box-shadow: 0 0 5px var(--clr);
-    }
-
+    .seg-slot { flex: 1; border-radius: 3px; background: rgba(255,255,255,0.07); transition: background .3s, box-shadow .3s; }
+    .seg-slot.on { background: var(--clr); box-shadow: 0 0 5px var(--clr); }
     .soc-row { display: flex; align-items: center; gap: 10px; }
     .soc-pct { font-size: 24px; font-weight: 900; line-height: 1; min-width: 60px; }
     .soc-pct small { font-size: 12px; font-weight: 400; }
-    .soc-bar-wrap {
-      flex: 1; height: 6px; border-radius: 3px;
-      background: rgba(255,255,255,0.07); overflow: hidden;
-    }
+    .soc-bar-wrap { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.07); overflow: hidden; }
     .soc-bar-fill { height: 100%; border-radius: 3px; transition: width .5s ease; }
-
-    /* ── ECONOMY ── */
-    .eco-hero {
-      position: relative; overflow: hidden;
-      text-align: center;
-      padding: 22px 16px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, rgba(0,230,118,.08), rgba(0,229,255,.05));
-      border: 1px solid rgba(0,230,118,.2);
-    }
-    .eco-label {
-      font-size: 9px; letter-spacing: 2.5px;
-      color: var(--clr-green); font-weight: 700; margin-bottom: 4px;
-    }
-    .eco-amount {
-      font-size: 46px; font-weight: 900; color: #fff;
-      text-shadow: 0 0 30px rgba(0,230,118,.4);
-      line-height: 1;
-    }
+    .eco-hero { position: relative; overflow: hidden; text-align: center; padding: 22px 16px; border-radius: 16px; background: linear-gradient(135deg, rgba(0,230,118,.08), rgba(0,229,255,.05)); border: 1px solid rgba(0,230,118,.2); }
+    .eco-label { font-size: 9px; letter-spacing: 2.5px; color: var(--clr-green); font-weight: 700; margin-bottom: 4px; }
+    .eco-amount { font-size: 46px; font-weight: 900; color: #fff; text-shadow: 0 0 30px rgba(0,230,118,.4); line-height: 1; }
     .eco-amount span { font-size: 24px; color: var(--clr-green); }
-    .eco-shine {
-      position: absolute; top: -20px; right: -20px;
-      width: 100px; height: 100px;
-      background: radial-gradient(circle, rgba(0,230,118,.15), transparent 70%);
-      pointer-events: none;
-    }
+    .eco-shine { position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: radial-gradient(circle, rgba(0,230,118,.15), transparent 70%); pointer-events: none; }
     .eco-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-    .e-card {
-      background: var(--clr-panel);
-      border: 1px solid var(--clr-border);
-      border-radius: 12px; padding: 12px 10px;
-      display: flex; flex-direction: column;
-      align-items: center; gap: 4px; text-align: center;
-    }
+    .e-card { background: var(--clr-panel); border: 1px solid var(--clr-border); border-radius: 12px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
     .e-card.highlight { border-color: rgba(0,230,118,.2); background: rgba(0,230,118,.04); }
     .e-icon { color: var(--clr-green); --mdc-icon-size: 20px; margin-bottom: 2px; }
     .e-card span { font-size: 8px; color: #aaa; font-weight: 600; letter-spacing: .5px; }
     .e-card b { font-size: 18px; font-weight: 900; color: white; }
     .e-card b small { font-size: 10px; font-weight: 400; color: #777; }
-
-    /* ── Misc ── */
-    .err {
-      padding: 20px; color: var(--clr-red);
-      background: rgba(255,82,82,.08); border-radius: 12px;
-      font-size: 13px; border: 1px solid rgba(255,82,82,.2);
-    }
+    .err { padding: 20px; color: var(--clr-red); background: rgba(255,82,82,.08); border-radius: 12px; font-size: 13px; border: 1px solid rgba(255,82,82,.2); }
   `;
 }
 customElements.define("solar-master-card", SolarMasterCard);
 
-// ── Enregistrement dans le picker Home Assistant ──
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type:        "solar-master-card",
-  name:        "Solar Master Card",
+  type: "solar-master-card",
+  name: "Solar Master Card",
   description: "Tableau de bord solaire : production, météo, batterie, économies",
-  preview:     false,
+  preview: false,
   documentationURL: "https://github.com/"
 });
