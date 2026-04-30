@@ -204,23 +204,50 @@ class SolarMasterCard extends LitElement {
       </div>`;
   }
 
-  _renderBattery() {
+_renderBattery() {
+    const c = this.config;
+    const socGlobal = this._getVal(c.batt_avg_soc).val;
+    
     return html`
       <div class="page-batt">
+        <div class="batt-header">
+            <div class="global-soc">${socGlobal}%</div>
+            <div class="global-label">CAPACITÉ RACK TOTAL</div>
+        </div>
+        
+        <div class="rack-list">
         ${[1,2,3,4].map(i => {
-          const soc = parseFloat(this._getVal(this.config[`b${i}_s`]).val) || 0;
-          const p = this._getVal(this.config[`b${i}_out`]);
-          if(!this.config[`b${i}_s`]) return '';
+          if(!c[`b${i}_s`]) return '';
+          const soc = parseFloat(this._getVal(c[`b${i}_s`]).val) || 0;
+          const power = parseFloat(this._getVal(c[`b${i}_out`]).val) || 0;
+          const temp = this._getVal(c[`b${i}_t`]).val;
+          
+          let color = "#00ff00"; // Vert
+          if (soc < 20) color = "#ff4444"; // Rouge
+          else if (soc < 50) color = "#ffc107"; // Orange
+
           return html`
-            <div class="batt-rack">
-              <div class="head"><b>${this.config[`b${i}_n`]}</b> <span>${soc}%</span></div>
-              <div class="track"><div class="fill" style="width:${soc}%; background:${soc < 20 ? '#f44336' : '#4caf50'}"></div></div>
-              <div class="stat">${p.val} W | ${this._getVal(this.config[`b${i}_t`]).val}°C</div>
+            <div class="rack-unit">
+              <div class="rack-meta">
+                <span class="n">${c[`b${i}_n`] || 'Unité '+i}</span>
+                <span class="t"><ha-icon icon="mdi:thermometer"></ha-icon> ${temp}°C</span>
+              </div>
+              <div class="rack-main">
+                <div class="rack-soc-bar">
+                  <div class="fill" style="width:${soc}%; background: ${color}; box-shadow: 0 0 10px ${color}"></div>
+                </div>
+                <div class="rack-values">
+                  <span class="p">${Math.round(soc)}%</span>
+                  <span class="w" style="color: ${power > 0 ? '#4caf50' : (power < 0 ? '#ff4444' : '#888')}">
+                    ${power > 0 ? '↑' : (power < 0 ? '↓' : '')} ${Math.abs(power)} W
+                  </span>
+                </div>
+              </div>
             </div>`;
         })}
+        </div>
       </div>`;
   }
-
   _renderEco() {
     const c = this.config;
     return html`
@@ -285,9 +312,18 @@ class SolarMasterCard extends LitElement {
     .weather-grid, .eco-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 15px; }
     .w-item, .e-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; text-align: center; }
     .w-item ha-icon { color: #00f9f9; }
-    .batt-rack { background: #111; padding: 12px; border-radius: 10px; margin-bottom: 10px; }
-    .batt-rack .track { height: 6px; background: #222; border-radius: 3px; margin: 8px 0; }
-    .batt-rack .fill { height: 100%; border-radius: 3px; transition: 1s; }
+   /* BATTERY RACK STYLE */
+    .batt-header { text-align: center; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 15px; margin-bottom: 20px; border: 1px solid #222; }
+    .global-soc { font-size: 42px; font-weight: 900; color: #00ff00; text-shadow: 0 0 15px rgba(0,255,0,0.3); }
+    .global-label { font-size: 10px; color: #888; letter-spacing: 1px; }
+    
+    .rack-unit { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #333; }
+    .rack-meta { display: flex; justify-content: space-between; font-size: 10px; font-weight: bold; margin-bottom: 8px; color: #aaa; }
+    .rack-soc-bar { height: 10px; background: #111; border-radius: 5px; overflow: hidden; margin-bottom: 8px; border: 1px solid #222; }
+    .fill { height: 100%; transition: width 1s ease-in-out; }
+    .rack-values { display: flex; justify-content: space-between; align-items: center; }
+    .rack-values .p { font-size: 18px; font-weight: 900; }
+    .rack-values .w { font-size: 14px; font-weight: bold; font-family: monospace; }
     .eco-hero { text-align: center; padding: 20px; background: rgba(0,255,0,0.05); border-radius: 15px; }
     .eco-hero .val { font-size: 36px; font-weight: 900; color: #4caf50; }
   `;
